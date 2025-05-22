@@ -1,8 +1,8 @@
 module vkCompViz;
 
-#include <stdio.h>
+import std;
 
-void test()
+void vkCompViz::test()
 {
-    printf("test");
+    std::cout << "test" << std::endl;
 }
