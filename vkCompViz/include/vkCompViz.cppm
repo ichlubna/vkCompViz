@@ -1,3 +1,3 @@
 export module vkCompViz;
 
-export import :app;
+export import : app;
