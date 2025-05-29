@@ -6,15 +6,30 @@ project(vkCompViz)
 find_package(Vulkan REQUIRED)
 find_package(glfw3 REQUIRED)
 
+add_library( VulkanHppModule )
+target_sources( VulkanHppModule PUBLIC
+  FILE_SET CXX_MODULES
+  BASE_DIRS ${Vulkan_INCLUDE_DIR}
+  FILES ${Vulkan_INCLUDE_DIR}/vulkan/vulkan.cppm
+)
+target_compile_features( VulkanHppModule PUBLIC cxx_std_26 )
+target_link_libraries( VulkanHppModule PUBLIC Vulkan::Vulkan )
+
 add_library(${PROJECT_NAME} SHARED)
 target_sources(${PROJECT_NAME}
     PUBLIC
     src/vkCompViz.app.cpp
+    src/gpu.vulkan.cpp
+    src/window.glfw.cpp
 )
 target_sources(${PROJECT_NAME}
     PUBLIC FILE_SET CXX_MODULES FILES
     include/vkCompViz.cppm
     src/vkCompViz.app.cppm
+    src/gpu.cppm
+    src/gpu.vulkan.cppm
+    src/window.cppm
+    src/window.glfw.cppm
 )
 target_include_directories(${PROJECT_NAME}
     PRIVATE
@@ -24,11 +39,11 @@ target_include_directories(${PROJECT_NAME}
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
 target_link_libraries(${PROJECT_NAME}
-    vulkan
+    VulkanHppModule
     glfw
 )
 target_compile_features(${PROJECT_NAME}
-    PRIVATE cxx_std_23
+    PRIVATE cxx_std_26
 )
 target_compile_options(${PROJECT_NAME}
     PRIVATE 
