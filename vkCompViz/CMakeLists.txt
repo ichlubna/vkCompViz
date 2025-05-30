@@ -1,19 +1,6 @@
 cmake_minimum_required(VERSION 4.0)
 project(vkCompViz)
-
-#set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/CMakeModules")
-
-find_package(Vulkan REQUIRED)
-find_package(glfw3 REQUIRED)
-
-add_library( VulkanHppModule )
-target_sources( VulkanHppModule PUBLIC
-  FILE_SET CXX_MODULES
-  BASE_DIRS ${Vulkan_INCLUDE_DIR}
-  FILES ${Vulkan_INCLUDE_DIR}/vulkan/vulkan.cppm
-)
-target_compile_features( VulkanHppModule PUBLIC cxx_std_26 )
-target_link_libraries( VulkanHppModule PUBLIC Vulkan::Vulkan )
+include(dependencies.cmake)
 
 add_library(${PROJECT_NAME} SHARED)
 target_sources(${PROJECT_NAME}
@@ -21,6 +8,7 @@ target_sources(${PROJECT_NAME}
     src/vkCompViz.app.cpp
     src/gpu.vulkan.cpp
     src/window.glfw.cpp
+    src/loader.image.cpp
 )
 target_sources(${PROJECT_NAME}
     PUBLIC FILE_SET CXX_MODULES FILES
@@ -30,6 +18,8 @@ target_sources(${PROJECT_NAME}
     src/gpu.vulkan.cppm
     src/window.cppm
     src/window.glfw.cppm
+    src/loader.cppm
+    src/loader.image.cppm
 )
 target_include_directories(${PROJECT_NAME}
     PRIVATE
@@ -37,10 +27,12 @@ target_include_directories(${PROJECT_NAME}
     PUBLIC 
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+    ${CMAKE_CURRENT_SOURCE_DIR}/external/stb
 )
 target_link_libraries(${PROJECT_NAME}
     VulkanHppModule
     glfw
+    ffmpeg swscale avfilter ${FFMPEG_LIBRARIES} 
 )
 target_compile_features(${PROJECT_NAME}
     PRIVATE cxx_std_26
