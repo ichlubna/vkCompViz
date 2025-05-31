@@ -1,3 +1,7 @@
 export module gpu;
 
-export import : vulkan;
+export namespace Gpu{
+    class Gpu
+    {
+    };
+}

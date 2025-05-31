@@ -2,22 +2,24 @@
 module;
 #include <string>
 
-module loader;
+module imageFfmpeg;
+using namespace Loader;
 
 extern "C" {
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
 }
 
-Image::Image(std::string path)
+
+ImageFfmpeg::ImageFfmpeg(std::string path) : Image(path)
 {
     auto formatContext = avformat_alloc_context();
 }
 
-Image::~Image()
+ImageFfmpeg::~ImageFfmpeg()
 {
 }
 
-const unsigned char* Image::getData() const
+const unsigned char* ImageFfmpeg::getData() const
 {
 }

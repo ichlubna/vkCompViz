@@ -1,9 +1,15 @@
-module window;
+module;
+
+#include <glm/glm.hpp>
+
+module windowGlfw;
+using namespace Window;
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
+//import glm;
 
-void Window::init(const Window::Parameters &parameters)
+WindowGlfw::WindowGlfw(const Window::Parameters &parameters) : Window(parameters)
 {
     glfwInit();
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
@@ -14,7 +20,7 @@ void Window::init(const Window::Parameters &parameters)
         throw std::runtime_error("Failed to create GLFW window");
 }
 
-void Window::run()
+void WindowGlfw::WindowGlfw::run()
 {
     while (!glfwWindowShouldClose(window))
     {
@@ -22,7 +28,7 @@ void Window::run()
     }
 }
 
-void Window::cleanup()
+WindowGlfw::~WindowGlfw()
 {
     glfwDestroyWindow(window);
     glfwTerminate();
