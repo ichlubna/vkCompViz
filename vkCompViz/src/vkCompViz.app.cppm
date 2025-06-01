@@ -1,5 +1,7 @@
-export module vkCompViz: app;
+module;
+#include <glm/glm.hpp>
 
+export module vkCompViz: app;
 import std;
 
 export namespace vkCompViz
@@ -14,8 +16,7 @@ export namespace vkCompViz
         class WindowParameters
         {
             public:
-            std::size_t width {1024};
-            std::size_t height {720};
+            glm::uvec2 resolution {1024, 720};
             std::string title {"No title"};
         };
         void run(ComputeParameters const &computeParameters, WindowParameters const &windowParameters);

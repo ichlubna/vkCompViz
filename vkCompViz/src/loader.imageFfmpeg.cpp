@@ -1,15 +1,24 @@
 //TODO use import std only
 module;
 #include <string>
+#include "ffmpeg.h"
 
 module loader;
 using namespace Loader;
 
-extern "C" {
-#include <libavcodec/avcodec.h>
-#include <libavformat/avformat.h>
+ImageData::ImageData()
+{
 }
 
+ImageData::~ImageData()
+{
+    //free?
+}
+
+const unsigned char* ImageData::getData() const
+{
+    return data;
+}
 
 ImageFfmpeg::ImageFfmpeg(std::string path) : Image(path)
 {
@@ -22,4 +31,5 @@ ImageFfmpeg::~ImageFfmpeg()
 
 const unsigned char* ImageFfmpeg::getData() const
 {
+    return data->getData(); 
 }

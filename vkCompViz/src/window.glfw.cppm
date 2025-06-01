@@ -1,5 +1,7 @@
-export module window:glfw;
+module;
+#include <glm/glm.hpp>
 
+export module window:glfw;
 export import :interface;
 import std;
 

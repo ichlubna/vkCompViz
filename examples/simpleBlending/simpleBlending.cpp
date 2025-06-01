@@ -12,7 +12,7 @@ int main()
     {
         //app.run({}) TODO test only compute;
         app.run(vkCompViz::App::ComputeParameters{},
-                vkCompViz::App::WindowParameters{.width = 800, .height = 600, .title = "simpleBlending"});
+                vkCompViz::App::WindowParameters{.resolution = {800, 600}, .title = "simpleBlending"});
     }
     catch (const std::exception &e)
     {

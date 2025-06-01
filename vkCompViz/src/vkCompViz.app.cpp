@@ -8,7 +8,7 @@ using namespace vkCompViz;
 
 void App::run(ComputeParameters const &computeParameters, WindowParameters const &windowParameters)
 {
-    Window::Window *window = new Window::WindowGlfw({.width=windowParameters.width, .height=windowParameters.height, .title=windowParameters.title});
+    std::unique_ptr<Window::Window> window = std::make_unique<Window::WindowGlfw>(Window::Parameters{.resolution=windowParameters.resolution, .title=windowParameters.title});
     window->run();
 }
 

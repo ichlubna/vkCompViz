@@ -12,6 +12,6 @@ export namespace Loader
         public:
         Image(std::string path) {};
         virtual ~Image() = default;
-        virtual const unsigned char* getData() const = 0;
+        [[nodiscard]] virtual const unsigned char* getData() const = 0;
     };
 }
