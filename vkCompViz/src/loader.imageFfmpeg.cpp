@@ -2,7 +2,7 @@
 module;
 #include <string>
 
-module imageFfmpeg;
+module loader;
 using namespace Loader;
 
 extern "C" {

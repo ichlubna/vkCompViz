@@ -2,7 +2,7 @@ module;
 
 #include <glm/glm.hpp>
 
-module windowGlfw;
+module window;
 using namespace Window;
 
 #define GLFW_INCLUDE_VULKAN

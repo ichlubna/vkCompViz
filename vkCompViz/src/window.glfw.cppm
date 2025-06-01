@@ -1,6 +1,6 @@
-export module windowGlfw;
+export module window:glfw;
 
-export import window;
+export import :interface;
 import std;
 
 export namespace Window

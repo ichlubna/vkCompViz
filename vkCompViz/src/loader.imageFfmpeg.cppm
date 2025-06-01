@@ -2,8 +2,8 @@ module;
 
 #include <string>
 
-export module imageFfmpeg;
-export import loader;
+export module loader:imageFfmpeg;
+export import :interface;
 
 // TODO use this one instead of the include above
 //import std;
@@ -16,6 +16,7 @@ export namespace Loader
         ImageFfmpeg(std::string path);
         ~ImageFfmpeg();
         const unsigned char* getData() const;
+
         private:
         unsigned char* data;
         std::size_t width;

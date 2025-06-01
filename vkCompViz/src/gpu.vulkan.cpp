@@ -1,4 +1,4 @@
-module gpuVulkan;
+module gpu;
 
 import vulkan_hpp;
 

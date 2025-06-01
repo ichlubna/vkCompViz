@@ -2,7 +2,7 @@ module vkCompViz;
 
 import std;
 import gpu;
-import windowGlfw;
+import window;
 
 using namespace vkCompViz;
 

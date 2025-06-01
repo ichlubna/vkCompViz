@@ -6,20 +6,23 @@ add_library(${PROJECT_NAME} SHARED)
 target_sources(${PROJECT_NAME}
     PUBLIC
     src/vkCompViz.app.cpp
-    src/gpuVulkan.cpp
-    src/windowGlfw.cpp
-    src/loaderImageFfmpeg.cpp
+    src/gpu.vulkan.cpp
+    src/window.glfw.cpp
+    src/loader.imageFfmpeg.cpp
 )
 target_sources(${PROJECT_NAME}
     PUBLIC FILE_SET CXX_MODULES FILES
     include/vkCompViz.cppm
     src/vkCompViz.app.cppm
     src/gpu.cppm
-    src/gpuVulkan.cppm
+    src/gpu.interface.cppm
+    src/gpu.vulkan.cppm
     src/window.cppm
-    src/windowGlfw.cppm
+    src/window.interface.cppm
+    src/window.glfw.cppm
     src/loader.cppm
-    src/loaderImageFfmpeg.cppm
+    src/loader.interface.cppm
+    src/loader.imageFfmpeg.cppm
 )
 target_include_directories(${PROJECT_NAME}
     PRIVATE

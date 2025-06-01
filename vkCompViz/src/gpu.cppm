@@ -1,7 +1,4 @@
 export module gpu;
 
-export namespace Gpu{
-    class Gpu
-    {
-    };
-}
+export import :interface;
+export import :vulkan;
