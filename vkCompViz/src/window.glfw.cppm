@@ -11,7 +11,8 @@ export namespace Window
     {
         public:
         WindowGlfw(const Parameters &parameters);
-        void run();
+        void run() override;
+        [[nodiscard]] std::vector<const char*> requiredExtensions() const override;
         ~WindowGlfw();
 
         private:

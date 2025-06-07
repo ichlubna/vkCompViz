@@ -13,6 +13,14 @@ WindowGlfw::WindowGlfw(const Parameters &parameters) : Window(parameters)
     if(window == nullptr)
         throw std::runtime_error("Failed to create GLFW window");
 }
+        
+std::vector<const char*> WindowGlfw::requiredExtensions() const
+{
+    uint32_t glfwExtensionCount = 0;
+    const char** glfwExtensions;
+    glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
+    return std::vector<const char*>(glfwExtensions, glfwExtensions + glfwExtensionCount);
+}
 
 void WindowGlfw::WindowGlfw::run()
 {

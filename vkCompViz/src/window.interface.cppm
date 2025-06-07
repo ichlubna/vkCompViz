@@ -18,6 +18,7 @@ export namespace Window
         public:
         Window(const Parameters &parameters) {};
         virtual void run() = 0;
+        [[nodiscard]] virtual std::vector<const char*> requiredExtensions() const = 0;
         virtual ~Window() = default;
     };
 }
