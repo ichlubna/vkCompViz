@@ -16,12 +16,23 @@ void App::useWindow(Window::Parameters const &windowParameters)
 void App::run(ComputeParameters const &computeParameters)
 {
     Gpu::Vulkan::VulkanInitParams vulkanInitParams;
-    if (window)
+    if(window)
+    {
         vulkanInitParams.requiredExtensions = window->requiredExtensions();
+        // This is used to keep the Vulkan initialization uninterrupted in constructor, the surface is obtained via function pointer from window
+        vulkanInitParams.surface = std::bind(&Window::Window::getSurface, window.get(), std::placeholders::_1);
+    }
     gpu = std::make_unique<Gpu::Vulkan>(vulkanInitParams);
-   
-     if(window)
-        window->run();
+
+    if(window)
+    {
+        bool end = false;
+        while(!end)
+        {
+            window->run();
+            end = window->key("Escape") || window->quit();
+        }
+    }
 }
 
 App::~App()

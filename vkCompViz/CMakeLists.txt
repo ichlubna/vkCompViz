@@ -13,6 +13,7 @@ target_sources(${PROJECT_NAME}
 target_sources(${PROJECT_NAME}
     PUBLIC FILE_SET CXX_MODULES FILES
     include/vkCompViz.cppm
+    src/common.cppm
     src/vkCompViz.app.cppm
     src/gpu.cppm
     src/gpu.interface.cppm

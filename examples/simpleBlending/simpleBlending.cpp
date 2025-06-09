@@ -7,14 +7,13 @@ import std;
 
 int main()
 {
-    vkCompViz::App app;
     try
     {
-        //app.run({}) TODO test only compute;
-        app.run(vkCompViz::App::ComputeParameters{},
-                vkCompViz::App::WindowParameters{.resolution = {800, 600}, .title = "simpleBlending"});
+        vkCompViz::App app;
+        app.useWindow({.resolution = {800, 600}, .title = "simpleBlending"});
+        app.run(vkCompViz::App::ComputeParameters{});
     }
-    catch (const std::exception &e)
+    catch(const std::exception &e)
     {
         std::cerr << e.what() << std::endl;
         return EXIT_FAILURE;

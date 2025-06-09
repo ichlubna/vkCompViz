@@ -1,4 +1,4 @@
 export module loader;
 
-export import :interface;
-export import :imageFfmpeg;
+export import : interface;
+export import : imageFfmpeg;

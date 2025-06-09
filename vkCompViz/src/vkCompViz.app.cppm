@@ -9,9 +9,9 @@ import window;
 
 export namespace vkCompViz
 {
-    class App
-    {
-        public:
+class App
+{
+    public:
         class ComputeParameters
         {
 
@@ -19,18 +19,18 @@ export namespace vkCompViz
         class WindowParameters
         {
             public:
-            glm::uvec2 resolution {1920, 1080};
-            std::string title {"No title"};
+                glm::uvec2 resolution {1920, 1080};
+                std::string title {"No title"};
         };
-        
+
         App();
         void useWindow(Window::Parameters const &windowParameters);
         void run(ComputeParameters const &computeParameters);
         ~App();
 
-        private:
+    private:
         std::unique_ptr<Window::Window> window;
         std::unique_ptr<Gpu::Gpu> gpu;
-    };
+};
 
 }

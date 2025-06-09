@@ -15,7 +15,7 @@ ImageData::~ImageData()
     //free?
 }
 
-const unsigned char* ImageData::getData() const
+const unsigned char *ImageData::getData() const
 {
     return data;
 }
@@ -29,7 +29,7 @@ ImageFfmpeg::~ImageFfmpeg()
 {
 }
 
-const unsigned char* ImageFfmpeg::getData() const
+const unsigned char *ImageFfmpeg::getData() const
 {
-    return data->getData(); 
+    return data->getData();
 }
