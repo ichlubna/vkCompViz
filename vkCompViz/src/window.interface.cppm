@@ -1,6 +1,5 @@
 module;
 #include <glm/glm.hpp>
-
 export module window: interface;
 import std;
 
@@ -22,6 +21,7 @@ class Window
         [[nodiscard]] virtual uintptr_t getSurface(uintptr_t vkInstance) = 0;
         [[nodiscard]] virtual bool key(std::string name) const = 0;
         [[nodiscard]] virtual bool quit() const = 0;
+        [[nodiscard]] virtual glm::uvec2 resolution() const = 0;
         virtual ~Window() = default;
 };
 }

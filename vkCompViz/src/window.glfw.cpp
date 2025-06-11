@@ -1,10 +1,10 @@
 module;
 #include <bits/stdc++.h>
+#include <glm/glm.hpp>
 module window;
 using namespace Window;
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
-//import glm;
 
 bool WindowGlfw::Keys::pressed(std::string name) const
 {
@@ -19,6 +19,15 @@ bool WindowGlfw::Keys::pressed(std::string name) const
     return pressedKeys.contains(keyNames.find(lowerName)->second);
 }
 
+void WindowGlfw::keyCallback(GLFWwindow *window, int key, [[maybe_unused]] int scancode, int action, [[maybe_unused]] int mods)
+{
+    auto* self = static_cast<WindowGlfw*>(glfwGetWindowUserPointer(window));
+    if(action == GLFW_PRESS)
+        self->keys.press(key);
+    else if(action == GLFW_RELEASE)
+        self->keys.release(key);
+}
+
 WindowGlfw::WindowGlfw(const Parameters &parameters) :
     Window(parameters)
 {
@@ -29,14 +38,14 @@ WindowGlfw::WindowGlfw(const Parameters &parameters) :
     if(window == nullptr)
         throw std::runtime_error("Failed to create GLFW window");
     glfwSetWindowUserPointer(window, this);
-    glfwSetKeyCallback(window, [](GLFWwindow * window, int key, [[maybe_unused]] int scancode, int action, [[maybe_unused]] int mods)
-    {
-        auto* self = static_cast<WindowGlfw *>(glfwGetWindowUserPointer(window));
-        if(action == GLFW_PRESS)
-            self->keys.press(key);
-        else if(action == GLFW_RELEASE)
-            self->keys.release(key);
-    });
+    glfwSetKeyCallback(window, WindowGlfw::keyCallback);
+}
+
+glm::uvec2 WindowGlfw::resolution() const
+{
+    int width, height;
+    glfwGetFramebufferSize(window, &width, &height);
+    return {width, height};
 }
 
 std::vector<const char *> WindowGlfw::requiredExtensions() const

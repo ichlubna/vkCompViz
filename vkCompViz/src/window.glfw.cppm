@@ -1,9 +1,9 @@
 module;
-#include <glm/glm.hpp>
 #include <set>
-
+#include <glm/glm.hpp>
 export module window: glfw;
 export import : interface;
+import common;
 import std;
 
 export namespace Window
@@ -11,15 +11,18 @@ export namespace Window
 class WindowGlfw : public Window
 {
     public:
+        typedef struct GLFWwindow GLFWwindow;
         WindowGlfw(const Parameters &parameters);
         void run() override;
         [[nodiscard]] std::vector<const char *> requiredExtensions() const override;
-        [[nodiscard]] uintptr_t getSurface(uintptr_t instance) override;
+        [[nodiscard]] std::uintptr_t getSurface(std::uintptr_t instance) override;
         [[nodiscard]] bool key(std::string name) const
         {
             return keys.pressed(name);
         }
-        [[nodiscard]] bool quit() const;
+        [[nodiscard]] bool quit() const override;
+        [[nodiscard]] glm::uvec2 resolution() const override;
+        static void keyCallback(GLFWwindow *window, int key, [[maybe_unused]] int scancode, int action, [[maybe_unused]] int mods);
         ~WindowGlfw();
 
     private:
@@ -39,7 +42,6 @@ class WindowGlfw : public Window
             private:
                 std::set<int> pressedKeys;
         } keys;
-        typedef struct GLFWwindow GLFWwindow;
         GLFWwindow *window;
 };
 }
