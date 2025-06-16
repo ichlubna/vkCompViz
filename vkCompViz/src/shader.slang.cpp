@@ -76,7 +76,7 @@ std::vector<uint32_t> SlangFactory::compile(slang::IModule *shaderModule, Slang:
     Slang::ComPtr<slang::IBlob> spirvCode;
     program->getEntryPointCode(0, 0, spirvCode.writeRef(), nullptr);
     const uint32_t* data = reinterpret_cast<const uint32_t*>(spirvCode->getBufferPointer());
-    std::vector<uint32_t> code(data, data+spirvCode->getBufferSize());
+    std::vector<uint32_t> code(data, data+spirvCode->getBufferSize()/sizeof(uint32_t));
     if(code.empty())
         throw std::runtime_error("Failed to compile shader");
     return code;
