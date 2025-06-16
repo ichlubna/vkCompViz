@@ -50,6 +50,7 @@ class Vulkan : public Gpu
                     return queueIndex.present;
                 }
                 [[nodiscard]] vk::SwapchainCreateInfoKHR &swapChain(glm::uvec2 resolution);
+                [[nodiscard]] vk::ShaderModuleCreateInfo &shaderModule(std::vector<std::uint32_t> &code);
 
             private:
                 Vulkan &vulkan;
@@ -59,6 +60,7 @@ class Vulkan : public Gpu
                 vk::DeviceCreateInfo deviceCreateInfo{};
                 vk::PhysicalDeviceFeatures physicalDeviceFeatures{};
                 vk::SwapchainCreateInfoKHR swapChainCreateInfo{};
+                vk::ShaderModuleCreateInfo shaderModuleCreateInfo{};
                 std::vector<vk::DeviceQueueCreateInfo> queueCreateInfos;
                 std::vector<const char*> extensions;
                 inline static const std::vector<const char*> instanceExtensions{"VK_KHR_portability_enumeration"};
@@ -92,6 +94,7 @@ class Vulkan : public Gpu
             SwapChain(vk::raii::Device &device, const vk::SwapchainCreateInfoKHR &swapChainCreateInfo);
             vk::raii::SwapchainKHR swapChain;
             std::vector<vk::Image> images;
+            std::vector<vk::raii::ImageView> imageViews;
             vk::Format imageFormat;
             vk::Extent2D extent;
         } swapChain;

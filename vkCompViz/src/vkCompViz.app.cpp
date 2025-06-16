@@ -10,7 +10,7 @@ App::App()
 
 void App::useWindow(Window::Parameters const &windowParameters)
 {
-    window = std::make_unique<Window::WindowGlfw>(windowParameters);
+    window = std::make_unique<Window::Glfw>(windowParameters);
 }
 
 void App::run(ComputeParameters const &computeParameters)

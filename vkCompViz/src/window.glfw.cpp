@@ -6,7 +6,7 @@ using namespace Window;
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
-bool WindowGlfw::Keys::pressed(std::string name) const
+bool Glfw::Keys::pressed(std::string name) const
 {
     const std::unordered_map<std::string, int> keyNames
     {
@@ -19,16 +19,16 @@ bool WindowGlfw::Keys::pressed(std::string name) const
     return pressedKeys.contains(keyNames.find(lowerName)->second);
 }
 
-void WindowGlfw::keyCallback(GLFWwindow *window, int key, [[maybe_unused]] int scancode, int action, [[maybe_unused]] int mods)
+void Glfw::keyCallback(GLFWwindow *window, int key, [[maybe_unused]] int scancode, int action, [[maybe_unused]] int mods)
 {
-    auto* self = static_cast<WindowGlfw*>(glfwGetWindowUserPointer(window));
+    auto* self = static_cast<Glfw*>(glfwGetWindowUserPointer(window));
     if(action == GLFW_PRESS)
         self->keys.press(key);
     else if(action == GLFW_RELEASE)
         self->keys.release(key);
 }
 
-WindowGlfw::WindowGlfw(const Parameters &parameters) :
+Glfw::Glfw(const Parameters &parameters) :
     Window(parameters)
 {
     glfwInit();
@@ -38,17 +38,17 @@ WindowGlfw::WindowGlfw(const Parameters &parameters) :
     if(window == nullptr)
         throw std::runtime_error("Failed to create GLFW window");
     glfwSetWindowUserPointer(window, this);
-    glfwSetKeyCallback(window, WindowGlfw::keyCallback);
+    glfwSetKeyCallback(window, Glfw::keyCallback);
 }
 
-glm::uvec2 WindowGlfw::resolution() const
+glm::uvec2 Glfw::resolution() const
 {
     int width, height;
     glfwGetFramebufferSize(window, &width, &height);
     return {width, height};
 }
 
-std::vector<const char *> WindowGlfw::requiredExtensions() const
+std::vector<const char *> Glfw::requiredExtensions() const
 {
     uint32_t glfwExtensionCount = 0;
     const char **glfwExtensions;
@@ -56,7 +56,7 @@ std::vector<const char *> WindowGlfw::requiredExtensions() const
     return std::vector<const char *>(glfwExtensions, glfwExtensions + glfwExtensionCount);
 }
 
-uintptr_t WindowGlfw::getSurface(uintptr_t instance)
+uintptr_t Glfw::getSurface(uintptr_t instance)
 {
     VkSurfaceKHR surface;
     if(glfwCreateWindowSurface(reinterpret_cast<VkInstance>(instance), window, nullptr, &surface) != VK_SUCCESS)
@@ -64,17 +64,17 @@ uintptr_t WindowGlfw::getSurface(uintptr_t instance)
     return reinterpret_cast<uintptr_t>(surface);
 }
 
-bool WindowGlfw::quit() const
+bool Glfw::quit() const
 {
     return glfwWindowShouldClose(window);
 }
 
-void WindowGlfw::WindowGlfw::run()
+void Glfw::run()
 {
     glfwPollEvents();
 }
 
-WindowGlfw::~WindowGlfw()
+Glfw::~Glfw()
 {
     glfwDestroyWindow(window);
     glfwTerminate();

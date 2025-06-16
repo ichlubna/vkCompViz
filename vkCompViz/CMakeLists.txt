@@ -9,6 +9,7 @@ target_sources(${PROJECT_NAME}
     src/gpu.vulkan.cpp
     src/window.glfw.cpp
     src/loader.imageFfmpeg.cpp
+    src/shader.slang.cpp
 )
 target_sources(${PROJECT_NAME}
     PUBLIC FILE_SET CXX_MODULES FILES
@@ -24,6 +25,9 @@ target_sources(${PROJECT_NAME}
     src/loader.cppm
     src/loader.interface.cppm
     src/loader.imageFfmpeg.cppm
+    src/shader.cppm
+    src/shader.interface.cppm
+    src/shader.slang.cppm
 )
 target_include_directories(${PROJECT_NAME}
     PRIVATE
@@ -36,6 +40,7 @@ target_link_libraries(${PROJECT_NAME}
     VulkanHppModule
     glfw
     glm
+    slang::slang
     ffmpeg swscale avfilter ${FFMPEG_LIBRARIES} 
 )
 target_compile_features(${PROJECT_NAME}

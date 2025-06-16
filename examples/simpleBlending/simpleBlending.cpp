@@ -1,9 +1,7 @@
 #include <cstdlib>
-
 import arguments;
 import vkCompViz;
 import std;
-
 
 int main()
 {

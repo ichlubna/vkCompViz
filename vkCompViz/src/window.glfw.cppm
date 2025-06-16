@@ -8,11 +8,11 @@ import std;
 
 export namespace Window
 {
-class WindowGlfw : public Window
+class Glfw : public Window
 {
     public:
         typedef struct GLFWwindow GLFWwindow;
-        WindowGlfw(const Parameters &parameters);
+        Glfw(const Parameters &parameters);
         void run() override;
         [[nodiscard]] std::vector<const char *> requiredExtensions() const override;
         [[nodiscard]] std::uintptr_t getSurface(std::uintptr_t instance) override;
@@ -23,7 +23,7 @@ class WindowGlfw : public Window
         [[nodiscard]] bool quit() const override;
         [[nodiscard]] glm::uvec2 resolution() const override;
         static void keyCallback(GLFWwindow *window, int key, [[maybe_unused]] int scancode, int action, [[maybe_unused]] int mods);
-        ~WindowGlfw();
+        ~Glfw();
 
     private:
         class Keys

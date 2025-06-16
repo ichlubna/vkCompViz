@@ -8,6 +8,7 @@ target_include_directories(ffmpeg INTERFACE $<BUILD_INTERFACE:${FFMPEG_INCLUDE_D
 find_package(Vulkan REQUIRED)
 find_package(glfw3 REQUIRED)
 find_package(glm REQUIRED)
+find_package(slang REQUIRED)
 
 add_library( VulkanHppModule )
 target_sources( VulkanHppModule PUBLIC

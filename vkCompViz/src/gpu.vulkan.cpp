@@ -185,6 +185,7 @@ vk::raii::PhysicalDevice Vulkan::CreateInfo::bestPhysicalDevice()
         queueIndex.present = bestDeviceRating.queueIndex.present;
         std::cout << "Selected as the most suitable: " << std::endl;
         bestDeviceRating.printInfo();
+        std::cout << std::endl;
         return *bestDeviceRating.device;
     }
     throw std::runtime_error("No suitable GPU found");
@@ -265,7 +266,32 @@ vk::SwapchainCreateInfoKHR &Vulkan::CreateInfo::swapChain(glm::uvec2 resolution)
 
 Vulkan::SwapChain::SwapChain(vk::raii::Device &device, const vk::SwapchainCreateInfoKHR &swapChainCreateInfo) : swapChain{device, swapChainCreateInfo}
 {
+    extent = swapChainCreateInfo.imageExtent;
+    imageFormat = swapChainCreateInfo.imageFormat;
     images = swapChain.getImages();
+    vk::ImageViewCreateInfo imageViewCreateInfo{};
+    imageViewCreateInfo
+        .setViewType(vk::ImageViewType::e2D)
+        .setFormat(imageFormat)
+        .setComponents({vk::ComponentSwizzle::eIdentity,
+                        vk::ComponentSwizzle::eIdentity,
+                        vk::ComponentSwizzle::eIdentity,
+                        vk::ComponentSwizzle::eIdentity})
+        .setSubresourceRange({vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1});
+
+    for (auto& image : images)
+    {
+        imageViewCreateInfo.setImage(image);
+        imageViews.push_back(vk::raii::ImageView{device, imageViewCreateInfo});
+    }
+}
+               
+vk::ShaderModuleCreateInfo &Vulkan::CreateInfo::shaderModule(std::vector<uint32_t> &code)
+{
+    shaderModuleCreateInfo
+    .setCodeSize(code.size() * sizeof(uint32_t))
+    .setPCode(code.data());
+    return shaderModuleCreateInfo;
 }
 
 void Vulkan::init()
