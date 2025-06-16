@@ -1,5 +1,4 @@
 module vkCompViz;
-
 import std;
 
 using namespace vkCompViz;
@@ -15,6 +14,7 @@ void App::useWindow(Window::Parameters const &windowParameters)
 
 void App::run(ComputeParameters const &computeParameters)
 {
+    shader = std::make_unique<Shader::SlangFactory>();
     Gpu::Vulkan::VulkanInitParams vulkanInitParams;
     if(window)
     {
@@ -23,6 +23,8 @@ void App::run(ComputeParameters const &computeParameters)
         vulkanInitParams.surface = std::bind(&Window::Window::getSurface, window.get(), std::placeholders::_1);
         auto resolution = window->resolution();
         vulkanInitParams.resolution = {resolution.x, resolution.y};
+        vulkanInitParams.shaderCodes.vertex = shader->loadFromFile("fullScreenVS");
+        vulkanInitParams.shaderCodes.fragment = shader->loadFromFile("splitScreenFS");
     }
     gpu = std::make_unique<Gpu::Vulkan>(vulkanInitParams);
 

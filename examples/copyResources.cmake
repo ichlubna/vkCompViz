@@ -1,10 +1,10 @@
-set(RESOURCE_FILES ${RESOURCE_FILES} 
-    vkCompViz/shaders/fullScreenVS.slang
-    vkCompViz/shaders/splitScreenFS.slang
-    vkCompViz/shaders/textureDisplayFS.slang
-)
-
 function(copyResources)
+    set(RESOURCE_FILES ${RESOURCE_FILES} 
+        vkCompViz/shaders/fullScreenVS.slang
+        vkCompViz/shaders/splitScreenFS.slang
+        vkCompViz/shaders/textureDisplayFS.slang
+    )
+
     foreach(RESOURCE_FILE IN LISTS RESOURCE_FILES)
         get_filename_component(FILE_NAME "${RESOURCE_FILE}" NAME)
         set(IN_FILE "${CMAKE_SOURCE_DIR}/${RESOURCE_FILE}")

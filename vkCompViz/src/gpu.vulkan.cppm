@@ -22,6 +22,12 @@ class Vulkan : public Gpu
                 std::vector<const char *> requiredExtensions;
                 std::function<std::uintptr_t(std::uintptr_t)> surface;
                 glm::uvec2 resolution;
+                class ShaderCodes
+                {
+                    public:
+                        std::vector<std::uint32_t> vertex;
+                        std::vector<std::uint32_t> fragment;
+                } shaderCodes;
         };
         Vulkan(VulkanInitParams params);
         void draw() override;
@@ -33,6 +39,7 @@ class Vulkan : public Gpu
         {
             public:
                 CreateInfo(Vulkan &vulkan, VulkanInitParams params) : vulkan(vulkan), params(params) {};
+                [[nodiscard]] vk::ApplicationInfo &application();
                 [[nodiscard]] vk::InstanceCreateInfo &instance();
                 [[nodiscard]] vk::raii::PhysicalDevice bestPhysicalDevice();
                 [[nodiscard]] vk::DeviceCreateInfo &device();
@@ -51,6 +58,7 @@ class Vulkan : public Gpu
                 }
                 [[nodiscard]] vk::SwapchainCreateInfoKHR &swapChain(glm::uvec2 resolution);
                 [[nodiscard]] vk::ShaderModuleCreateInfo &shaderModule(std::vector<std::uint32_t> &code);
+                [[nodiscard]] vk::PipelineShaderStageCreateInfo &pipelineShaderStage(vk::raii::ShaderModule &shaderModule, vk::ShaderStageFlagBits stage);
 
             private:
                 Vulkan &vulkan;
@@ -60,12 +68,14 @@ class Vulkan : public Gpu
                 vk::DeviceCreateInfo deviceCreateInfo{};
                 vk::PhysicalDeviceFeatures physicalDeviceFeatures{};
                 vk::SwapchainCreateInfoKHR swapChainCreateInfo{};
-                vk::ShaderModuleCreateInfo shaderModuleCreateInfo{};
+                std::vector<vk::ShaderModuleCreateInfo> shaderModuleCreateInfos;
+                std::vector<vk::PipelineShaderStageCreateInfo> pipelineShaderStageCreateInfos;
                 std::vector<vk::DeviceQueueCreateInfo> queueCreateInfos;
-                std::vector<const char*> extensions;
+                [[nodiscard]] std::vector<const char*> &allInstanceExtensions(); 
+                std::vector<const char*> allExtensions;
                 inline static const std::vector<const char*> instanceExtensions{"VK_KHR_portability_enumeration"};
                 inline static const std::vector<const char*> validationLayers{"VK_LAYER_KHRONOS_validation"};
-                inline static const std::vector<const char*> deviceExtensions{"VK_KHR_swapchain"};
+                inline static const std::vector<const char*> deviceExtensions{"VK_KHR_swapchain", "VK_KHR_shader_draw_parameters"};
                 class QueueIndices
                 {
                     public:
@@ -98,6 +108,13 @@ class Vulkan : public Gpu
             vk::Format imageFormat;
             vk::Extent2D extent;
         } swapChain;
+        class Shaders
+        {
+            public:
+            vk::raii::ShaderModule vertex;
+            vk::raii::ShaderModule fragment;
+            std::vector<vk::raii::ShaderModule> compute;
+        } shaders; 
         void init() override;
 };
 }

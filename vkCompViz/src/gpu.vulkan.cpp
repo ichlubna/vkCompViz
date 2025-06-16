@@ -15,25 +15,38 @@ Vulkan::Vulkan(VulkanInitParams params) :
     queues{ .graphics{device.getQueue(createInfo->graphicsQueueID(), 0)},
             .compute{device.getQueue(createInfo->computeQueueID(), 0)},
             .present{device.getQueue(createInfo->presentQueueID(), 0)}},
-    swapChain{device, createInfo->swapChain(params.resolution)}
+    swapChain{device, createInfo->swapChain(params.resolution)},
+    shaders{.vertex{device, createInfo->shaderModule(params.shaderCodes.vertex)},
+            .fragment{device, createInfo->shaderModule(params.shaderCodes.fragment)},
+            .compute{}}
 {
     init();
 }
 
-vk::InstanceCreateInfo &Vulkan::CreateInfo::instance()
+vk::ApplicationInfo &Vulkan::CreateInfo::application()
 {
     applicationInfo
     .setPApplicationName("My Vulkan App")
     .setPEngineName("My Engine")
+    .setApiVersion(VK_API_VERSION_1_2)
     .setPNext(nullptr);
+    return applicationInfo;
+}
 
-    extensions.insert(extensions.end(), params.requiredExtensions.begin(), params.requiredExtensions.end());
-    extensions.insert(extensions.end(), instanceExtensions.begin(), instanceExtensions.end());
+std::vector<const char*> &Vulkan::CreateInfo::allInstanceExtensions()
+{
+    allExtensions.clear();
+    allExtensions.insert(allExtensions.end(), params.requiredExtensions.begin(), params.requiredExtensions.end());
+    allExtensions.insert(allExtensions.end(), instanceExtensions.begin(), instanceExtensions.end());
+    return allExtensions;
+}
 
+vk::InstanceCreateInfo &Vulkan::CreateInfo::instance()
+{
     instanceCreateInfo
-    .setPApplicationInfo(&applicationInfo)
+    .setPApplicationInfo(&application())
     .setFlags(vk::InstanceCreateFlagBits::eEnumeratePortabilityKHR)
-    .setPEnabledExtensionNames(extensions);
+    .setPEnabledExtensionNames(allInstanceExtensions());
     if(DEBUG)
     {
         instanceCreateInfo.ppEnabledLayerNames = validationLayers.data();
@@ -287,11 +300,20 @@ Vulkan::SwapChain::SwapChain(vk::raii::Device &device, const vk::SwapchainCreate
 }
                
 vk::ShaderModuleCreateInfo &Vulkan::CreateInfo::shaderModule(std::vector<uint32_t> &code)
-{
-    shaderModuleCreateInfo
+{ 
+    shaderModuleCreateInfos.emplace_back()
     .setCodeSize(code.size() * sizeof(uint32_t))
     .setPCode(code.data());
-    return shaderModuleCreateInfo;
+    return shaderModuleCreateInfos.back();
+}
+
+vk::PipelineShaderStageCreateInfo &Vulkan::CreateInfo::pipelineShaderStage(vk::raii::ShaderModule &shaderModule, vk::ShaderStageFlagBits stage)
+{
+    pipelineShaderStageCreateInfos.emplace_back()
+    .setStage(vk::ShaderStageFlagBits(stage))
+    .setModule(shaderModule)
+    .setPName("main");
+    return pipelineShaderStageCreateInfos.back();
 }
 
 void Vulkan::init()

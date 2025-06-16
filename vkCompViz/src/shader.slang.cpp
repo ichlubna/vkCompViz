@@ -10,12 +10,14 @@ SlangFactory::SlangFactory()
 {
     SlangGlobalSessionDesc desc = {};
     slang::createGlobalSession(&desc, globalSession.writeRef());
-    addShaderSourcePath("shaders");
+    if(!globalSession)
+        throw std::runtime_error("Could not create global session in Slang");
+    addShaderSourcePath("shaders/");
 }
 
 void SlangFactory::addShaderSourcePath(std::string path)
 {
-    searchPaths.push_back(path.c_str());
+    searchPaths.push_back(path);
 }
 
 Slang::ComPtr<slang::ISession> SlangFactory::createSession() const
@@ -26,8 +28,13 @@ Slang::ComPtr<slang::ISession> SlangFactory::createSession() const
     targetDesc.profile = globalSession->findProfile("glsl_450");
     sessionDesc.targets = &targetDesc;
     sessionDesc.targetCount = 1;
-    sessionDesc.searchPaths = searchPaths.data();
-    sessionDesc.searchPathCount = searchPaths.size();
+
+    std::vector<const char*> paths;
+    for (const auto& path : searchPaths)
+        paths.push_back(path.c_str());
+
+    sessionDesc.searchPaths = paths.data();
+    sessionDesc.searchPathCount = paths.size();
     Slang::ComPtr<slang::ISession> session;
     globalSession->createSession(sessionDesc, session.writeRef());
     return session;
@@ -38,7 +45,11 @@ std::vector<uint32_t> SlangFactory::loadFromFile(std::string shaderName) const
     auto session = createSession();
     Slang::ComPtr<slang::IBlob> diagnostics;
     slang::IModule *shaderModule = session->loadModule(shaderName.c_str(), diagnostics.writeRef());
-    std::cout << "Compilation of shader " << shaderName << std::endl << reinterpret_cast<const char*>(diagnostics->getBufferPointer()) << std::endl;
+    if(!shaderModule)
+    {
+        std::cerr << reinterpret_cast<const char*>(diagnostics->getBufferPointer()) << std::endl;
+        throw std::runtime_error("Could not load shader");
+    }
     return compile(shaderModule, session);
 }
 
@@ -47,7 +58,11 @@ std::vector<uint32_t> SlangFactory::loadFromString(std::string code) const
     auto session = createSession();
     Slang::ComPtr<slang::IBlob> diagnostics;
     slang::IModule *shaderModule = session->loadModuleFromSourceString("", "", code.c_str(), diagnostics.writeRef());
-    std::cout << "Compilation of shader from string" << std::endl << reinterpret_cast<const char*>(diagnostics->getBufferPointer()) << std::endl;
+    if(!shaderModule)
+    {
+        std::cout << std::endl << reinterpret_cast<const char*>(diagnostics->getBufferPointer()) << std::endl;
+        throw std::runtime_error("Could not load shader");
+    }
     return compile(shaderModule, session);
 }
 
@@ -62,6 +77,8 @@ std::vector<uint32_t> SlangFactory::compile(slang::IModule *shaderModule, Slang:
     program->getEntryPointCode(0, 0, spirvCode.writeRef(), nullptr);
     const uint32_t* data = reinterpret_cast<const uint32_t*>(spirvCode->getBufferPointer());
     std::vector<uint32_t> code(data, data+spirvCode->getBufferSize());
+    if(code.empty())
+        throw std::runtime_error("Failed to compile shader");
     return code;
 }
 

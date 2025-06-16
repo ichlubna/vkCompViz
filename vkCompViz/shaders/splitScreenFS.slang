@@ -1,3 +1,9 @@
+struct VertexOutput
+{
+	float4 position : SV_Position;
+};
+
+
 [shader("fragment")]
 float4 main(VertexOutput input) : SV_Target
 {

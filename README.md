@@ -5,7 +5,8 @@ examples in ccmake options
 mkdir build
 cmake .. -G "Ninja"
 ninja
-./examples/exampleName/exampleName
+cd ./examples/exampleName/
+./exampleName
 ```
 
 

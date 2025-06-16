@@ -9,7 +9,7 @@ export namespace Shader
 class SlangFactory : public Shader
 {
     public:
-        SlangFactory(){};
+        SlangFactory();
         void addShaderSourcePath(std::string path);
         [[nodiscard]] std::vector<uint32_t> loadFromFile(std::string shaderName) const override;
         [[nodiscard]] std::vector<uint32_t> loadFromString(std::string shaderName) const override;
@@ -18,7 +18,7 @@ class SlangFactory : public Shader
 
     private:
         Slang::ComPtr<slang::IGlobalSession> globalSession;
-        std::vector<const char*> searchPaths;
+        std::vector<std::string> searchPaths;
         [[nodiscard]] Slang::ComPtr<slang::ISession> createSession() const;
         std::vector<uint32_t> compile(slang::IModule *shaderModule, Slang::ComPtr<slang::ISession> session) const;
 };

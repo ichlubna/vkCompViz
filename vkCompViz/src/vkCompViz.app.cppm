@@ -5,6 +5,7 @@ module;
 export module vkCompViz: app;
 import gpu;
 import window;
+import shader;
 //import std;
 
 export namespace vkCompViz
@@ -31,6 +32,7 @@ class App
     private:
         std::unique_ptr<Window::Window> window;
         std::unique_ptr<Gpu::Gpu> gpu;
+        std::unique_ptr<Shader::Shader> shader;
 };
 
 }
