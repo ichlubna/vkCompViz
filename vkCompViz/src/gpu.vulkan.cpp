@@ -21,7 +21,13 @@ Vulkan::Vulkan(VulkanInitParams params) :
             .compute{}},
     pipelines{  .graphics{  .layout{device, createInfo->pipelineLayout()},
                             .renderPass{device, createInfo->renderPass()},
-                            .pipeline{device, nullptr, createInfo->graphicsPipeline()}}} 
+                            .pipeline{device, nullptr, createInfo->graphicsPipeline()}}}, 
+    commandPools{   .graphics{device, createInfo->commandPool(createInfo->graphicsQueueID())},
+                    .compute{device, createInfo->commandPool(createInfo->computeQueueID())}},
+    semaphores{     .imageAvailable{device, createInfo->semaphore()},
+                    .renderFinished{device, createInfo->semaphore()}},
+    fences{         .inFlight{device, createInfo->fence()}}
+
 {
     init();
 }
@@ -284,7 +290,6 @@ Vulkan::SwapChain::SwapChain(vk::raii::Device &device, const vk::SwapchainCreate
 {
     extent = swapChainCreateInfo.imageExtent;
     imageFormat = swapChainCreateInfo.imageFormat;
-    images = swapChain.getImages();
     vk::ImageViewCreateInfo imageViewCreateInfo{};
     imageViewCreateInfo
         .setViewType(vk::ImageViewType::e2D)
@@ -295,10 +300,13 @@ Vulkan::SwapChain::SwapChain(vk::raii::Device &device, const vk::SwapchainCreate
                         vk::ComponentSwizzle::eIdentity})
         .setSubresourceRange({vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1});
 
+    auto images = swapChain.getImages();
     for (auto& image : images)
     {
         imageViewCreateInfo.setImage(image);
-        imageViews.push_back(vk::raii::ImageView{device, imageViewCreateInfo});
+        frames.emplace_back();
+        frames.back().image = image;
+        frames.back().imageView.emplace(vk::raii::ImageView{device, imageViewCreateInfo});
     }
 }
                
@@ -448,13 +456,21 @@ vk::RenderPassCreateInfo &Vulkan::CreateInfo::renderPass()
     .setColorAttachmentCount(1)
     .setPColorAttachments(&colorAttachmentReference);
 
+    subpassDependency
+    .setSrcSubpass(VK_SUBPASS_EXTERNAL)
+    .setDstSubpass(0)
+    .setSrcStageMask(vk::PipelineStageFlagBits::eColorAttachmentOutput)
+    .setDstStageMask(vk::PipelineStageFlagBits::eColorAttachmentOutput)
+    .setSrcAccessMask(vk::AccessFlagBits::eNone)
+    .setDstAccessMask(vk::AccessFlagBits::eColorAttachmentWrite);
+
     renderPassCreateInfo
     .setAttachmentCount(1)
     .setPAttachments(&colorAttachment)
     .setSubpassCount(1)
     .setPSubpasses(&subpass)
-    .setDependencyCount(0)
-    .setPDependencies(nullptr);
+    .setDependencyCount(1)
+    .setPDependencies(&subpassDependency);
     return renderPassCreateInfo;
 }
 
@@ -479,16 +495,123 @@ vk::GraphicsPipelineCreateInfo &Vulkan::CreateInfo::graphicsPipeline()
     .setSubpass(0)
     .setBasePipelineHandle(VK_NULL_HANDLE)
     .setBasePipelineIndex(-1);
+
+    createFrameBuffers();
     return graphicsPipelineCreateInfo;
+}
+
+vk::FramebufferCreateInfo &Vulkan::CreateInfo::frameBuffer(vk::raii::ImageView &attachment)
+{
+    frameBufferAttachments = {attachment};
+    frameBufferCreateInfo
+    .setRenderPass(vulkan.pipelines.graphics.renderPass)
+    .setAttachments(frameBufferAttachments)
+    .setWidth(vulkan.swapChain.extent.width)
+    .setHeight(vulkan.swapChain.extent.height)
+    .setLayers(1);
+    return frameBufferCreateInfo;
+}
+
+void Vulkan::CreateInfo::createFrameBuffers()
+{
+    for(auto& frame : vulkan.swapChain.frames)
+        frame.frameBuffer.emplace(vk::raii::Framebuffer{vulkan.device, frameBuffer(*frame.imageView)});
+}
+
+vk::CommandPoolCreateInfo &Vulkan::CreateInfo::commandPool(size_t queueFamilyID)
+{
+    commandPoolCreateInfo
+    .setQueueFamilyIndex(queueFamilyID)
+    .setFlags(vk::CommandPoolCreateFlagBits::eResetCommandBuffer);
+    return commandPoolCreateInfo;
+}
+
+vk::CommandBufferAllocateInfo &Vulkan::CreateInfo::commandBuffer(vk::raii::CommandPool &commandPool)
+{
+    commandBufferAllocateInfo
+    .setCommandPool(commandPool)
+    .setLevel(vk::CommandBufferLevel::ePrimary)
+    .setCommandBufferCount(vulkan.swapChain.frames.size());
+    return commandBufferAllocateInfo;
+}
+
+
+vk::RenderPassBeginInfo &Vulkan::CreateInfo::renderPassBegin(vk::raii::Framebuffer &frameBuffer)
+{
+    renderPassBeginInfo
+    .setRenderPass(vulkan.pipelines.graphics.renderPass)
+    .setFramebuffer(frameBuffer)
+    .setRenderArea({{0, 0}, vulkan.swapChain.extent})
+    .setClearValueCount(1)
+    .setPClearValues(&clearColor);
+    return renderPassBeginInfo;
+}
+
+void Vulkan::CreateInfo::createCommandBuffers()
+{
+    vk::raii::CommandBuffers commandBuffers(vulkan.device, commandBuffer(vulkan.commandPools.graphics));
+    size_t id = 0;
+    for(auto& frame : vulkan.swapChain.frames)
+        frame.commandBuffer.emplace(std::move(commandBuffers[id++]));
+}
+
+vk::SemaphoreCreateInfo &Vulkan::CreateInfo::semaphore()
+{
+    return semaphoreCreateInfo;
+}
+
+vk::FenceCreateInfo &Vulkan::CreateInfo::fence()
+{
+    fenceCreateInfo
+    .setFlags(vk::FenceCreateFlagBits::eSignaled);
+    return fenceCreateInfo;
 }
 
 void Vulkan::init()
 {
+    createInfo->createCommandBuffers();
+}
+
+void Vulkan::recordCommandBuffer(SwapChain::Frame &frame)
+{
+    auto &buffer = *frame.commandBuffer;
+    buffer.begin({});
+    buffer.beginRenderPass(createInfo->renderPassBegin(*frame.frameBuffer), vk::SubpassContents::eInline);
+    buffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipelines.graphics.pipeline);
+    buffer.setViewport(0, {vk::Viewport(0, 0, swapChain.extent.width, swapChain.extent.height, 0, 1)});
+    buffer.setScissor(0, {vk::Rect2D({0, 0}, swapChain.extent)});
+    buffer.draw(3, 1, 0, 0);
+    buffer.endRenderPass();
+    buffer.end();       
 }
 
 void Vulkan::draw()
 {
+    while(device.waitForFences({*fences.inFlight}, VK_TRUE, std::numeric_limits<uint64_t>::max()) == vk::Result::eTimeout);
+    device.resetFences({*fences.inFlight});
+  
+    vk::Result result;
+    uint32_t imageIndex; 
+    std::tie(result, imageIndex) = swapChain.swapChain.acquireNextImage(std::numeric_limits<uint64_t>::max(), *semaphores.imageAvailable);
+    recordCommandBuffer(swapChain.frames[imageIndex]);
 
+    std::vector<vk::PipelineStageFlags> waitStage{vk::PipelineStageFlagBits::eColorAttachmentOutput};
+    vk::SubmitInfo submitInfo;
+    submitInfo
+    .setCommandBuffers({**(swapChain.frames[imageIndex].commandBuffer)})
+    .setSignalSemaphores({*semaphores.renderFinished})
+    .setWaitSemaphores({*semaphores.imageAvailable})
+    .setWaitDstStageMask(waitStage);
+
+    queues.graphics.submit({submitInfo}, *fences.inFlight); 
+
+    vk::PresentInfoKHR presentInfo;
+    presentInfo
+    .setWaitSemaphores({*semaphores.renderFinished})
+    .setSwapchains({*swapChain.swapChain})
+    .setPImageIndices(&imageIndex);
+    if(queues.present.presentKHR(presentInfo) != vk::Result::eSuccess)
+        throw std::runtime_error("failed to present image");
 }
 
 void Vulkan::compute()

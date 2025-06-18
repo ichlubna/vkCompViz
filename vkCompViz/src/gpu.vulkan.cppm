@@ -70,6 +70,14 @@ class Vulkan : public Gpu
                 [[nodiscard]] vk::PipelineLayoutCreateInfo &pipelineLayout();
                 [[nodiscard]] vk::RenderPassCreateInfo &renderPass();
                 [[nodiscard]] vk::GraphicsPipelineCreateInfo &graphicsPipeline();
+                [[nodiscard]] vk::FramebufferCreateInfo &frameBuffer(vk::raii::ImageView &attachment);
+                [[nodiscard]] vk::CommandPoolCreateInfo &commandPool(std::size_t queueFamilyID);
+                [[nodiscard]] vk::CommandBufferAllocateInfo &commandBuffer(vk::raii::CommandPool &commandPool);
+                [[nodiscard]] vk::RenderPassBeginInfo &renderPassBegin(vk::raii::Framebuffer &frameBuffer);
+                [[nodiscard]] vk::SemaphoreCreateInfo &semaphore();
+                [[nodiscard]] vk::FenceCreateInfo &fence();
+                void createFrameBuffers();
+                void createCommandBuffers();
 
             private:
                 Vulkan &vulkan;
@@ -89,16 +97,25 @@ class Vulkan : public Gpu
                 vk::PipelineColorBlendStateCreateInfo colorBlendCreateInfo{};
                 vk::PipelineLayoutCreateInfo pipelineLayoutCreateInfo{};
                 vk::RenderPassCreateInfo renderPassCreateInfo{};
+                vk::FramebufferCreateInfo frameBufferCreateInfo{};
+                vk::CommandPoolCreateInfo commandPoolCreateInfo{};
+                vk::CommandBufferAllocateInfo commandBufferAllocateInfo{};
+                vk::RenderPassBeginInfo renderPassBeginInfo{};
+                vk::SemaphoreCreateInfo semaphoreCreateInfo{};
+                vk::FenceCreateInfo fenceCreateInfo{};
                 vk::AttachmentDescription colorAttachment{};
                 vk::AttachmentReference colorAttachmentReference{};
-                vk::SubpassDescription subpass{};    
+                vk::SubpassDescription subpass{};
+                vk::SubpassDependency subpassDependency{}; 
                 vk::GraphicsPipelineCreateInfo graphicsPipelineCreateInfo{};
                 vk::Viewport pipelineViewport{};
                 vk::Rect2D pipelineScissor{};
+                vk::ClearValue clearColor{{0.02f, 0.01f, 0.01f, 1.0f}};
                 std::vector<vk::ShaderModuleCreateInfo> shaderModuleCreateInfos;
                 std::vector<vk::PipelineShaderStageCreateInfo> pipelineShaderStageCreateInfos;
                 std::vector<vk::DeviceQueueCreateInfo> queueCreateInfos;
                 std::vector<vk::PipelineShaderStageCreateInfo> shaderStages{};
+                std::vector<vk::ImageView> frameBufferAttachments;
                 [[nodiscard]] std::vector<const char*> &allInstanceExtensions(); 
                 std::vector<const char*> allExtensions;
                 inline static const std::vector<const char*> instanceExtensions{"VK_KHR_portability_enumeration"};
@@ -130,12 +147,18 @@ class Vulkan : public Gpu
         class SwapChain
         {
             public:
+            struct Frame
+            {
+                vk::Image image;
+                std::optional<vk::raii::ImageView> imageView;
+                std::optional<vk::raii::Framebuffer> frameBuffer;
+                std::optional<vk::raii::CommandBuffer> commandBuffer;
+            };
             SwapChain(vk::raii::Device &device, const vk::SwapchainCreateInfoKHR &swapChainCreateInfo);
             vk::raii::SwapchainKHR swapChain;
-            std::vector<vk::Image> images;
-            std::vector<vk::raii::ImageView> imageViews;
             vk::Format imageFormat;
             vk::Extent2D extent;
+            std::vector<Frame> frames;
         } swapChain;
         class Shaders
         {
@@ -155,6 +178,24 @@ class Vulkan : public Gpu
                 vk::raii::Pipeline pipeline;
             } graphics;
         } pipelines;
+        class CommandPools
+        {
+            public:
+            vk::raii::CommandPool graphics;
+            vk::raii::CommandPool compute;
+        } commandPools;
+        class Sempahores
+        {
+            public:
+            vk::raii::Semaphore imageAvailable;
+            vk::raii::Semaphore renderFinished;
+        } semaphores;
+        class Fences
+        {
+            public:
+            vk::raii::Fence inFlight; 
+        } fences; 
+        void recordCommandBuffer(SwapChain::Frame &frame);
         void init() override;
 };
 }

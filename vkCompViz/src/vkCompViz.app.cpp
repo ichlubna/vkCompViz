@@ -35,6 +35,7 @@ void App::run(ComputeParameters const &computeParameters)
         {
             window->run();
             end = window->key("Escape") || window->quit();
+            gpu->draw();
         }
     }
 }
