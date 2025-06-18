@@ -18,7 +18,10 @@ Vulkan::Vulkan(VulkanInitParams params) :
     swapChain{device, createInfo->swapChain(params.resolution)},
     shaders{.vertex{device, createInfo->shaderModule(params.shaderCodes.vertex)},
             .fragment{device, createInfo->shaderModule(params.shaderCodes.fragment)},
-            .compute{}}
+            .compute{}},
+    pipelines{  .graphics{  .layout{device, createInfo->pipelineLayout()},
+                            .renderPass{device, createInfo->renderPass()},
+                            .pipeline{device, nullptr, createInfo->graphicsPipeline()}}} 
 {
     init();
 }
@@ -314,6 +317,169 @@ vk::PipelineShaderStageCreateInfo &Vulkan::CreateInfo::pipelineShaderStage(vk::r
     .setModule(shaderModule)
     .setPName("main");
     return pipelineShaderStageCreateInfos.back();
+}
+
+vk::PipelineDynamicStateCreateInfo &Vulkan::CreateInfo::pipelineDynamic()
+{
+    dynamicStateCreateInfo.setDynamicStates(dynamicStates);
+    return dynamicStateCreateInfo;
+}
+
+vk::PipelineVertexInputStateCreateInfo &Vulkan::CreateInfo::vertexInput()
+{
+    vertexInputCreateInfo
+    .setVertexBindingDescriptions({})
+    .setVertexAttributeDescriptions({});
+    return vertexInputCreateInfo;
+}
+
+vk::PipelineInputAssemblyStateCreateInfo &Vulkan::CreateInfo::inputAssembly()
+{
+    inputAssemblyCreateInfo
+    .setTopology(vk::PrimitiveTopology::eTriangleList)
+    .setPrimitiveRestartEnable(false);
+    return inputAssemblyCreateInfo;
+}
+
+vk::PipelineViewportStateCreateInfo &Vulkan::CreateInfo::viewport()
+{
+    pipelineViewport
+    .setX(0.0f)
+    .setY(0.0f)
+    .setWidth(vulkan.swapChain.extent.width)
+    .setHeight(vulkan.swapChain.extent.height)
+    .setMinDepth(0.0f)
+    .setMaxDepth(1.0f);
+
+    pipelineScissor
+    .setOffset(vk::Offset2D{0, 0})
+    .setExtent(vulkan.swapChain.extent);
+
+    viewportCreateInfo
+    .setViewports(pipelineViewport)
+    .setScissors(pipelineScissor);
+    return viewportCreateInfo;
+}
+
+vk::PipelineRasterizationStateCreateInfo &Vulkan::CreateInfo::rasterization()
+{
+    rasterizationCreateInfo
+    .setDepthClampEnable(false)
+    .setRasterizerDiscardEnable(false)
+    .setPolygonMode(vk::PolygonMode::eFill)
+    .setLineWidth(1.0f)
+    .setCullMode(vk::CullModeFlagBits::eBack)
+    .setFrontFace(vk::FrontFace::eCounterClockwise)
+    .setDepthBiasEnable(false)
+    .setDepthBiasConstantFactor(0.0f)
+    .setDepthBiasClamp(0.0f)
+    .setDepthBiasSlopeFactor(0.0f);
+    return rasterizationCreateInfo;
+}
+
+vk::PipelineMultisampleStateCreateInfo &Vulkan::CreateInfo::multisample()
+{
+    multisampleCreateInfo
+    .setSampleShadingEnable(false)
+    .setRasterizationSamples(vk::SampleCountFlagBits::e1)
+    .setMinSampleShading(1.0f)
+    .setPSampleMask(nullptr)
+    .setAlphaToCoverageEnable(false)
+    .setAlphaToOneEnable(false);
+    return multisampleCreateInfo; 
+}
+
+vk::PipelineColorBlendAttachmentState &Vulkan::CreateInfo::colorBlendAttachment()
+{
+    colorBlendAttachmentState
+    .setBlendEnable(false)
+    .setSrcColorBlendFactor(vk::BlendFactor::eOne)
+    .setDstColorBlendFactor(vk::BlendFactor::eZero)
+    .setColorBlendOp(vk::BlendOp::eAdd)
+    .setSrcAlphaBlendFactor(vk::BlendFactor::eOne)
+    .setDstAlphaBlendFactor(vk::BlendFactor::eZero)
+    .setAlphaBlendOp(vk::BlendOp::eAdd)
+    .setColorWriteMask(vk::ColorComponentFlagBits::eR
+                        | vk::ColorComponentFlagBits::eG
+                        | vk::ColorComponentFlagBits::eB
+                        | vk::ColorComponentFlagBits::eA);
+    return colorBlendAttachmentState;
+}
+
+vk::PipelineColorBlendStateCreateInfo &Vulkan::CreateInfo::colorBlend()
+{
+    colorBlendCreateInfo
+    .setLogicOpEnable(false)
+    .setLogicOp(vk::LogicOp::eCopy)
+    .setAttachmentCount(1)
+    .setPAttachments(&colorBlendAttachment())
+    .setBlendConstants({0.0f, 0.0f, 0.0f, 0.0f});
+    return colorBlendCreateInfo;
+}
+
+vk::PipelineLayoutCreateInfo &Vulkan::CreateInfo::pipelineLayout()
+{
+    pipelineLayoutCreateInfo
+    .setSetLayoutCount(0)
+    .setPSetLayouts(nullptr)
+    .setPushConstantRangeCount(0)
+    .setPPushConstantRanges(nullptr);
+    return pipelineLayoutCreateInfo;
+}
+
+vk::RenderPassCreateInfo &Vulkan::CreateInfo::renderPass()
+{
+    colorAttachment
+    .setFormat(vulkan.swapChain.imageFormat)
+    .setSamples(vk::SampleCountFlagBits::e1)
+    .setLoadOp(vk::AttachmentLoadOp::eClear)
+    .setStoreOp(vk::AttachmentStoreOp::eStore)
+    .setStencilLoadOp(vk::AttachmentLoadOp::eDontCare)
+    .setStencilStoreOp(vk::AttachmentStoreOp::eDontCare)
+    .setInitialLayout(vk::ImageLayout::eUndefined)
+    .setFinalLayout(vk::ImageLayout::ePresentSrcKHR);
+
+    colorAttachmentReference
+    .setAttachment(0)
+    .setLayout(vk::ImageLayout::eColorAttachmentOptimal);
+
+    subpass
+    .setPipelineBindPoint(vk::PipelineBindPoint::eGraphics)
+    .setColorAttachmentCount(1)
+    .setPColorAttachments(&colorAttachmentReference);
+
+    renderPassCreateInfo
+    .setAttachmentCount(1)
+    .setPAttachments(&colorAttachment)
+    .setSubpassCount(1)
+    .setPSubpasses(&subpass)
+    .setDependencyCount(0)
+    .setPDependencies(nullptr);
+    return renderPassCreateInfo;
+}
+
+vk::GraphicsPipelineCreateInfo &Vulkan::CreateInfo::graphicsPipeline()
+{
+    shaderStages.clear();
+    shaderStages.emplace_back(pipelineShaderStage(vulkan.shaders.vertex, vk::ShaderStageFlagBits::eVertex));
+    shaderStages.emplace_back(pipelineShaderStage(vulkan.shaders.fragment, vk::ShaderStageFlagBits::eFragment));
+
+    graphicsPipelineCreateInfo
+    .setStages(shaderStages)
+    .setPVertexInputState(&vertexInput())
+    .setPInputAssemblyState(&inputAssembly())
+    .setPViewportState(&viewport())
+    .setPRasterizationState(&rasterization())
+    .setPMultisampleState(&multisample())
+    .setPColorBlendState(&colorBlend())
+    .setPDepthStencilState(nullptr)
+    .setPDynamicState(nullptr)
+    .setLayout(vulkan.pipelines.graphics.layout)
+    .setRenderPass(vulkan.pipelines.graphics.renderPass)
+    .setSubpass(0)
+    .setBasePipelineHandle(VK_NULL_HANDLE)
+    .setBasePipelineIndex(-1);
+    return graphicsPipelineCreateInfo;
 }
 
 void Vulkan::init()

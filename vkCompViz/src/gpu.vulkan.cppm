@@ -59,6 +59,17 @@ class Vulkan : public Gpu
                 [[nodiscard]] vk::SwapchainCreateInfoKHR &swapChain(glm::uvec2 resolution);
                 [[nodiscard]] vk::ShaderModuleCreateInfo &shaderModule(std::vector<std::uint32_t> &code);
                 [[nodiscard]] vk::PipelineShaderStageCreateInfo &pipelineShaderStage(vk::raii::ShaderModule &shaderModule, vk::ShaderStageFlagBits stage);
+                [[nodiscard]] vk::PipelineDynamicStateCreateInfo &pipelineDynamic();
+                [[nodiscard]] vk::PipelineVertexInputStateCreateInfo &vertexInput();
+                [[nodiscard]] vk::PipelineInputAssemblyStateCreateInfo &inputAssembly();
+                [[nodiscard]] vk::PipelineViewportStateCreateInfo &viewport();
+                [[nodiscard]] vk::PipelineRasterizationStateCreateInfo &rasterization();
+                [[nodiscard]] vk::PipelineMultisampleStateCreateInfo &multisample(); 
+                [[nodiscard]] vk::PipelineColorBlendAttachmentState &colorBlendAttachment();
+                [[nodiscard]] vk::PipelineColorBlendStateCreateInfo &colorBlend();
+                [[nodiscard]] vk::PipelineLayoutCreateInfo &pipelineLayout();
+                [[nodiscard]] vk::RenderPassCreateInfo &renderPass();
+                [[nodiscard]] vk::GraphicsPipelineCreateInfo &graphicsPipeline();
 
             private:
                 Vulkan &vulkan;
@@ -68,14 +79,32 @@ class Vulkan : public Gpu
                 vk::DeviceCreateInfo deviceCreateInfo{};
                 vk::PhysicalDeviceFeatures physicalDeviceFeatures{};
                 vk::SwapchainCreateInfoKHR swapChainCreateInfo{};
+                vk::PipelineDynamicStateCreateInfo dynamicStateCreateInfo{};
+                vk::PipelineVertexInputStateCreateInfo vertexInputCreateInfo{};
+                vk::PipelineInputAssemblyStateCreateInfo inputAssemblyCreateInfo{};
+                vk::PipelineViewportStateCreateInfo viewportCreateInfo{};
+                vk::PipelineRasterizationStateCreateInfo rasterizationCreateInfo{};
+                vk::PipelineMultisampleStateCreateInfo multisampleCreateInfo{};
+                vk::PipelineColorBlendAttachmentState colorBlendAttachmentState{};
+                vk::PipelineColorBlendStateCreateInfo colorBlendCreateInfo{};
+                vk::PipelineLayoutCreateInfo pipelineLayoutCreateInfo{};
+                vk::RenderPassCreateInfo renderPassCreateInfo{};
+                vk::AttachmentDescription colorAttachment{};
+                vk::AttachmentReference colorAttachmentReference{};
+                vk::SubpassDescription subpass{};    
+                vk::GraphicsPipelineCreateInfo graphicsPipelineCreateInfo{};
+                vk::Viewport pipelineViewport{};
+                vk::Rect2D pipelineScissor{};
                 std::vector<vk::ShaderModuleCreateInfo> shaderModuleCreateInfos;
                 std::vector<vk::PipelineShaderStageCreateInfo> pipelineShaderStageCreateInfos;
                 std::vector<vk::DeviceQueueCreateInfo> queueCreateInfos;
+                std::vector<vk::PipelineShaderStageCreateInfo> shaderStages{};
                 [[nodiscard]] std::vector<const char*> &allInstanceExtensions(); 
                 std::vector<const char*> allExtensions;
                 inline static const std::vector<const char*> instanceExtensions{"VK_KHR_portability_enumeration"};
                 inline static const std::vector<const char*> validationLayers{"VK_LAYER_KHRONOS_validation"};
                 inline static const std::vector<const char*> deviceExtensions{"VK_KHR_swapchain", "VK_KHR_shader_draw_parameters"};
+                inline static const std::vector<vk::DynamicState> dynamicStates{vk::DynamicState::eViewport, vk::DynamicState::eScissor};
                 class QueueIndices
                 {
                     public:
@@ -112,9 +141,20 @@ class Vulkan : public Gpu
         {
             public:
             vk::raii::ShaderModule vertex;
-            vk::raii::ShaderModule fragment;
+            vk::raii::ShaderModule fragment; 
             std::vector<vk::raii::ShaderModule> compute;
-        } shaders; 
+        } shaders;
+        class Pipelines
+        {
+            public:
+            class Graphics
+            {
+                public:
+                vk::raii::PipelineLayout layout;
+                vk::raii::RenderPass renderPass;
+                vk::raii::Pipeline pipeline;
+            } graphics;
+        } pipelines;
         void init() override;
 };
 }
