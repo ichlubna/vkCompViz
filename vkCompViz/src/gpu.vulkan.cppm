@@ -35,6 +35,34 @@ class Vulkan : public Gpu
         ~Vulkan();
 
     private:
+        class SwapChain
+        {
+            public:
+            struct Frame
+            {
+                public:
+                class Sempahores
+                {
+                    public:
+                    std::optional<vk::raii::Semaphore> imageAvailable;
+                    std::optional<vk::raii::Semaphore> renderFinished;
+                } semaphores;
+                class Fences
+                {
+                    public:
+                    std::optional<vk::raii::Fence> inFlight; 
+                } fences; 
+                vk::Image image;
+                std::optional<vk::raii::ImageView> imageView;
+                std::optional<vk::raii::Framebuffer> frameBuffer;
+                std::optional<vk::raii::CommandBuffer> commandBuffer;
+            };
+            SwapChain(vk::raii::Device &device, const vk::SwapchainCreateInfoKHR &swapChainCreateInfo);
+            vk::raii::SwapchainKHR swapChain;
+            vk::Format imageFormat;
+            vk::Extent2D extent;
+            std::vector<Frame> frames;
+        };
         class CreateInfo
         {
             public:
@@ -72,12 +100,13 @@ class Vulkan : public Gpu
                 [[nodiscard]] vk::GraphicsPipelineCreateInfo &graphicsPipeline();
                 [[nodiscard]] vk::FramebufferCreateInfo &frameBuffer(vk::raii::ImageView &attachment);
                 [[nodiscard]] vk::CommandPoolCreateInfo &commandPool(std::size_t queueFamilyID);
-                [[nodiscard]] vk::CommandBufferAllocateInfo &commandBuffer(vk::raii::CommandPool &commandPool);
+                [[nodiscard]] vk::CommandBufferAllocateInfo &commandBuffer(vk::raii::CommandPool &commandPool, std::uint32_t count);
                 [[nodiscard]] vk::RenderPassBeginInfo &renderPassBegin(vk::raii::Framebuffer &frameBuffer);
                 [[nodiscard]] vk::SemaphoreCreateInfo &semaphore();
                 [[nodiscard]] vk::FenceCreateInfo &fence();
-                void createFrameBuffers();
-                void createCommandBuffers();
+                [[nodiscard]] vk::ImageViewCreateInfo &imageView(vk::Format imageFormat);
+                void createFrameBuffer(Vulkan::SwapChain::Frame &frame, vk::Image image);
+                void createFrameSync(SwapChain::Frame &frame);
 
             private:
                 Vulkan &vulkan;
@@ -99,6 +128,7 @@ class Vulkan : public Gpu
                 vk::RenderPassCreateInfo renderPassCreateInfo{};
                 vk::FramebufferCreateInfo frameBufferCreateInfo{};
                 vk::CommandPoolCreateInfo commandPoolCreateInfo{};
+                vk::ImageViewCreateInfo imageViewCreateInfo{};
                 vk::CommandBufferAllocateInfo commandBufferAllocateInfo{};
                 vk::RenderPassBeginInfo renderPassBeginInfo{};
                 vk::SemaphoreCreateInfo semaphoreCreateInfo{};
@@ -131,7 +161,7 @@ class Vulkan : public Gpu
                 } queueIndex;
                 inline static const float queuePriorities{1.0f};
         };
-        std::unique_ptr<CreateInfo> createInfo;
+        CreateInfo createInfo;
         vk::raii::Context context;
         vk::raii::Instance instance;
         vk::raii::SurfaceKHR surface;
@@ -144,22 +174,7 @@ class Vulkan : public Gpu
             vk::raii::Queue compute;
             vk::raii::Queue present;
         } queues;
-        class SwapChain
-        {
-            public:
-            struct Frame
-            {
-                vk::Image image;
-                std::optional<vk::raii::ImageView> imageView;
-                std::optional<vk::raii::Framebuffer> frameBuffer;
-                std::optional<vk::raii::CommandBuffer> commandBuffer;
-            };
-            SwapChain(vk::raii::Device &device, const vk::SwapchainCreateInfoKHR &swapChainCreateInfo);
-            vk::raii::SwapchainKHR swapChain;
-            vk::Format imageFormat;
-            vk::Extent2D extent;
-            std::vector<Frame> frames;
-        } swapChain;
+        SwapChain swapChain;
         class Shaders
         {
             public:
@@ -184,18 +199,10 @@ class Vulkan : public Gpu
             vk::raii::CommandPool graphics;
             vk::raii::CommandPool compute;
         } commandPools;
-        class Sempahores
-        {
-            public:
-            vk::raii::Semaphore imageAvailable;
-            vk::raii::Semaphore renderFinished;
-        } semaphores;
-        class Fences
-        {
-            public:
-            vk::raii::Fence inFlight; 
-        } fences; 
+        std::uint32_t currentFrameID{0};
         void recordCommandBuffer(SwapChain::Frame &frame);
+        void recreateSwapChain();
+        void createSwapChainFrames();
         void init() override;
 };
 }

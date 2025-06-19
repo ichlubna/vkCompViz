@@ -3,6 +3,7 @@ function(copyResources)
         vkCompViz/shaders/fullScreenVS.slang
         vkCompViz/shaders/splitScreenFS.slang
         vkCompViz/shaders/textureDisplayFS.slang
+        vkCompViz/shaders/vertexFragmentCommons.slang
     )
 
     foreach(RESOURCE_FILE IN LISTS RESOURCE_FILES)

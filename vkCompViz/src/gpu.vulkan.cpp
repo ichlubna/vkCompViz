@@ -6,28 +6,24 @@ import common;
 using namespace Gpu;
 
 Vulkan::Vulkan(VulkanInitParams params) :
-    createInfo{std::make_unique<CreateInfo>(*this, params)},
+    createInfo{*this, params},
     context{},
-    instance{context, createInfo->instance()},
+    instance{context, createInfo.instance()},
     surface{instance, reinterpret_cast<VkSurfaceKHR>(params.surface(reinterpret_cast<std::uintptr_t>(static_cast<VkInstance>(*instance))))},
-    physicalDevice{createInfo->bestPhysicalDevice()},
-    device{physicalDevice, createInfo->device()},
-    queues{ .graphics{device.getQueue(createInfo->graphicsQueueID(), 0)},
-            .compute{device.getQueue(createInfo->computeQueueID(), 0)},
-            .present{device.getQueue(createInfo->presentQueueID(), 0)}},
-    swapChain{device, createInfo->swapChain(params.resolution)},
-    shaders{.vertex{device, createInfo->shaderModule(params.shaderCodes.vertex)},
-            .fragment{device, createInfo->shaderModule(params.shaderCodes.fragment)},
+    physicalDevice{createInfo.bestPhysicalDevice()},
+    device{physicalDevice, createInfo.device()},
+    queues{ .graphics{device.getQueue(createInfo.graphicsQueueID(), 0)},
+            .compute{device.getQueue(createInfo.computeQueueID(), 0)},
+            .present{device.getQueue(createInfo.presentQueueID(), 0)}},
+    swapChain{device, createInfo.swapChain(params.resolution)},
+    shaders{.vertex{device, createInfo.shaderModule(params.shaderCodes.vertex)},
+            .fragment{device, createInfo.shaderModule(params.shaderCodes.fragment)},
             .compute{}},
-    pipelines{  .graphics{  .layout{device, createInfo->pipelineLayout()},
-                            .renderPass{device, createInfo->renderPass()},
-                            .pipeline{device, nullptr, createInfo->graphicsPipeline()}}}, 
-    commandPools{   .graphics{device, createInfo->commandPool(createInfo->graphicsQueueID())},
-                    .compute{device, createInfo->commandPool(createInfo->computeQueueID())}},
-    semaphores{     .imageAvailable{device, createInfo->semaphore()},
-                    .renderFinished{device, createInfo->semaphore()}},
-    fences{         .inFlight{device, createInfo->fence()}}
-
+    pipelines{  .graphics{  .layout{device, createInfo.pipelineLayout()},
+                            .renderPass{device, createInfo.renderPass()},
+                            .pipeline{device, nullptr, createInfo.graphicsPipeline()}}}, 
+    commandPools{   .graphics{device, createInfo.commandPool(createInfo.graphicsQueueID())},
+                    .compute{device, createInfo.commandPool(createInfo.computeQueueID())}}
 {
     init();
 }
@@ -290,24 +286,6 @@ Vulkan::SwapChain::SwapChain(vk::raii::Device &device, const vk::SwapchainCreate
 {
     extent = swapChainCreateInfo.imageExtent;
     imageFormat = swapChainCreateInfo.imageFormat;
-    vk::ImageViewCreateInfo imageViewCreateInfo{};
-    imageViewCreateInfo
-        .setViewType(vk::ImageViewType::e2D)
-        .setFormat(imageFormat)
-        .setComponents({vk::ComponentSwizzle::eIdentity,
-                        vk::ComponentSwizzle::eIdentity,
-                        vk::ComponentSwizzle::eIdentity,
-                        vk::ComponentSwizzle::eIdentity})
-        .setSubresourceRange({vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1});
-
-    auto images = swapChain.getImages();
-    for (auto& image : images)
-    {
-        imageViewCreateInfo.setImage(image);
-        frames.emplace_back();
-        frames.back().image = image;
-        frames.back().imageView.emplace(vk::raii::ImageView{device, imageViewCreateInfo});
-    }
 }
                
 vk::ShaderModuleCreateInfo &Vulkan::CreateInfo::shaderModule(std::vector<uint32_t> &code)
@@ -377,7 +355,7 @@ vk::PipelineRasterizationStateCreateInfo &Vulkan::CreateInfo::rasterization()
     .setPolygonMode(vk::PolygonMode::eFill)
     .setLineWidth(1.0f)
     .setCullMode(vk::CullModeFlagBits::eBack)
-    .setFrontFace(vk::FrontFace::eCounterClockwise)
+    .setFrontFace(vk::FrontFace::eClockwise)
     .setDepthBiasEnable(false)
     .setDepthBiasConstantFactor(0.0f)
     .setDepthBiasClamp(0.0f)
@@ -489,14 +467,12 @@ vk::GraphicsPipelineCreateInfo &Vulkan::CreateInfo::graphicsPipeline()
     .setPMultisampleState(&multisample())
     .setPColorBlendState(&colorBlend())
     .setPDepthStencilState(nullptr)
-    .setPDynamicState(nullptr)
+    .setPDynamicState(&pipelineDynamic())
     .setLayout(vulkan.pipelines.graphics.layout)
     .setRenderPass(vulkan.pipelines.graphics.renderPass)
     .setSubpass(0)
     .setBasePipelineHandle(VK_NULL_HANDLE)
     .setBasePipelineIndex(-1);
-
-    createFrameBuffers();
     return graphicsPipelineCreateInfo;
 }
 
@@ -512,12 +488,6 @@ vk::FramebufferCreateInfo &Vulkan::CreateInfo::frameBuffer(vk::raii::ImageView &
     return frameBufferCreateInfo;
 }
 
-void Vulkan::CreateInfo::createFrameBuffers()
-{
-    for(auto& frame : vulkan.swapChain.frames)
-        frame.frameBuffer.emplace(vk::raii::Framebuffer{vulkan.device, frameBuffer(*frame.imageView)});
-}
-
 vk::CommandPoolCreateInfo &Vulkan::CreateInfo::commandPool(size_t queueFamilyID)
 {
     commandPoolCreateInfo
@@ -526,12 +496,12 @@ vk::CommandPoolCreateInfo &Vulkan::CreateInfo::commandPool(size_t queueFamilyID)
     return commandPoolCreateInfo;
 }
 
-vk::CommandBufferAllocateInfo &Vulkan::CreateInfo::commandBuffer(vk::raii::CommandPool &commandPool)
+vk::CommandBufferAllocateInfo &Vulkan::CreateInfo::commandBuffer(vk::raii::CommandPool &commandPool, uint32_t count)
 {
     commandBufferAllocateInfo
     .setCommandPool(commandPool)
     .setLevel(vk::CommandBufferLevel::ePrimary)
-    .setCommandBufferCount(vulkan.swapChain.frames.size());
+    .setCommandBufferCount(count);
     return commandBufferAllocateInfo;
 }
 
@@ -545,14 +515,6 @@ vk::RenderPassBeginInfo &Vulkan::CreateInfo::renderPassBegin(vk::raii::Framebuff
     .setClearValueCount(1)
     .setPClearValues(&clearColor);
     return renderPassBeginInfo;
-}
-
-void Vulkan::CreateInfo::createCommandBuffers()
-{
-    vk::raii::CommandBuffers commandBuffers(vulkan.device, commandBuffer(vulkan.commandPools.graphics));
-    size_t id = 0;
-    for(auto& frame : vulkan.swapChain.frames)
-        frame.commandBuffer.emplace(std::move(commandBuffers[id++]));
 }
 
 vk::SemaphoreCreateInfo &Vulkan::CreateInfo::semaphore()
@@ -569,14 +531,14 @@ vk::FenceCreateInfo &Vulkan::CreateInfo::fence()
 
 void Vulkan::init()
 {
-    createInfo->createCommandBuffers();
+    createSwapChainFrames();
 }
 
 void Vulkan::recordCommandBuffer(SwapChain::Frame &frame)
 {
     auto &buffer = *frame.commandBuffer;
     buffer.begin({});
-    buffer.beginRenderPass(createInfo->renderPassBegin(*frame.frameBuffer), vk::SubpassContents::eInline);
+    buffer.beginRenderPass(createInfo.renderPassBegin(*frame.frameBuffer), vk::SubpassContents::eInline);
     buffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipelines.graphics.pipeline);
     buffer.setViewport(0, {vk::Viewport(0, 0, swapChain.extent.width, swapChain.extent.height, 0, 1)});
     buffer.setScissor(0, {vk::Rect2D({0, 0}, swapChain.extent)});
@@ -586,32 +548,83 @@ void Vulkan::recordCommandBuffer(SwapChain::Frame &frame)
 }
 
 void Vulkan::draw()
-{
-    while(device.waitForFences({*fences.inFlight}, VK_TRUE, std::numeric_limits<uint64_t>::max()) == vk::Result::eTimeout);
-    device.resetFences({*fences.inFlight});
-  
-    vk::Result result;
+{     
+    size_t timeout = std::numeric_limits<uint64_t>::max();
+    while(device.waitForFences({swapChain.frames[currentFrameID].fences.inFlight.value()}, VK_TRUE, timeout) == vk::Result::eTimeout);
+    device.resetFences({*swapChain.frames[currentFrameID].fences.inFlight});
+ 
     uint32_t imageIndex; 
-    std::tie(result, imageIndex) = swapChain.swapChain.acquireNextImage(std::numeric_limits<uint64_t>::max(), *semaphores.imageAvailable);
+    vk::Result result;
+    std::tie(result, imageIndex) = swapChain.swapChain.acquireNextImage(timeout, *swapChain.frames[currentFrameID].semaphores.imageAvailable);
     recordCommandBuffer(swapChain.frames[imageIndex]);
 
     std::vector<vk::PipelineStageFlags> waitStage{vk::PipelineStageFlagBits::eColorAttachmentOutput};
     vk::SubmitInfo submitInfo;
     submitInfo
-    .setCommandBuffers({**(swapChain.frames[imageIndex].commandBuffer)})
-    .setSignalSemaphores({*semaphores.renderFinished})
-    .setWaitSemaphores({*semaphores.imageAvailable})
+    .setCommandBuffers({*swapChain.frames[currentFrameID].commandBuffer.value()})
+    .setSignalSemaphores({*swapChain.frames[currentFrameID].semaphores.renderFinished.value()})
+    .setWaitSemaphores({*swapChain.frames[currentFrameID].semaphores.imageAvailable.value()})
     .setWaitDstStageMask(waitStage);
 
-    queues.graphics.submit({submitInfo}, *fences.inFlight); 
+    queues.graphics.submit({submitInfo}, *swapChain.frames[currentFrameID].fences.inFlight); 
 
     vk::PresentInfoKHR presentInfo;
     presentInfo
-    .setWaitSemaphores({*semaphores.renderFinished})
+    .setWaitSemaphores({*swapChain.frames[currentFrameID].semaphores.renderFinished.value()})
     .setSwapchains({*swapChain.swapChain})
     .setPImageIndices(&imageIndex);
     if(queues.present.presentKHR(presentInfo) != vk::Result::eSuccess)
         throw std::runtime_error("failed to present image");
+    currentFrameID = (currentFrameID + 1) % swapChain.frames.size();
+}
+
+vk::ImageViewCreateInfo &Vulkan::CreateInfo::imageView(vk::Format imageFormat)
+{
+    imageViewCreateInfo
+        .setViewType(vk::ImageViewType::e2D)
+        .setFormat(imageFormat)
+        .setComponents({vk::ComponentSwizzle::eIdentity,
+                        vk::ComponentSwizzle::eIdentity,
+                        vk::ComponentSwizzle::eIdentity,
+                        vk::ComponentSwizzle::eIdentity})
+        .setSubresourceRange({vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1});
+    return imageViewCreateInfo;
+}
+
+void Vulkan::CreateInfo::createFrameSync(SwapChain::Frame &frame)
+{
+    frame.semaphores.imageAvailable = std::move(vk::raii::Semaphore(vulkan.device, semaphore()));
+    frame.semaphores.renderFinished = std::move(vk::raii::Semaphore(vulkan.device, semaphore()));
+    frame.fences.inFlight = std::move(vk::raii::Fence(vulkan.device, fence()));
+}
+
+void Vulkan::CreateInfo::createFrameBuffer(Vulkan::SwapChain::Frame &frame, vk::Image image)
+{
+    frame.image = image;
+    auto &imageViewCreateInfo = imageView(vulkan.swapChain.imageFormat);
+    imageViewCreateInfo.setImage(image);
+    frame.imageView.emplace(vk::raii::ImageView{vulkan.device, imageViewCreateInfo});
+    frame.frameBuffer.emplace(vk::raii::Framebuffer{vulkan.device, frameBuffer(*frame.imageView)});
+}
+
+void Vulkan::createSwapChainFrames()
+{
+    auto images = swapChain.swapChain.getImages();
+    vk::raii::CommandBuffers commandBuffers(device, createInfo.commandBuffer(commandPools.graphics, images.size()));
+    swapChain.frames.clear();
+    for (auto& image : images)
+    {
+        swapChain.frames.emplace_back();
+        createInfo.createFrameBuffer(swapChain.frames.back(), image);
+        swapChain.frames.back().commandBuffer.emplace(std::move(commandBuffers[swapChain.frames.size() - 1]));
+        createInfo.createFrameSync(swapChain.frames.back());
+    }
+}
+
+void Vulkan::recreateSwapChain()
+{
+    device.waitIdle();
+    swapChain.frames.clear();
 }
 
 void Vulkan::compute()
@@ -621,6 +634,7 @@ void Vulkan::compute()
 
 Vulkan::~Vulkan()
 {
-
+    device.waitIdle();
+    swapChain.frames.clear();
 }
 
