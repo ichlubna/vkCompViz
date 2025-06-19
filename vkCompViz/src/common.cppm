@@ -6,3 +6,10 @@ export constexpr bool DEBUG =
 #else
     false;
 #endif
+
+export class Resolution
+{
+    public:
+    unsigned int width;
+    unsigned int height;
+};

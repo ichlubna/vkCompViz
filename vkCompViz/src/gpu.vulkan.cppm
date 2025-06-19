@@ -1,6 +1,3 @@
-module;
-// TODO use glm, currently causing compiler error, probably caused by modules 
-//#include <glm/glm.hpp>
 export module gpu: vulkan;
 export import : interface;
 import std;
@@ -8,11 +5,6 @@ import vulkan_hpp;
 
 export namespace Gpu
 {
-namespace glm
-{
-    class uvec2{public: unsigned int x; unsigned int y;};
-}
-
 class Vulkan : public Gpu
 {
     public:
@@ -21,7 +13,8 @@ class Vulkan : public Gpu
             public:
                 std::vector<const char *> requiredExtensions;
                 std::function<std::uintptr_t(std::uintptr_t)> surface;
-                glm::uvec2 resolution;
+                std::function<Resolution()> currentResolution;
+                Resolution resolution;
                 class ShaderCodes
                 {
                     public:
@@ -32,6 +25,7 @@ class Vulkan : public Gpu
         Vulkan(VulkanInitParams params);
         void draw() override;
         void compute() override;
+        void resize() override;
         ~Vulkan();
 
     private:
@@ -67,6 +61,7 @@ class Vulkan : public Gpu
         {
             public:
                 CreateInfo(Vulkan &vulkan, VulkanInitParams params) : vulkan(vulkan), params(params) {};
+                void updateResolution();
                 [[nodiscard]] vk::ApplicationInfo &application();
                 [[nodiscard]] vk::InstanceCreateInfo &instance();
                 [[nodiscard]] vk::raii::PhysicalDevice bestPhysicalDevice();
@@ -84,7 +79,7 @@ class Vulkan : public Gpu
                 {
                     return queueIndex.present;
                 }
-                [[nodiscard]] vk::SwapchainCreateInfoKHR &swapChain(glm::uvec2 resolution);
+                [[nodiscard]] vk::SwapchainCreateInfoKHR &swapChain();
                 [[nodiscard]] vk::ShaderModuleCreateInfo &shaderModule(std::vector<std::uint32_t> &code);
                 [[nodiscard]] vk::PipelineShaderStageCreateInfo &pipelineShaderStage(vk::raii::ShaderModule &shaderModule, vk::ShaderStageFlagBits stage);
                 [[nodiscard]] vk::PipelineDynamicStateCreateInfo &pipelineDynamic();
@@ -175,6 +170,7 @@ class Vulkan : public Gpu
             vk::raii::Queue present;
         } queues;
         SwapChain swapChain;
+        std::optional<vk::raii::SwapchainKHR> oldSwapchain;
         class Shaders
         {
             public:
@@ -200,6 +196,7 @@ class Vulkan : public Gpu
             vk::raii::CommandPool compute;
         } commandPools;
         std::uint32_t currentFrameID{0};
+        bool resizeRequired{false};
         void recordCommandBuffer(SwapChain::Frame &frame);
         void recreateSwapChain();
         void createSwapChainFrames();

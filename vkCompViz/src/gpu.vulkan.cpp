@@ -2,7 +2,6 @@ module;
 #include <vulkan/vulkan.hpp>
 module gpu;
 import vulkan_hpp;
-import common;
 using namespace Gpu;
 
 Vulkan::Vulkan(VulkanInitParams params) :
@@ -15,7 +14,7 @@ Vulkan::Vulkan(VulkanInitParams params) :
     queues{ .graphics{device.getQueue(createInfo.graphicsQueueID(), 0)},
             .compute{device.getQueue(createInfo.computeQueueID(), 0)},
             .present{device.getQueue(createInfo.presentQueueID(), 0)}},
-    swapChain{device, createInfo.swapChain(params.resolution)},
+    swapChain{device, createInfo.swapChain()},
     shaders{.vertex{device, createInfo.shaderModule(params.shaderCodes.vertex)},
             .fragment{device, createInfo.shaderModule(params.shaderCodes.fragment)},
             .compute{}},
@@ -245,22 +244,22 @@ vk::PresentModeKHR swapChainPresentMode(const std::vector<vk::PresentModeKHR> &a
     return vk::PresentModeKHR::eFifo;
 }
 
-vk::Extent2D swapChainExtent(const vk::SurfaceCapabilitiesKHR &capabilities,glm::uvec2 resolution)
+vk::Extent2D swapChainExtent(const vk::SurfaceCapabilitiesKHR &capabilities, Resolution resolution)
 {
     if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max()) 
         return capabilities.currentExtent;
-    vk::Extent2D extent = {resolution.x, resolution.y};    
+    vk::Extent2D extent = {resolution.width, resolution.height};
     extent.width = std::clamp(extent.width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
     extent.height = std::clamp(extent.height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
     return extent;
 }
 
-vk::SwapchainCreateInfoKHR &Vulkan::CreateInfo::swapChain(glm::uvec2 resolution)
+vk::SwapchainCreateInfoKHR &Vulkan::CreateInfo::swapChain()
 {
     auto surfaceCapabilities = vulkan.physicalDevice.getSurfaceCapabilitiesKHR(vulkan.surface);
     auto surfaceFormat = swapChainSurfaceFormat(vulkan.physicalDevice.getSurfaceFormatsKHR(vulkan.surface));
     auto presentMode = swapChainPresentMode(vulkan.physicalDevice.getSurfacePresentModesKHR(vulkan.surface));
-    auto extent = swapChainExtent(surfaceCapabilities,resolution);
+    auto extent = swapChainExtent(surfaceCapabilities, params.resolution);
     size_t imageCount = surfaceCapabilities.minImageCount + 1;
     if(surfaceCapabilities.maxImageCount > 0 && imageCount > surfaceCapabilities.maxImageCount)
         imageCount = surfaceCapabilities.maxImageCount;
@@ -551,11 +550,32 @@ void Vulkan::draw()
 {     
     size_t timeout = std::numeric_limits<uint64_t>::max();
     while(device.waitForFences({swapChain.frames[currentFrameID].fences.inFlight.value()}, VK_TRUE, timeout) == vk::Result::eTimeout);
-    device.resetFences({*swapChain.frames[currentFrameID].fences.inFlight});
  
     uint32_t imageIndex; 
     vk::Result result;
-    std::tie(result, imageIndex) = swapChain.swapChain.acquireNextImage(timeout, *swapChain.frames[currentFrameID].semaphores.imageAvailable);
+    try
+    {
+        std::tie(result, imageIndex) = swapChain.swapChain.acquireNextImage(timeout, *swapChain.frames[currentFrameID].semaphores.imageAvailable);
+    }
+    catch (const vk::SystemError& err)
+    {
+        if (err.code() == vk::Result::eErrorOutOfDateKHR)
+        {
+            recreateSwapChain();
+            resizeRequired = false;
+        }
+        else
+            throw;        
+    }
+
+    if (resizeRequired) 
+    {
+        recreateSwapChain();
+        resizeRequired = false;
+        return;
+    }
+    
+    device.resetFences({*swapChain.frames[currentFrameID].fences.inFlight});
     recordCommandBuffer(swapChain.frames[imageIndex]);
 
     std::vector<vk::PipelineStageFlags> waitStage{vk::PipelineStageFlagBits::eColorAttachmentOutput};
@@ -573,8 +593,20 @@ void Vulkan::draw()
     .setWaitSemaphores({*swapChain.frames[currentFrameID].semaphores.renderFinished.value()})
     .setSwapchains({*swapChain.swapChain})
     .setPImageIndices(&imageIndex);
-    if(queues.present.presentKHR(presentInfo) != vk::Result::eSuccess)
-        throw std::runtime_error("failed to present image");
+    try
+    {
+        result = queues.present.presentKHR(presentInfo);
+    }
+    catch (const vk::SystemError& err)
+    {
+        if (err.code() == vk::Result::eErrorOutOfDateKHR)
+        {
+            recreateSwapChain();
+            resizeRequired = false;
+        }
+        else
+            throw;        
+    }
     currentFrameID = (currentFrameID + 1) % swapChain.frames.size();
 }
 
@@ -624,7 +656,22 @@ void Vulkan::createSwapChainFrames()
 void Vulkan::recreateSwapChain()
 {
     device.waitIdle();
-    swapChain.frames.clear();
+    createInfo.updateResolution();
+    oldSwapchain.emplace(std::move(swapChain.swapChain));
+    auto &swapChainCreateInfo = createInfo.swapChain();
+    swapChainCreateInfo.setOldSwapchain(oldSwapchain.value());
+    swapChain = Vulkan::SwapChain{device, swapChainCreateInfo};
+    createSwapChainFrames();
+}
+
+void Vulkan::CreateInfo::updateResolution()
+{
+    params.resolution = params.currentResolution();
+}
+
+void Vulkan::resize()
+{
+    resizeRequired = true;
 }
 
 void Vulkan::compute()

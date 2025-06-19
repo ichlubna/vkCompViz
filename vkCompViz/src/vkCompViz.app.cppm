@@ -1,12 +1,10 @@
 module;
 #include <memory>
-#include <glm/glm.hpp>
-
 export module vkCompViz: app;
+import common;
 import gpu;
 import window;
 import shader;
-//import std;
 
 export namespace vkCompViz
 {
@@ -20,7 +18,7 @@ class App
         class WindowParameters
         {
             public:
-                glm::uvec2 resolution {1920, 1080};
+                Resolution resolution {1920, 1080};
                 std::string title {"No title"};
         };
 

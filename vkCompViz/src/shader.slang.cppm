@@ -13,7 +13,6 @@ class SlangFactory : public Shader
         void addShaderSourcePath(std::string path);
         [[nodiscard]] std::vector<uint32_t> loadFromFile(std::string shaderName) const override;
         [[nodiscard]] std::vector<uint32_t> loadFromString(std::string shaderName) const override;
-        [[nodiscard]] std::vector<std::uint32_t> defaultShader(DefaultShaderType type) const override;
         ~SlangFactory();
 
     private:

@@ -1,6 +1,5 @@
 module;
 #include <set>
-#include <glm/glm.hpp>
 export module window: glfw;
 export import : interface;
 import common;
@@ -21,8 +20,11 @@ class Glfw : public Window
             return keys.pressed(name);
         }
         [[nodiscard]] bool quit() const override;
-        [[nodiscard]] glm::uvec2 resolution() const override;
+        [[nodiscard]] Resolution resolution() const override;
+        void setResized() {wasResized = true;}
+        bool resized() const override {return wasResized;} 
         static void keyCallback(GLFWwindow *window, int key, [[maybe_unused]] int scancode, int action, [[maybe_unused]] int mods);
+        static void resizeCallback(GLFWwindow *window, [[maybe_unused]] int width, [[maybe_unused]] int height);
         ~Glfw();
 
     private:
@@ -43,5 +45,6 @@ class Glfw : public Window
                 std::set<int> pressedKeys;
         } keys;
         GLFWwindow *window;
+        bool wasResized{false};
 };
 }

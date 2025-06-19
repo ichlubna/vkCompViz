@@ -28,24 +28,31 @@ void Glfw::keyCallback(GLFWwindow *window, int key, [[maybe_unused]] int scancod
         self->keys.release(key);
 }
 
+void Glfw::resizeCallback(GLFWwindow *window, [[maybe_unused]] int width, [[maybe_unused]] int height)
+{
+    auto* self = static_cast<Glfw*>(glfwGetWindowUserPointer(window));
+    self->setResized();
+}
+
 Glfw::Glfw(const Parameters &parameters) :
     Window(parameters)
 {
     glfwInit();
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-    glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
-    window = glfwCreateWindow(parameters.resolution.x, parameters.resolution.y, parameters.title.c_str(), nullptr, nullptr);
+    glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
+    window = glfwCreateWindow(parameters.resolution.width, parameters.resolution.height, parameters.title.c_str(), nullptr, nullptr);
     if(window == nullptr)
         throw std::runtime_error("Failed to create GLFW window");
     glfwSetWindowUserPointer(window, this);
     glfwSetKeyCallback(window, Glfw::keyCallback);
+    glfwSetFramebufferSizeCallback(window, Glfw::resizeCallback);
 }
 
-glm::uvec2 Glfw::resolution() const
+Resolution Glfw::resolution() const
 {
     int width, height;
     glfwGetFramebufferSize(window, &width, &height);
-    return {width, height};
+    return {static_cast<uint32_t>(width), static_cast<uint32_t>(height)};
 }
 
 std::vector<const char *> Glfw::requiredExtensions() const

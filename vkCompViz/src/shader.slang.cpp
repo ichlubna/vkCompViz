@@ -82,21 +82,6 @@ std::vector<uint32_t> SlangFactory::compile(slang::IModule *shaderModule, Slang:
     return code;
 }
 
-std::vector<std::uint32_t> SlangFactory::defaultShader(DefaultShaderType type) const
-{ 
-    switch(type)
-    {
-        case DefaultShaderType::VertexFullScreen:
-            return loadFromFile("fullScreenVS.slang");
-        case DefaultShaderType::FragmentSplitScreen:
-            return loadFromFile("splitScreenFS.slang");
-        case DefaultShaderType::FragmentTextureDisplay:
-            return loadFromFile("textureDisplayFS.slang");
-        default:
-            throw std::runtime_error("Requested shader not implemented"); 
-    }
-}
-
 SlangFactory::~SlangFactory()
 {
 }
