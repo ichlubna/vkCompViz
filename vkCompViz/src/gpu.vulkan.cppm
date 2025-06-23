@@ -1,7 +1,10 @@
+module;
+#include <vk_mem_alloc.h>
 export module gpu: vulkan;
 export import : interface;
 import std;
 import vulkan_hpp;
+import common;
 
 export namespace Gpu
 {
@@ -26,6 +29,8 @@ class Vulkan : public Gpu
         void draw() override;
         void compute() override;
         void resize() override;
+        std::size_t addInputTexture(std::shared_ptr<Loader::Image> image) override;
+        std::size_t addOutputTexture(Loader::Image::ImageFormat imageFormat) override;
         ~Vulkan();
 
     private:
@@ -105,6 +110,7 @@ class Vulkan : public Gpu
                 [[nodiscard]] vk::SemaphoreCreateInfo &semaphore();
                 [[nodiscard]] vk::FenceCreateInfo &fence();
                 [[nodiscard]] vk::ImageViewCreateInfo &imageView(vk::Format imageFormat);
+                [[nodiscard]] vk::BufferCreateInfo &buffer();
                 void createFrameBuffer(Vulkan::SwapChain::Frame &frame, vk::Image image);
                 void createFrameSync(SwapChain::InFlightSync &frame);
 
@@ -133,6 +139,7 @@ class Vulkan : public Gpu
                 vk::RenderPassBeginInfo renderPassBeginInfo{};
                 vk::SemaphoreCreateInfo semaphoreCreateInfo{};
                 vk::FenceCreateInfo fenceCreateInfo{};
+                vk::BufferCreateInfo bufferCreateInfo{};
                 vk::AttachmentDescription colorAttachment{};
                 vk::AttachmentReference colorAttachmentReference{};
                 vk::SubpassDescription subpass{};
@@ -200,11 +207,39 @@ class Vulkan : public Gpu
             vk::raii::CommandPool graphics;
             vk::raii::CommandPool compute;
         } commandPools;
-        std::uint32_t currentFrameID{0};
+        class Buffer
+        {
+            public:
+            vk::raii::Buffer buffer;
+            VmaAllocation allocation;
+            VmaAllocator *allocator;
+            ~Buffer() { vmaDestroyBuffer(*allocator, *buffer, allocation); }
+        };
+        class Texture
+        {
+            public:
+            vk::raii::Image image;
+            vk::raii::DeviceMemory memory;
+            vk::raii::ImageView view;
+            vk::raii::Sampler sampler;
+            VmaAllocation allocation;
+            VmaAllocator *allocator;
+            ~Texture() { vmaDestroyImage(*allocator, *image, allocation); }
+        };
+        class Textures
+        {
+            public:
+            std::vector<Texture> input;
+            std::vector<Texture> output;
+        } textures;
+        VmaAllocator allocator;
+        std::uint32_t inFlightFrameID{0};
         bool resizeRequired{false};
         void recordCommandBuffer(SwapChain::Frame &frame);
         void recreateSwapChain();
         void createSwapChainFrames();
+        void graphicsSubmit(std::size_t swapChainFrameID, std::size_t inFlightFrameID);
+        void createAllocator();
         void init() override;
 };
 }

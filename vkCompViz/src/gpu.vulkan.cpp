@@ -1,5 +1,8 @@
 module;
 #include <vulkan/vulkan.hpp>
+#define VMA_VULKAN_VERSION 1002000 
+#define VMA_IMPLEMENTATION
+#include <vk_mem_alloc.h>
 module gpu;
 import vulkan_hpp;
 using namespace Gpu;
@@ -22,7 +25,7 @@ Vulkan::Vulkan(VulkanInitParams params) :
                             .renderPass{device, createInfo.renderPass()},
                             .pipeline{device, nullptr, createInfo.graphicsPipeline()}}}, 
     commandPools{   .graphics{device, createInfo.commandPool(createInfo.graphicsQueueID())},
-                    .compute{device, createInfo.commandPool(createInfo.computeQueueID())}}
+                    .compute{device, createInfo.commandPool(createInfo.computeQueueID())}}    
 {
     init();
 }
@@ -531,9 +534,19 @@ vk::FenceCreateInfo &Vulkan::CreateInfo::fence()
     return fenceCreateInfo;
 }
 
+void Vulkan::createAllocator()
+{
+    VmaAllocatorCreateInfo allocatorInfo{};
+    allocatorInfo.instance = *instance;
+    allocatorInfo.physicalDevice = *physicalDevice;
+    allocatorInfo.device = *device;
+    vmaCreateAllocator(&allocatorInfo, &allocator);
+}
+
 void Vulkan::init()
 {
     createSwapChainFrames();
+    createAllocator();
 }
 
 void Vulkan::recordCommandBuffer(SwapChain::Frame &frame)
@@ -549,16 +562,32 @@ void Vulkan::recordCommandBuffer(SwapChain::Frame &frame)
     buffer.end();       
 }
 
+void Vulkan::graphicsSubmit(size_t swapChainFrameID, size_t inFlightFrameID)
+{
+    device.resetFences({*swapChain.inFlightSyncs[inFlightFrameID].fences.inFlight});
+    recordCommandBuffer(swapChain.frames[swapChainFrameID]);
+
+    std::vector<vk::PipelineStageFlags> waitStage{vk::PipelineStageFlagBits::eColorAttachmentOutput};
+    vk::SubmitInfo submitInfo;
+    submitInfo
+    .setCommandBuffers({*swapChain.frames[swapChainFrameID].commandBuffer.value()})
+    .setSignalSemaphores({*swapChain.inFlightSyncs[inFlightFrameID].semaphores.renderFinished.value()})
+    .setWaitSemaphores({*swapChain.inFlightSyncs[inFlightFrameID].semaphores.imageAvailable.value()})
+    .setWaitDstStageMask(waitStage);
+
+    queues.graphics.submit({submitInfo}, *swapChain.inFlightSyncs[inFlightFrameID].fences.inFlight); 
+}
+
 void Vulkan::draw()
 {     
     size_t timeout = std::numeric_limits<uint64_t>::max();
-    while(device.waitForFences({swapChain.inFlightSyncs[currentFrameID].fences.inFlight.value()}, VK_TRUE, timeout) == vk::Result::eTimeout);
+    while(device.waitForFences({swapChain.inFlightSyncs[inFlightFrameID].fences.inFlight.value()}, VK_TRUE, timeout) == vk::Result::eTimeout);
  
-    uint32_t imageIndex; 
+    uint32_t swapChainFrameID; 
     vk::Result result;
     try
     {
-        std::tie(result, imageIndex) = swapChain.swapChain.acquireNextImage(timeout, *swapChain.inFlightSyncs[currentFrameID].semaphores.imageAvailable);
+        std::tie(result, swapChainFrameID) = swapChain.swapChain.acquireNextImage(timeout, *swapChain.inFlightSyncs[inFlightFrameID].semaphores.imageAvailable);
     }
     catch (const vk::SystemError& err)
     {
@@ -570,25 +599,14 @@ void Vulkan::draw()
         else
             throw;        
     }
- 
-    device.resetFences({*swapChain.inFlightSyncs[currentFrameID].fences.inFlight});
-    recordCommandBuffer(swapChain.frames[imageIndex]);
 
-    std::vector<vk::PipelineStageFlags> waitStage{vk::PipelineStageFlagBits::eColorAttachmentOutput};
-    vk::SubmitInfo submitInfo;
-    submitInfo
-    .setCommandBuffers({*swapChain.frames[imageIndex].commandBuffer.value()})
-    .setSignalSemaphores({*swapChain.inFlightSyncs[currentFrameID].semaphores.renderFinished.value()})
-    .setWaitSemaphores({*swapChain.inFlightSyncs[currentFrameID].semaphores.imageAvailable.value()})
-    .setWaitDstStageMask(waitStage);
-
-    queues.graphics.submit({submitInfo}, *swapChain.inFlightSyncs[currentFrameID].fences.inFlight); 
+    graphicsSubmit(swapChainFrameID, inFlightFrameID); 
 
     vk::PresentInfoKHR presentInfo;
     presentInfo
-    .setWaitSemaphores({*swapChain.inFlightSyncs[currentFrameID].semaphores.renderFinished.value()})
+    .setWaitSemaphores({*swapChain.inFlightSyncs[inFlightFrameID].semaphores.renderFinished.value()})
     .setSwapchains({*swapChain.swapChain})
-    .setPImageIndices(&imageIndex);
+    .setPImageIndices(&swapChainFrameID);
     try
     {
         result = queues.present.presentKHR(presentInfo);
@@ -608,7 +626,7 @@ void Vulkan::draw()
         recreateSwapChain();
         resizeRequired = false;
     }
-    currentFrameID = (currentFrameID + 1) % swapChain.frames.size();
+    inFlightFrameID = (inFlightFrameID + 1) % swapChain.inFlightSyncs.size();
 }
 
 vk::ImageViewCreateInfo &Vulkan::CreateInfo::imageView(vk::Format imageFormat)
@@ -675,6 +693,19 @@ void Vulkan::resize()
 {
     resizeRequired = true;
 }
+
+size_t Vulkan::addInputTexture(std::shared_ptr<Loader::Image> image)
+{
+    //inputTextures.emplace_back();
+    return textures.input.size()-1;
+}
+
+size_t Vulkan::addOutputTexture(Loader::Image::ImageFormat imageFormat)
+{
+    
+    return textures.output.size()-1;
+}
+
 
 void Vulkan::compute()
 {

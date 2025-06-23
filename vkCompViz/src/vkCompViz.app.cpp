@@ -1,3 +1,5 @@
+module;
+#include <memory>
 module vkCompViz;
 import std;
 using namespace vkCompViz;
@@ -24,6 +26,8 @@ void App::run(ComputeParameters const &computeParameters)
         vulkanInitParams.resolution = window->resolution();
         vulkanInitParams.shaderCodes.vertex = shader->loadFromFile("fullScreenVS");
         vulkanInitParams.shaderCodes.fragment = shader->loadFromFile("splitScreenFS");
+        
+        std::shared_ptr<Loader::Image> image = std::make_shared<Loader::ImageFfmpeg>("../resources/texture.png");
     }
     gpu = std::make_unique<Gpu::Vulkan>(vulkanInitParams);
 

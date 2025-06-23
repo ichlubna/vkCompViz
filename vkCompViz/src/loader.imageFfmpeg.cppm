@@ -1,8 +1,6 @@
 module;
 #include <string>
 #include <memory>
-#include <glm/glm.hpp>
-
 export module loader: imageFfmpeg;
 export import : interface;
 
@@ -11,27 +9,20 @@ export import : interface;
 
 export namespace Loader
 {
-class ImageData
-{
-    public:
-        ImageData();
-        [[nodiscard]] const unsigned char *getData() const;
-        ~ImageData();
-
-    private:
-        unsigned char *data;
-
-};
-
 class ImageFfmpeg : public Image
 {
     public:
         ImageFfmpeg(std::string path);
+        [[nodiscard]] const unsigned char *getData() const override;
+        [[nodiscard]] virtual size_t width() const { return dataWidth; }
+        [[nodiscard]] virtual size_t height() const { return dataHeight; }
+        [[nodiscard]] virtual ImageFormat getImageFormat() const { return imageFormat; };
         ~ImageFfmpeg();
-        [[nodiscard]] const unsigned char *getData() const;
 
     private:
-        std::unique_ptr<ImageData> data;
-        glm::uvec2 resolution;
+        unsigned char *data;
+        Image::ImageFormat imageFormat;
+        size_t dataWidth;
+        size_t dataHeight;
 };
 }

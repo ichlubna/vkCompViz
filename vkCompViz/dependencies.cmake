@@ -6,8 +6,8 @@ target_link_libraries(ffmpeg INTERFACE ${FFMPEG_LIBRARIES})
 target_include_directories(ffmpeg INTERFACE $<BUILD_INTERFACE:${FFMPEG_INCLUDE_DIRS})
 
 find_package(Vulkan REQUIRED)
+find_package(VulkanMemoryAllocator CONFIG REQUIRED)
 find_package(glfw3 REQUIRED)
-#find_package(glm REQUIRED)
 find_package(slang REQUIRED)
 
 add_library( VulkanHppModule )
