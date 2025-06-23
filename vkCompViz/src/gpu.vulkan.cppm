@@ -32,9 +32,17 @@ class Vulkan : public Gpu
         class SwapChain
         {
             public:
-            struct Frame
+            class Frame
             {
                 public:
+                vk::Image image;
+                std::optional<vk::raii::ImageView> imageView;
+                std::optional<vk::raii::Framebuffer> frameBuffer;
+                std::optional<vk::raii::CommandBuffer> commandBuffer;
+            };
+            class InFlightSync
+            {
+                public: 
                 class Sempahores
                 {
                     public:
@@ -46,16 +54,13 @@ class Vulkan : public Gpu
                     public:
                     std::optional<vk::raii::Fence> inFlight; 
                 } fences; 
-                vk::Image image;
-                std::optional<vk::raii::ImageView> imageView;
-                std::optional<vk::raii::Framebuffer> frameBuffer;
-                std::optional<vk::raii::CommandBuffer> commandBuffer;
             };
             SwapChain(vk::raii::Device &device, const vk::SwapchainCreateInfoKHR &swapChainCreateInfo);
             vk::raii::SwapchainKHR swapChain;
             vk::Format imageFormat;
             vk::Extent2D extent;
             std::vector<Frame> frames;
+            std::vector<InFlightSync> inFlightSyncs;
         };
         class CreateInfo
         {
@@ -101,7 +106,7 @@ class Vulkan : public Gpu
                 [[nodiscard]] vk::FenceCreateInfo &fence();
                 [[nodiscard]] vk::ImageViewCreateInfo &imageView(vk::Format imageFormat);
                 void createFrameBuffer(Vulkan::SwapChain::Frame &frame, vk::Image image);
-                void createFrameSync(SwapChain::Frame &frame);
+                void createFrameSync(SwapChain::InFlightSync &frame);
 
             private:
                 Vulkan &vulkan;
