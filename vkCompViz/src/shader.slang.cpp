@@ -68,6 +68,7 @@ std::vector<uint32_t> SlangFactory::loadFromString(std::string code) const
 
 std::vector<uint32_t> SlangFactory::compile(slang::IModule *shaderModule, Slang::ComPtr<slang::ISession> session) const
 {
+
     Slang::ComPtr<slang::IEntryPoint> entryPoint;
     shaderModule->findEntryPointByName("main", entryPoint.writeRef());
     slang::IComponentType* components[] = { shaderModule, entryPoint };

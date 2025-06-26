@@ -11,6 +11,7 @@ class Gpu
         virtual void draw() = 0;
         virtual void compute() = 0;
         virtual void resize() = 0;
+        virtual void setInFlightFrames(std::size_t count) = 0;
         virtual std::size_t addInputTexture(std::shared_ptr<Loader::Image> image) = 0;
         virtual std::size_t addOutputTexture(Loader::Image::ImageFormat imageFormat) = 0;
         virtual ~Gpu() = default;

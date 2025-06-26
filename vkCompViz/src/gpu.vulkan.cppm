@@ -29,6 +29,7 @@ class Vulkan : public Gpu
         void draw() override;
         void compute() override;
         void resize() override;
+        void setInFlightFrames(std::size_t count) override;
         std::size_t addInputTexture(std::shared_ptr<Loader::Image> image) override;
         std::size_t addOutputTexture(Loader::Image::ImageFormat imageFormat) override;
         ~Vulkan();
@@ -43,11 +44,11 @@ class Vulkan : public Gpu
                 vk::Image image;
                 std::optional<vk::raii::ImageView> imageView;
                 std::optional<vk::raii::Framebuffer> frameBuffer;
-                std::optional<vk::raii::CommandBuffer> commandBuffer;
             };
-            class InFlightSync
+            class InFlight
             {
                 public: 
+                std::optional<vk::raii::CommandBuffer> commandBuffer;
                 class Sempahores
                 {
                     public:
@@ -60,12 +61,16 @@ class Vulkan : public Gpu
                     std::optional<vk::raii::Fence> inFlight; 
                 } fences; 
             };
+            void nextInFlight() { inFlightID = (inFlightID + 1) % inFlightCount; };
+            [[nodiscard]] InFlight &currentInFlight() { return inFlight[inFlightID]; };
             SwapChain(vk::raii::Device &device, const vk::SwapchainCreateInfoKHR &swapChainCreateInfo);
             vk::raii::SwapchainKHR swapChain;
             vk::Format imageFormat;
             vk::Extent2D extent;
             std::vector<Frame> frames;
-            std::vector<InFlightSync> inFlightSyncs;
+            std::vector<InFlight> inFlight;
+            std::uint32_t inFlightID{0};
+            std::uint32_t inFlightCount{0};
         };
         class CreateInfo
         {
@@ -111,8 +116,9 @@ class Vulkan : public Gpu
                 [[nodiscard]] vk::FenceCreateInfo &fence();
                 [[nodiscard]] vk::ImageViewCreateInfo &imageView(vk::Format imageFormat);
                 [[nodiscard]] vk::BufferCreateInfo &buffer();
+                [[nodiscard]] vk::DescriptorSetLayoutCreateInfo &descriptorSetLayout();
                 void createFrameBuffer(Vulkan::SwapChain::Frame &frame, vk::Image image);
-                void createFrameSync(SwapChain::InFlightSync &frame);
+                void createFrameSync(SwapChain::InFlight &frame);
 
             private:
                 Vulkan &vulkan;
@@ -147,6 +153,8 @@ class Vulkan : public Gpu
                 vk::GraphicsPipelineCreateInfo graphicsPipelineCreateInfo{};
                 vk::Viewport pipelineViewport{};
                 vk::Rect2D pipelineScissor{};
+                vk::DescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo{};
+                vk::DescriptorSetLayoutBinding binding{};
                 vk::ClearValue clearColor{{0.02f, 0.01f, 0.01f, 1.0f}};
                 std::vector<vk::ShaderModuleCreateInfo> shaderModuleCreateInfos;
                 std::vector<vk::PipelineShaderStageCreateInfo> pipelineShaderStageCreateInfos;
@@ -181,6 +189,12 @@ class Vulkan : public Gpu
             vk::raii::Queue compute;
             vk::raii::Queue present;
         } queues;
+        class CommandPools
+        {
+            public:
+            vk::raii::CommandPool graphics;
+            vk::raii::CommandPool compute;
+        } commandPools;
         SwapChain swapChain;
         std::optional<vk::raii::SwapchainKHR> oldSwapchain;
         class Shaders
@@ -190,6 +204,7 @@ class Vulkan : public Gpu
             vk::raii::ShaderModule fragment; 
             std::vector<vk::raii::ShaderModule> compute;
         } shaders;
+        vk::raii::DescriptorSetLayout descriptorSetLayout;
         class Pipelines
         {
             public:
@@ -201,12 +216,6 @@ class Vulkan : public Gpu
                 vk::raii::Pipeline pipeline;
             } graphics;
         } pipelines;
-        class CommandPools
-        {
-            public:
-            vk::raii::CommandPool graphics;
-            vk::raii::CommandPool compute;
-        } commandPools;
         class Buffer
         {
             public:
@@ -232,10 +241,15 @@ class Vulkan : public Gpu
             std::vector<Texture> input;
             std::vector<Texture> output;
         } textures;
-        VmaAllocator allocator;
-        std::uint32_t inFlightFrameID{0};
+        class Memory
+        {   
+            public:
+            Memory(vk::raii::Instance &instance, vk::raii::PhysicalDevice &physicalDevice, vk::raii::Device &device);
+            VmaAllocator allocator;
+            ~Memory() { vmaDestroyAllocator(allocator); }
+        } memory;
         bool resizeRequired{false};
-        void recordCommandBuffer(SwapChain::Frame &frame);
+        void recordCommandBuffer(SwapChain::Frame &frame, SwapChain::InFlight &inFlight);
         void recreateSwapChain();
         void createSwapChainFrames();
         void graphicsSubmit(std::size_t swapChainFrameID, std::size_t inFlightFrameID);
