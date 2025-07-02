@@ -1,4 +1,6 @@
 module;
+#include <memory>
+
 #include <vk_mem_alloc.h>
 export module gpu: vulkan;
 export import : interface;
@@ -35,6 +37,14 @@ class Vulkan : public Gpu
         ~Vulkan();
 
     private:
+        class Buffer
+        {
+            public:
+            VkBuffer buffer;
+            VmaAllocation allocation;
+            VmaAllocator *allocator;
+            ~Buffer() { vmaDestroyBuffer(*allocator, buffer, allocation); }
+        };
         class SwapChain
         {
             public:
@@ -49,6 +59,7 @@ class Vulkan : public Gpu
             {
                 public: 
                 std::optional<vk::raii::CommandBuffer> commandBuffer;
+                std::unique_ptr<Buffer> uniformBuffer;
                 class Sempahores
                 {
                     public:
@@ -182,6 +193,14 @@ class Vulkan : public Gpu
         vk::raii::SurfaceKHR surface;
         vk::raii::PhysicalDevice physicalDevice;
         vk::raii::Device device;
+        class Memory
+        {   
+            public:
+            Memory(vk::raii::Instance &instance, vk::raii::PhysicalDevice &physicalDevice, vk::raii::Device &device);
+            VmaAllocator allocator;
+            std::unique_ptr<Buffer> buffer(vk::BufferUsageFlags usage, size_t size);
+            ~Memory() { vmaDestroyAllocator(allocator); }
+        } memory;
         class Queues
         {
             public:
@@ -216,14 +235,6 @@ class Vulkan : public Gpu
                 vk::raii::Pipeline pipeline;
             } graphics;
         } pipelines;
-        class Buffer
-        {
-            public:
-            vk::raii::Buffer buffer;
-            VmaAllocation allocation;
-            VmaAllocator *allocator;
-            ~Buffer() { vmaDestroyBuffer(*allocator, *buffer, allocation); }
-        };
         class Texture
         {
             public:
@@ -241,13 +252,6 @@ class Vulkan : public Gpu
             std::vector<Texture> input;
             std::vector<Texture> output;
         } textures;
-        class Memory
-        {   
-            public:
-            Memory(vk::raii::Instance &instance, vk::raii::PhysicalDevice &physicalDevice, vk::raii::Device &device);
-            VmaAllocator allocator;
-            ~Memory() { vmaDestroyAllocator(allocator); }
-        } memory;
         bool resizeRequired{false};
         void recordCommandBuffer(SwapChain::Frame &frame, SwapChain::InFlight &inFlight);
         void recreateSwapChain();

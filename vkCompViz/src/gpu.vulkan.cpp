@@ -14,6 +14,7 @@ Vulkan::Vulkan(VulkanInitParams params) :
     surface{instance, reinterpret_cast<VkSurfaceKHR>(params.surface(reinterpret_cast<std::uintptr_t>(static_cast<VkInstance>(*instance))))},
     physicalDevice{createInfo.bestPhysicalDevice()},
     device{physicalDevice, createInfo.device()},
+    memory{instance, physicalDevice, device},
     queues{ .graphics{device.getQueue(createInfo.graphicsQueueID(), 0)},
             .compute{device.getQueue(createInfo.computeQueueID(), 0)},
             .present{device.getQueue(createInfo.presentQueueID(), 0)}},
@@ -26,8 +27,7 @@ Vulkan::Vulkan(VulkanInitParams params) :
     descriptorSetLayout{device, createInfo.descriptorSetLayout()},
     pipelines{  .graphics{  .layout{device, createInfo.pipelineLayout()},
                             .renderPass{device, createInfo.renderPass()},
-                            .pipeline{device, nullptr, createInfo.graphicsPipeline()}}}, 
-    memory{instance, physicalDevice, device}
+                            .pipeline{device, nullptr, createInfo.graphicsPipeline()}}} 
 {
     init();
 }
@@ -683,6 +683,21 @@ void Vulkan::CreateInfo::createFrameBuffer(Vulkan::SwapChain::Frame &frame, vk::
     frame.frameBuffer.emplace(vk::raii::Framebuffer{vulkan.device, frameBuffer(*frame.imageView)});
 }
 
+std::unique_ptr<Vulkan::Buffer> Vulkan::Memory::buffer(vk::BufferUsageFlags usage, size_t size)
+{
+    auto buffer = std::make_unique<Buffer>();
+    buffer->allocator = &allocator;
+    vk::BufferCreateInfo bufferInfo;
+    bufferInfo
+        .setUsage(usage)
+        .setSize(size);
+    VmaAllocationCreateInfo allocInfo = {};
+    allocInfo.usage = VMA_MEMORY_USAGE_AUTO;
+    auto info = static_cast<VkBufferCreateInfo>(bufferInfo);
+    vmaCreateBuffer(allocator, &info, &allocInfo, &buffer->buffer, &buffer->allocation, nullptr);
+    return buffer;
+}
+
 void Vulkan::createSwapChainFrames()
 {
     auto images = swapChain.swapChain.getImages();
@@ -699,6 +714,7 @@ void Vulkan::createSwapChainFrames()
         swapChain.inFlight.emplace_back();
         swapChain.inFlight.back().commandBuffer.emplace(std::move(commandBuffers[swapChain.inFlight.size() - 1]));
         createInfo.createFrameSync(swapChain.inFlight.back());
+        swapChain.inFlight.back().uniformBuffer = memory.buffer(vk::BufferUsageFlagBits::eUniformBuffer, 1000); 
     }
 }
 

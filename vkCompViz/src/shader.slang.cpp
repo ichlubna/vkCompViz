@@ -68,7 +68,6 @@ std::vector<uint32_t> SlangFactory::loadFromString(std::string code) const
 
 std::vector<uint32_t> SlangFactory::compile(slang::IModule *shaderModule, Slang::ComPtr<slang::ISession> session) const
 {
-
     Slang::ComPtr<slang::IEntryPoint> entryPoint;
     shaderModule->findEntryPointByName("main", entryPoint.writeRef());
     slang::IComponentType* components[] = { shaderModule, entryPoint };
@@ -80,6 +79,28 @@ std::vector<uint32_t> SlangFactory::compile(slang::IModule *shaderModule, Slang:
     std::vector<uint32_t> code(data, data+spirvCode->getBufferSize()/sizeof(uint32_t));
     if(code.empty())
         throw std::runtime_error("Failed to compile shader");
+
+    auto programLayout = program->getLayout();
+    auto globalLayout = programLayout->getGlobalParamsVarLayout();
+    auto typeLayout = globalLayout->getTypeLayout();
+    
+    //if(typeLayout->getKind() == slang::TypeReflection::Kind::Struct)
+    {
+            int paramCount = typeLayout->getFieldCount();
+            std::cerr << "Count: " << paramCount << std::endl;
+            for (int i = 0; i < paramCount; i++)
+            {
+                auto param = typeLayout->getFieldByIndex(i);
+                auto paramTypeLayout = param->getTypeLayout();
+                std::cerr << "Name: " << param->getName() << std::endl;
+                int usedLayoutUnitCount = paramTypeLayout->getCategoryCount();
+                for (int i = 0; i < usedLayoutUnitCount; ++i)
+                {
+                    auto layoutUnit = paramTypeLayout->getCategoryByIndex(i);
+                    std::cerr << "Size: " << paramTypeLayout->getSize(layoutUnit) << std::endl;
+                }
+            }
+    }
     return code;
 }
 
