@@ -20,14 +20,15 @@ Vulkan::Vulkan(VulkanInitParams params) :
             .present{device.getQueue(createInfo.presentQueueID(), 0)}},
     commandPools{   .graphics{device, createInfo.commandPool(createInfo.graphicsQueueID())},
                     .compute{device, createInfo.commandPool(createInfo.computeQueueID())}},
+    descriptorSetLayout{device, createInfo.descriptorSetLayout()},
     swapChain{device, createInfo.swapChain()},
+    currentUniformBufferData{static_cast<std::uint32_t>(params.shaderCodes.uniformBufferSize), 0},
     shaders{.vertex{device, createInfo.shaderModule(params.shaderCodes.vertex)},
             .fragment{device, createInfo.shaderModule(params.shaderCodes.fragment)},
             .compute{}},
-    descriptorSetLayout{device, createInfo.descriptorSetLayout()},
     pipelines{  .graphics{  .layout{device, createInfo.pipelineLayout()},
                             .renderPass{device, createInfo.renderPass()},
-                            .pipeline{device, nullptr, createInfo.graphicsPipeline()}}} 
+                            .pipeline{device, nullptr, createInfo.graphicsPipeline()}}}
 {
     init();
 }
@@ -541,21 +542,13 @@ vk::DescriptorSetLayoutCreateInfo &Vulkan::CreateInfo::descriptorSetLayout()
     .setBinding(0)
     .setDescriptorType(vk::DescriptorType::eUniformBuffer)
     .setDescriptorCount(1)
-    .setStageFlags(vk::ShaderStageFlagBits::eCompute);
+    .setStageFlags(vk::ShaderStageFlagBits::eCompute | vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment);
 
     descriptorSetLayoutCreateInfo
     .setBindingCount(1)
     .setPBindings(&binding);
     return descriptorSetLayoutCreateInfo;
 }
-
-vk::BufferCreateInfo &Vulkan::CreateInfo::buffer()
-{
-    bufferCreateInfo;
-    //.
-    return bufferCreateInfo;
-}
-
 
 Vulkan::Memory::Memory(vk::raii::Instance &instance, vk::raii::PhysicalDevice &physicalDevice, vk::raii::Device &device)
 {
@@ -580,12 +573,13 @@ void Vulkan::recordCommandBuffer(SwapChain::Frame &frame, SwapChain::InFlight &i
     buffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipelines.graphics.pipeline);
     buffer.setViewport(0, {vk::Viewport(0, 0, swapChain.extent.width, swapChain.extent.height, 0, 1)});
     buffer.setScissor(0, {vk::Rect2D({0, 0}, swapChain.extent)});
+    buffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipelines.graphics.layout, 0, {inFlight.descriptorSet.value()}, {});
     buffer.draw(3, 1, 0, 0);
     buffer.endRenderPass();
     buffer.end();       
 }
 
-void Vulkan::graphicsSubmit(size_t swapChainFrameID, size_t inFlightFrameID)
+void Vulkan::graphicsSubmit(size_t swapChainFrameID)
 {
     auto &inFlight = swapChain.currentInFlight();
     device.resetFences({*inFlight.fences.inFlight});
@@ -600,6 +594,11 @@ void Vulkan::graphicsSubmit(size_t swapChainFrameID, size_t inFlightFrameID)
     .setWaitDstStageMask(waitStage);
 
     queues.graphics.submit({submitInfo}, *inFlight.fences.inFlight); 
+}
+
+void Vulkan::updateUniformBuffer(SwapChain::InFlight &inFlight)
+{
+    vmaCopyMemoryToAllocation(*inFlight.uniformBuffer->allocator, currentUniformBufferData.data(), inFlight.uniformBuffer->allocation, 0, currentUniformBufferData.size()*sizeof(uint32_t));
 }
 
 void Vulkan::draw()
@@ -624,8 +623,8 @@ void Vulkan::draw()
         else
             throw;        
     }
-
-    graphicsSubmit(swapChainFrameID, swapChain.inFlightID); 
+    updateUniformBuffer(inFlight);
+    graphicsSubmit(swapChainFrameID); 
 
     vk::PresentInfoKHR presentInfo;
     presentInfo
@@ -689,13 +688,36 @@ std::unique_ptr<Vulkan::Buffer> Vulkan::Memory::buffer(vk::BufferUsageFlags usag
     buffer->allocator = &allocator;
     vk::BufferCreateInfo bufferInfo;
     bufferInfo
-        .setUsage(usage)
+        .setUsage(usage | vk::BufferUsageFlagBits::eTransferDst)
         .setSize(size);
     VmaAllocationCreateInfo allocInfo = {};
     allocInfo.usage = VMA_MEMORY_USAGE_AUTO;
+    allocInfo.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT;
     auto info = static_cast<VkBufferCreateInfo>(bufferInfo);
     vmaCreateBuffer(allocator, &info, &allocInfo, &buffer->buffer, &buffer->allocation, nullptr);
     return buffer;
+}
+
+vk::DescriptorPoolCreateInfo &Vulkan::CreateInfo::descriptorPool(size_t count)
+{
+    descriptorPoolSizes.clear();
+    descriptorPoolSizes.push_back({vk::DescriptorType::eUniformBuffer, static_cast<uint32_t>(count)});
+    descriptorPoolCreateInfo
+        .setMaxSets(count)
+        .setFlags(vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet)
+        .setPoolSizes(descriptorPoolSizes);
+    return descriptorPoolCreateInfo;
+}
+
+vk::DescriptorSetAllocateInfo &Vulkan::CreateInfo::descriptorSet(vk::raii::DescriptorPool &descriptorPool, size_t count)
+{
+    descriptorSetLayouts.clear();
+    for (size_t i = 0; i < count; i++)
+        descriptorSetLayouts.push_back(vulkan.descriptorSetLayout);
+    descriptorSetAllocateInfo
+        .setDescriptorPool(descriptorPool)
+        .setSetLayouts(descriptorSetLayouts);
+    return descriptorSetAllocateInfo;
 }
 
 void Vulkan::createSwapChainFrames()
@@ -706,15 +728,35 @@ void Vulkan::createSwapChainFrames()
     if (swapChain.inFlightCount == 0)
         swapChain.inFlightCount = images.size();
     vk::raii::CommandBuffers commandBuffers(device, createInfo.commandBuffer(commandPools.graphics, swapChain.inFlightCount));
+    swapChain.descriptorPool.emplace(device, createInfo.descriptorPool(swapChain.inFlightCount));
+    vk::raii::DescriptorSets descriptorSets(device, createInfo.descriptorSet(swapChain.descriptorPool.value(), swapChain.inFlightCount));
     swapChain.frames.clear();
+    size_t id = 0;
     for (auto& image : images)
     {
         swapChain.frames.emplace_back();
         createInfo.createFrameBuffer(swapChain.frames.back(), image);
         swapChain.inFlight.emplace_back();
-        swapChain.inFlight.back().commandBuffer.emplace(std::move(commandBuffers[swapChain.inFlight.size() - 1]));
+        swapChain.inFlight.back().commandBuffer.emplace(std::move(commandBuffers[id]));
         createInfo.createFrameSync(swapChain.inFlight.back());
-        swapChain.inFlight.back().uniformBuffer = memory.buffer(vk::BufferUsageFlagBits::eUniformBuffer, 1000); 
+        swapChain.inFlight.back().uniformBuffer = memory.buffer(vk::BufferUsageFlagBits::eUniformBuffer, currentUniformBufferData.size());
+        swapChain.inFlight.back().descriptorSet.emplace(std::move(descriptorSets[id]));
+        
+        vk::DescriptorBufferInfo bufferInfo;
+        bufferInfo
+            .setBuffer(swapChain.inFlight.back().uniformBuffer->buffer)
+            .setOffset(0)
+            .setRange(VK_WHOLE_SIZE);
+        vk::WriteDescriptorSet writeDescriptorSet;
+        writeDescriptorSet
+            .setDstSet(*swapChain.inFlight.back().descriptorSet.value())
+            .setDstBinding(0)
+            .setDstArrayElement(0)
+            .setDescriptorType(vk::DescriptorType::eUniformBuffer)
+            .setDescriptorCount(1)
+            .setBufferInfo(bufferInfo);
+        device.updateDescriptorSets({writeDescriptorSet}, {});
+        id++;
     }
 }
 
@@ -755,6 +797,11 @@ void Vulkan::setInFlightFrames(std::size_t count)
     swapChain.inFlightCount = count;
     resize();
 };
+
+void Vulkan::updateUniformBuffer(std::vector<uint32_t> buffer)
+{
+    std::copy(buffer.begin(), buffer.end(), currentUniformBufferData.begin());
+}
 
 void Vulkan::compute()
 {

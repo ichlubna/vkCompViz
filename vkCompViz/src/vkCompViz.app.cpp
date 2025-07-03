@@ -31,6 +31,9 @@ void App::run(ComputeParameters const &computeParameters)
     }
     gpu = std::make_unique<Gpu::Vulkan>(vulkanInitParams);
 
+    std::vector<uint32_t> uniforms(1, 0);
+    float test = 0.0f;
+
     if(window)
     {
         bool end = false;
@@ -38,6 +41,8 @@ void App::run(ComputeParameters const &computeParameters)
         {
             window->run();
             end = window->key("Escape") || window->quit();
+            test+= 0.01f; uniforms[0] = *reinterpret_cast<uint32_t*>(&test);
+            gpu->updateUniformBuffer(uniforms);
             gpu->draw();
             if(window->resized())
                 gpu->resize();
