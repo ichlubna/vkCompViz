@@ -1,5 +1,6 @@
 module;
 #include <memory>
+#include <map>
 export module vkCompViz: app;
 import common;
 import gpu;
@@ -21,6 +22,15 @@ class App
                 Resolution resolution {1920, 1080};
                 std::string title {"No title"};
         };
+        class ParameterParser
+        {
+            private:
+                std::string lastName{};
+                std::map<std::string, float> parametersMap;
+            public:
+                void read();
+                float get(std::string name, float defaultValue = 0.0f);
+        }; 
 
         App();
         void useWindow(Window::Parameters const &windowParameters);
