@@ -1,11 +1,9 @@
-module;
-#include <memory>
-#include <map>
 export module vkCompViz: app;
 import common;
 import gpu;
 import window;
 import shader;
+import std;
 
 export namespace vkCompViz
 {
@@ -14,7 +12,24 @@ class App
     public:
         class ComputeParameters
         {
-
+            public:
+                class Textures
+                {
+                    public:
+                        class Output
+                        {
+                            public:
+                                std::string path{""};
+                                Resolution resolution{0,0};
+                                bool floatFormat{false};
+                                int sameResolutionAsInputID{-1};
+                                int sameFormatAsInputID{-1};
+                        };
+                        std::vector<std::string> input;
+                        std::vector<Output> output;
+                } textures;
+                std::vector<std::string> computeShaders;
+                std::vector<std::pair<std::string, float>> uniforms;                
         };
         class WindowParameters
         {

@@ -1,5 +1,3 @@
-module;
-#include <memory>
 module vkCompViz;
 import std;
 using namespace vkCompViz;
@@ -16,7 +14,7 @@ void App::useWindow(Window::Parameters const &windowParameters)
 [[nodiscard]] std::vector<std::string> split(std::string input, char delimiter)
 {
     std::vector<std::string> result;
-    size_t position = input.find(delimiter);
+    std::size_t position = input.find(delimiter);
     if(position == std::string::npos)
         result.push_back(input);
     while(position != std::string::npos)
@@ -95,14 +93,13 @@ void App::run(ComputeParameters const &computeParameters)
         vulkanInitParams.resolution = window->resolution();
         vulkanInitParams.shaders.vertex = shader->loadFromFile("fullScreenVS");
         vulkanInitParams.shaders.fragment = shader->loadFromFile("splitScreenFS");
-        
-        std::shared_ptr<Loader::Image> image = std::make_shared<Loader::ImageFfmpeg>("../resources/texture.png");
     }
-    gpu = std::make_unique<Gpu::Vulkan>(vulkanInitParams);
-    ParameterParser parameters;
-
+    //for and pass shaders, input, output and uniforms to vulkan
+    //std::shared_ptr<Loader::Image> image = std::make_shared<Loader::ImageFfmpeg>("../resources/texture.png");
+    gpu = std::make_unique<Gpu::Vulkan>(vulkanInitParams);    
     if(window)
     {
+        ParameterParser parameters;
         bool end = false;
         while(!end)
         {

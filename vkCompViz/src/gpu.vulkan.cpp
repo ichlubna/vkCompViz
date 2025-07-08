@@ -789,17 +789,6 @@ void Vulkan::resize()
     resizeRequired = true;
 }
 
-size_t Vulkan::addInputTexture(std::shared_ptr<Loader::Image> image)
-{
-    //inputTextures.emplace_back();
-    return textures.input.size()-1;
-}
-
-size_t Vulkan::addOutputTexture(Loader::Image::ImageFormat imageFormat)
-{   
-    return textures.output.size()-1;
-}
-
 void Vulkan::setInFlightFrames(std::size_t count)
 {
     swapChain.inFlightCount = count;

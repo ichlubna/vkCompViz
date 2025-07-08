@@ -3,13 +3,29 @@ import arguments;
 import vkCompViz;
 import std;
 
-int main()
+int main(int argc, char *argv[])
 {
     try
     {
+        std::string help =  "This program blends two images together with a factor.\n"
+                            "Usage: ./simpleBlending -i1 pathToFirstImage -i2 pathToSecondImage -f floatFactor -o pathToOutputImage\n";
+        Arguments args(argc, argv);
+        if(args.printHelpIfPresent(help))
+            return EXIT_SUCCESS;
+
+        if(!args["-i1"] || !args["-i2"] || !args["-f"] || !args["-o"])
+            throw std::invalid_argument("Missing parameters");
+
+        vkCompViz::App::ComputeParameters params;
+        params.computeShaders.push_back("blendFS.slang");
+        params.textures.input.push_back(args["-i1"]);
+        params.textures.input.push_back(args["-i2"]);
+        params.textures.output.push_back({.path=args["-o"], .sameResolutionAsInputID=0, .sameFormatAsInputID=0});
+        params.uniforms.push_back({"factor", args["-f"]});
+
         vkCompViz::App app;
         app.useWindow({.resolution = {800, 600}, .title = "simpleBlending"});
-        app.run(vkCompViz::App::ComputeParameters{});
+        app.run(params);
     }
     catch(const std::exception &e)
     {

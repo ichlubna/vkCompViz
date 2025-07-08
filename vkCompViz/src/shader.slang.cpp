@@ -88,17 +88,20 @@ Shader::Shader::Info SlangFactory::compile(slang::IModule *shaderModule, Slang::
     {
         auto varLayout = programLayout->getParameterByIndex(paramID);
         auto paramTypeLayout = varLayout->getTypeLayout();
-        size_t fieldCount = paramTypeLayout->getFieldCount();
-        for (size_t fieldID = 0; fieldID < fieldCount; fieldID++)
+        if (paramTypeLayout->getKind() == slang::TypeReflection::Kind::Struct)
         {
-            auto fieldLayout = paramTypeLayout->getFieldByIndex(fieldID);
-            info.uniformNames.push_back(fieldLayout->getName());
-        }
-        int usedLayoutUnitCount = paramTypeLayout->getCategoryCount();
-        for (int unitID = 0; unitID < usedLayoutUnitCount; unitID++)
-        {
-            auto layoutUnit = paramTypeLayout->getCategoryByIndex(unitID);
-            info.uniformBufferSize = std::max(paramTypeLayout->getSize(layoutUnit), info.uniformBufferSize);
+            size_t fieldCount = paramTypeLayout->getFieldCount();
+            for (size_t fieldID = 0; fieldID < fieldCount; fieldID++)
+            {
+                auto fieldLayout = paramTypeLayout->getFieldByIndex(fieldID);
+                info.uniformNames.push_back(fieldLayout->getName());
+            }
+            int usedLayoutUnitCount = paramTypeLayout->getCategoryCount();
+            for (int unitID = 0; unitID < usedLayoutUnitCount; unitID++)
+            {
+                auto layoutUnit = paramTypeLayout->getCategoryByIndex(unitID);
+                info.uniformBufferSize = std::max(paramTypeLayout->getSize(layoutUnit), info.uniformBufferSize);
+            }
         }
             
     }

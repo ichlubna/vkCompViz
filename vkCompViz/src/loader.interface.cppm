@@ -8,12 +8,15 @@ export namespace Loader
 class Image
 {
     public:
-        enum class ImageFormat { RGBA_8_INT, RGBA_32_FLOAT };
+        enum class Format { RGBA_8_INT, RGBA_32_FLOAT };
         Image(std::string path) {};
-        [[nodiscard]] virtual const unsigned char *getData() const = 0;
+        Image(size_t width, size_t height, Format imageFormat) {};
+        [[nodiscard]] virtual const unsigned char *data() const = 0;
         [[nodiscard]] virtual size_t width() const = 0;
         [[nodiscard]] virtual size_t height() const = 0;
-        [[nodiscard]] virtual ImageFormat getImageFormat() const = 0;
+        [[nodiscard]] virtual size_t stride() const = 0;
+        [[nodiscard]] virtual Format imageFormat() const = 0;
+        virtual void save(std::string path) const = 0;
         virtual ~Image() = default;  
 };
 }

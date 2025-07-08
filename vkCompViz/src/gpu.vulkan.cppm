@@ -29,14 +29,18 @@ class Vulkan : public Gpu
                         [[nodiscard]] size_t uniformBufferUint32Count() const { return std::ceil(uniformBufferSize()/sizeof(uint32_t)); };
                         [[nodiscard]] std::vector<std::string> uniformNames() const;
                 } shaders;
+                class Textures
+                {
+                    public:
+                        std::vector<std::shared_ptr<Loader::Image>> input;
+                        std::vector<std::shared_ptr<Loader::Image>> output;
+                } textures;
         };
         Vulkan(VulkanInitParams params);
         void draw() override;
         void compute() override;
         void resize() override;
         void setInFlightFrames(std::size_t count) override;
-        std::size_t addInputTexture(std::shared_ptr<Loader::Image> image) override;
-        std::size_t addOutputTexture(Loader::Image::ImageFormat imageFormat) override;
         void updateUniformBuffer(std::vector<uint32_t> buffer) override;
         void updateUniform(std::string name, float value) override;
         ~Vulkan();

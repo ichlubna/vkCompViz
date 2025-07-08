@@ -1,6 +1,7 @@
 module;
 #include <string>
 #include <memory>
+#include "ffmpeg.h"
 export module loader: imageFfmpeg;
 export import : interface;
 
@@ -13,16 +14,18 @@ class ImageFfmpeg : public Image
 {
     public:
         ImageFfmpeg(std::string path);
-        [[nodiscard]] const unsigned char *getData() const override;
-        [[nodiscard]] virtual size_t width() const { return dataWidth; }
-        [[nodiscard]] virtual size_t height() const { return dataHeight; }
-        [[nodiscard]] virtual ImageFormat getImageFormat() const { return imageFormat; };
+        ImageFfmpeg(size_t width, size_t height, size_t stride, Format imageFormat, std::string path, uint8_t *data=nullptr);
+        [[nodiscard]] const unsigned char *data() const { return frame->data[0]; }
+        [[nodiscard]] virtual size_t width() const { return frame->width; }
+        [[nodiscard]] virtual size_t height() const { return frame->height; }
+        [[nodiscard]] virtual size_t stride() const { return frame->linesize[0]; }
+        [[nodiscard]] virtual Format imageFormat() const { return format; };
+        void save(std::string path="") const override; 
         ~ImageFfmpeg();
 
     private:
-        unsigned char *data;
-        Image::ImageFormat imageFormat;
-        size_t dataWidth;
-        size_t dataHeight;
+        AVFrame *frame;
+        Image::Format format;
+        std::string path;
 };
 }
