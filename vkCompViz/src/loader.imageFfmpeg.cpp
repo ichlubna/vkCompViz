@@ -31,19 +31,19 @@ AVFrame *frameFromFile(std::string path)
     avcodec_send_packet(codecContext, nullptr);
     int err = avcodec_receive_frame(codecContext, decodedFrame);
     if(err < 0)
-		throw std::runtime_error("Cannot receive frame");
-	av_packet_free(&packet);
+        throw std::runtime_error("Cannot receive frame");
+    av_packet_free(&packet);
     return decodedFrame;
 }
 
 void convertFrame(AVFrame *input, AVFrame *output)
 {
-    struct SwsContext *cRGB = nullptr;  
+    struct SwsContext *cRGB = nullptr;
     cRGB = sws_getCachedContext(cRGB, input->width, input->height, (enum AVPixelFormat)input->format, output->width, output->height, static_cast<AVPixelFormat>(output->format), SWS_BICUBIC, nullptr, nullptr, nullptr);
     sws_scale(cRGB, (const uint8_t *const *)input->data, input->linesize, 0, input->height, output->data, output->linesize);
 }
 
-ImageFfmpeg::ImageFfmpeg(std::string inputPath) : Image(inputPath)
+ImageFfmpeg::ImageFfmpeg(std::string inputPath) : Image()
 {
     path = inputPath;
     auto decodedFrame = frameFromFile(inputPath);
@@ -51,14 +51,14 @@ ImageFfmpeg::ImageFfmpeg(std::string inputPath) : Image(inputPath)
     frame->width = decodedFrame->width;
     frame->height = decodedFrame->height;
     av_frame_get_buffer(frame, 0);
- 
+
     const AVPixFmtDescriptor *desc = av_pix_fmt_desc_get(static_cast<enum AVPixelFormat>(decodedFrame->format));
     int bitDepth = desc->comp[0].depth;
 
-    if (bitDepth == 8)
+    if(bitDepth == 8)
     {
         frame->format = AV_PIX_FMT_RGBA;
-        format = Image::Format::RGBA_8_INT; 
+        format = Image::Format::RGBA_8_INT;
     }
     else
     {
@@ -67,14 +67,14 @@ ImageFfmpeg::ImageFfmpeg(std::string inputPath) : Image(inputPath)
     }
 
     convertFrame(decodedFrame, frame);
-      
+
     av_frame_unref(decodedFrame);
     av_frame_free(&decodedFrame);
 }
-       
-ImageFfmpeg::ImageFfmpeg(size_t width, size_t height, size_t stride, Format imageFormat, std::string outputPath, uint8_t *data) : Image(width, height, imageFormat), format{imageFormat}
-{    
-    frame = av_frame_alloc(); 
+
+ImageFfmpeg::ImageFfmpeg(size_t width, size_t height, [[maybe_unused]] size_t stride, Format imageFormat, std::string outputPath, uint8_t *data) : Image()
+{
+    frame = av_frame_alloc();
     frame->width = width;
     frame->height = height;
     format = imageFormat;

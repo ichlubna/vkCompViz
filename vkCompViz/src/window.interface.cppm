@@ -14,7 +14,7 @@ class Parameters
 class Window
 {
     public:
-        Window(const Parameters &parameters) {};
+        Window() {};
         virtual void run() = 0;
         [[nodiscard]] virtual std::vector<const char *> requiredExtensions() const = 0;
         [[nodiscard]] virtual std::uintptr_t getSurface(std::uintptr_t vkInstance) = 0;

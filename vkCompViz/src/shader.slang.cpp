@@ -29,8 +29,8 @@ Slang::ComPtr<slang::ISession> SlangFactory::createSession() const
     sessionDesc.targets = &targetDesc;
     sessionDesc.targetCount = 1;
 
-    std::vector<const char*> paths;
-    for (const auto& path : searchPaths)
+    std::vector<const char *> paths;
+    for(const auto& path : searchPaths)
         paths.push_back(path.c_str());
 
     sessionDesc.searchPaths = paths.data();
@@ -48,7 +48,7 @@ Shader::Shader::Info SlangFactory::loadFromFile(std::string shaderName) const
     slang::IModule *shaderModule = session->loadModule(shaderName.c_str(), diagnostics.writeRef());
     if(!shaderModule)
     {
-        std::cerr << reinterpret_cast<const char*>(diagnostics->getBufferPointer()) << std::endl;
+        std::cerr << reinterpret_cast<const char *>(diagnostics->getBufferPointer()) << std::endl;
         throw std::runtime_error("Could not load shader");
     }
     return compile(shaderModule, session);
@@ -61,7 +61,7 @@ Shader::Shader::Info SlangFactory::loadFromString(std::string code) const
     slang::IModule *shaderModule = session->loadModuleFromSourceString("", "", code.c_str(), diagnostics.writeRef());
     if(!shaderModule)
     {
-        std::cout << std::endl << reinterpret_cast<const char*>(diagnostics->getBufferPointer()) << std::endl;
+        std::cout << std::endl << reinterpret_cast<const char *>(diagnostics->getBufferPointer()) << std::endl;
         throw std::runtime_error("Could not load shader");
     }
     return compile(shaderModule, session);
@@ -77,33 +77,33 @@ Shader::Shader::Info SlangFactory::compile(slang::IModule *shaderModule, Slang::
     session->createCompositeComponentType(components, 2, program.writeRef());
     Slang::ComPtr<slang::IBlob> spirvCode;
     program->getEntryPointCode(0, 0, spirvCode.writeRef(), nullptr);
-    const uint32_t* data = reinterpret_cast<const uint32_t*>(spirvCode->getBufferPointer());
-    std::vector<uint32_t> code(data, data+spirvCode->getBufferSize()/sizeof(uint32_t));
+    const uint32_t *data = reinterpret_cast<const uint32_t *>(spirvCode->getBufferPointer());
+    std::vector<uint32_t> code(data, data + spirvCode->getBufferSize() / sizeof(uint32_t));
     if(code.empty())
         throw std::runtime_error("Failed to compile shader");
     info.code = std::move(code);
 
     auto programLayout = program->getLayout();
-    for (size_t paramID = 0 ; paramID < programLayout->getParameterCount(); paramID++)
+    for(size_t paramID = 0 ; paramID < programLayout->getParameterCount(); paramID++)
     {
         auto varLayout = programLayout->getParameterByIndex(paramID);
         auto paramTypeLayout = varLayout->getTypeLayout();
-        if (paramTypeLayout->getKind() == slang::TypeReflection::Kind::Struct)
+        if(paramTypeLayout->getKind() == slang::TypeReflection::Kind::Struct)
         {
             size_t fieldCount = paramTypeLayout->getFieldCount();
-            for (size_t fieldID = 0; fieldID < fieldCount; fieldID++)
+            for(size_t fieldID = 0; fieldID < fieldCount; fieldID++)
             {
                 auto fieldLayout = paramTypeLayout->getFieldByIndex(fieldID);
                 info.uniformNames.push_back(fieldLayout->getName());
             }
             int usedLayoutUnitCount = paramTypeLayout->getCategoryCount();
-            for (int unitID = 0; unitID < usedLayoutUnitCount; unitID++)
+            for(int unitID = 0; unitID < usedLayoutUnitCount; unitID++)
             {
                 auto layoutUnit = paramTypeLayout->getCategoryByIndex(unitID);
                 info.uniformBufferSize = std::max(paramTypeLayout->getSize(layoutUnit), info.uniformBufferSize);
             }
         }
-            
+
     }
     return info;
 }

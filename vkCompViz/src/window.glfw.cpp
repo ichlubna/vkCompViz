@@ -21,7 +21,7 @@ bool Glfw::Keys::pressed(std::string name) const
 
 void Glfw::keyCallback(GLFWwindow *window, int key, [[maybe_unused]] int scancode, int action, [[maybe_unused]] int mods)
 {
-    auto* self = static_cast<Glfw*>(glfwGetWindowUserPointer(window));
+    auto* self = static_cast<Glfw *>(glfwGetWindowUserPointer(window));
     if(action == GLFW_PRESS)
         self->keys.press(key);
     else if(action == GLFW_RELEASE)
@@ -30,12 +30,12 @@ void Glfw::keyCallback(GLFWwindow *window, int key, [[maybe_unused]] int scancod
 
 void Glfw::resizeCallback(GLFWwindow *window, [[maybe_unused]] int width, [[maybe_unused]] int height)
 {
-    auto* self = static_cast<Glfw*>(glfwGetWindowUserPointer(window));
+    auto* self = static_cast<Glfw *>(glfwGetWindowUserPointer(window));
     self->setResized();
 }
 
 Glfw::Glfw(const Parameters &parameters) :
-    Window(parameters)
+    Window()
 {
     glfwInit();
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);

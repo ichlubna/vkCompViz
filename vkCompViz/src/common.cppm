@@ -10,6 +10,6 @@ export constexpr bool DEBUG =
 export class Resolution
 {
     public:
-    unsigned int width;
-    unsigned int height;
+        unsigned int width;
+        unsigned int height;
 };

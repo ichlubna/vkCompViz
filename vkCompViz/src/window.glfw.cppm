@@ -21,8 +21,14 @@ class Glfw : public Window
         }
         [[nodiscard]] bool quit() const override;
         [[nodiscard]] Resolution resolution() const override;
-        void setResized() {wasResized = true;}
-        bool resized() const override {return wasResized;} 
+        void setResized()
+        {
+            wasResized = true;
+        }
+        bool resized() const override
+        {
+            return wasResized;
+        }
         static void keyCallback(GLFWwindow *window, int key, [[maybe_unused]] int scancode, int action, [[maybe_unused]] int mods);
         static void resizeCallback(GLFWwindow *window, [[maybe_unused]] int width, [[maybe_unused]] int height);
         ~Glfw();

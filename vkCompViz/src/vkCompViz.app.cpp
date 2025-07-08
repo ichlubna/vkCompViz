@@ -20,7 +20,7 @@ void App::useWindow(Window::Parameters const &windowParameters)
     while(position != std::string::npos)
     {
         result.push_back(input.substr(0, position));
-        input.erase(0, position+1);
+        input.erase(0, position + 1);
         position = input.find(delimiter);
         if(position == std::string::npos)
             result.push_back(input);
@@ -43,7 +43,7 @@ void App::ParameterParser::read()
     parametersMap.clear();
     std::string input;
     std::getline(std::cin, input);
-    
+
     if(!lastName.empty())
     {
         bool singleValue = true;
@@ -53,7 +53,7 @@ void App::ParameterParser::read()
         }
         catch(...)
         {
-           singleValue = false; 
+            singleValue = false;
         }
         if(singleValue)
         {
@@ -80,10 +80,8 @@ void App::ParameterParser::read()
         lastName.clear();
 }
 
-void App::run(ComputeParameters const &computeParameters)
+void App::windowInitParams()
 {
-    shader = std::make_unique<Shader::SlangFactory>();
-    Gpu::Vulkan::VulkanInitParams vulkanInitParams;
     if(window)
     {
         vulkanInitParams.requiredExtensions = window->requiredExtensions();
@@ -94,17 +92,24 @@ void App::run(ComputeParameters const &computeParameters)
         vulkanInitParams.shaders.vertex = shader->loadFromFile("fullScreenVS");
         vulkanInitParams.shaders.fragment = shader->loadFromFile("splitScreenFS");
     }
-    //for and pass shaders, input, output and uniforms to vulkan
-    for (auto &computeShader : computeParameters.computeShaders)
+}
+
+void App::initComputeShaders(ComputeParameters const &computeParameters)
+{
+    for(auto &computeShader : computeParameters.computeShaders)
         vulkanInitParams.shaders.compute.push_back(shader->loadFromFile(computeShader));
-    std::vector<std::shared_ptr<Loader::Image>> inputTextures;
-    for (auto &texture : computeParameters.textures.input)        
+}
+
+void App::initTextures(ComputeParameters const &computeParameters)
+{
+    std::vector<std::shared_ptr<Loader::Image >> inputTextures;
+    for(auto &texture : computeParameters.textures.input)
     {
         inputTextures.push_back(std::make_shared<Loader::ImageFfmpeg>(texture));
         vulkanInitParams.textures.input.push_back(inputTextures.back());
     }
 
-    for (auto &texture : computeParameters.textures.output)        
+    for(auto &texture : computeParameters.textures.output)
     {
         std::size_t width = texture.resolution.width;
         std::size_t height = texture.resolution.height;
@@ -124,9 +129,16 @@ void App::run(ComputeParameters const &computeParameters)
         }
         vulkanInitParams.textures.output.push_back(std::make_shared<Loader::ImageFfmpeg>(width, height, 0, format, texture.path, nullptr));
     }
-    gpu = std::make_unique<Gpu::Vulkan>(vulkanInitParams);    
-    for (auto &uniform : computeParameters.uniforms)
+}
+
+void App::initUniforms(ComputeParameters const &computeParameters) const
+{
+    for(auto &uniform : computeParameters.uniforms)
         gpu->updateUniform(uniform.first, uniform.second);
+}
+
+void App::mainLoop()
+{
     if(window)
     {
         ParameterParser parameters;
@@ -142,11 +154,22 @@ void App::run(ComputeParameters const &computeParameters)
             {
                 parameters.read();
                 auto params = parameters.get();
-                for (auto &p : params)
+                for(auto &p : params)
                     gpu->updateUniform(p.first, p.second);
             }
         }
     }
+}
+
+void App::run(ComputeParameters const &computeParameters)
+{
+    shader = std::make_unique<Shader::SlangFactory>();
+    windowInitParams();
+    initComputeShaders(computeParameters);
+    initTextures(computeParameters);
+    gpu = std::make_unique<Gpu::Vulkan>(vulkanInitParams);
+    initUniforms(computeParameters);
+    mainLoop();
 }
 
 App::~App()

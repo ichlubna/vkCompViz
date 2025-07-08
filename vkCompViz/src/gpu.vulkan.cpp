@@ -1,6 +1,6 @@
 module;
 #include <vulkan/vulkan.hpp>
-#define VMA_VULKAN_VERSION 1002000 
+#define VMA_VULKAN_VERSION 1002000
 #define VMA_IMPLEMENTATION
 #include <vk_mem_alloc.h>
 module gpu;
@@ -47,11 +47,11 @@ bool areVectorsSame(const std::vector<T> &a, const std::vector<T> &b)
 
 std::vector<std::string> Vulkan::VulkanInitParams::Shaders::uniformNames() const
 {
-    if (compute.size() == 0)
+    if(compute.size() == 0)
         return {};
-    
-    for (size_t i = 1; i < compute.size(); i++)
-        if (!areVectorsSame(compute[0].uniformNames, compute[i].uniformNames))
+
+    for(size_t i = 1; i < compute.size(); i++)
+        if(!areVectorsSame(compute[0].uniformNames, compute[i].uniformNames))
             throw std::runtime_error("The uniform buffer does not contain the same member variables in all compute shaders");
     return compute[0].uniformNames;
 }
@@ -59,7 +59,7 @@ std::vector<std::string> Vulkan::VulkanInitParams::Shaders::uniformNames() const
 size_t Vulkan::VulkanInitParams::Shaders::uniformBufferSize() const
 {
     size_t size = 0;
-    for (auto& computeShader : compute)
+    for(auto& computeShader : compute)
         size = std::max(computeShader.uniformBufferSize, size);
     return size;
 }
@@ -74,7 +74,7 @@ vk::ApplicationInfo &Vulkan::CreateInfo::application()
     return applicationInfo;
 }
 
-std::vector<const char*> &Vulkan::CreateInfo::allInstanceExtensions()
+std::vector<const char *> &Vulkan::CreateInfo::allInstanceExtensions()
 {
     allExtensions.clear();
     allExtensions.insert(allExtensions.end(), params.requiredExtensions.begin(), params.requiredExtensions.end());
@@ -99,23 +99,23 @@ vk::InstanceCreateInfo &Vulkan::CreateInfo::instance()
 class DeviceRating
 {
     public:
-    DeviceRating(const vk::raii::PhysicalDevice *testedDevice, const vk::SurfaceKHR &testedSurface, const std::vector<const char*> &requiredExtensions);
-    DeviceRating() = default;
-    void printInfo();
-    const vk::raii::PhysicalDevice *device;
-    std::string name;
-    std::string id;
-    std::set<std::string> uniqueCapabilities;
-    class QueueIndices
-    {
-        public:
-        std::size_t graphics{0};
-        std::size_t compute{0};
-        std::size_t present{0};
-    } queueIndex;
-    size_t score{0};
-    static bool extensionPresent(const std::vector<const char*> &requiredExtensions, const std::vector<vk::ExtensionProperties> &extensionProperties);
-    bool swapChainSupport(const vk::SurfaceKHR &testedSurface);
+        DeviceRating(const vk::raii::PhysicalDevice *testedDevice, const vk::SurfaceKHR &testedSurface, const std::vector<const char*> &requiredExtensions);
+        DeviceRating() = default;
+        void printInfo();
+        const vk::raii::PhysicalDevice *device;
+        std::string name;
+        std::string id;
+        std::set<std::string> uniqueCapabilities;
+        class QueueIndices
+        {
+            public:
+                std::size_t graphics{0};
+                std::size_t compute{0};
+                std::size_t present{0};
+        } queueIndex;
+        size_t score{0};
+        static bool extensionPresent(const std::vector<const char*> &requiredExtensions, const std::vector<vk::ExtensionProperties> &extensionProperties);
+        bool swapChainSupport(const vk::SurfaceKHR &testedSurface);
 };
 inline bool operator>(const DeviceRating& a, const DeviceRating& b)
 {
@@ -129,7 +129,7 @@ void DeviceRating::printInfo()
     for(const auto& capability : uniqueCapabilities)
         std::cout << capability << " ";
     std::cout << std::endl;
-    std::cout << "- ID: " << id << std::endl; 
+    std::cout << "- ID: " << id << std::endl;
 }
 
 bool DeviceRating::extensionPresent(const std::vector<const char*> &requiredExtensions, const std::vector<vk::ExtensionProperties> &extensionProperties)
@@ -156,7 +156,7 @@ bool DeviceRating::extensionPresent(const std::vector<const char*> &requiredExte
 bool DeviceRating::swapChainSupport(const vk::SurfaceKHR &testedSurface)
 {
     auto surfaceFormats = device->getSurfaceFormatsKHR(testedSurface);
-    auto surfacePresentModes = device->getSurfacePresentModesKHR(testedSurface); 
+    auto surfacePresentModes = device->getSurfacePresentModesKHR(testedSurface);
     return !surfaceFormats.empty() && !surfacePresentModes.empty();
 }
 
@@ -169,7 +169,7 @@ DeviceRating::DeviceRating(const vk::raii::PhysicalDevice *testedDevice, const v
         score++;
         uniqueCapabilities.insert("Discrete");
     }
- 
+
     const auto extensionProperties = device->enumerateDeviceExtensionProperties();
     if(extensionPresent(requiredExtensions, extensionProperties))
     {
@@ -182,7 +182,7 @@ DeviceRating::DeviceRating(const vk::raii::PhysicalDevice *testedDevice, const v
         }
     }
 
-    const auto queueFamilyProperties = device->getQueueFamilyProperties(); 
+    const auto queueFamilyProperties = device->getQueueFamilyProperties();
     for(auto [queueFamilyID, queueFamily] : queueFamilyProperties | std::ranges::views::enumerate)
     {
         if(queueFamily.queueFlags & vk::QueueFlagBits::eGraphics)
@@ -205,7 +205,7 @@ DeviceRating::DeviceRating(const vk::raii::PhysicalDevice *testedDevice, const v
         }
     }
 
-    for(size_t i=0; i<VK_UUID_SIZE; i++)
+    for(size_t i = 0; i < VK_UUID_SIZE; i++)
         id += std::to_string(properties.pipelineCacheUUID[i]);
 }
 
@@ -269,23 +269,23 @@ vk::DeviceCreateInfo &Vulkan::CreateInfo::device()
 
 vk::SurfaceFormatKHR swapChainSurfaceFormat(const std::vector<vk::SurfaceFormatKHR> &availableFormats)
 {
-    for (const auto& availableFormat : availableFormats)
-    if (availableFormat.format == vk::Format::eB8G8R8A8Srgb && availableFormat.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear) 
-        return availableFormat; 
+    for(const auto& availableFormat : availableFormats)
+        if(availableFormat.format == vk::Format::eB8G8R8A8Srgb && availableFormat.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear)
+            return availableFormat;
     return availableFormats.front();
 }
 
 vk::PresentModeKHR swapChainPresentMode(const std::vector<vk::PresentModeKHR> &availablePresentModes)
 {
-    for (const auto& availablePresentMode : availablePresentModes)
-    if (availablePresentMode == vk::PresentModeKHR::eMailbox) 
-        return availablePresentMode; 
+    for(const auto& availablePresentMode : availablePresentModes)
+        if(availablePresentMode == vk::PresentModeKHR::eMailbox)
+            return availablePresentMode;
     return vk::PresentModeKHR::eFifo;
 }
 
 vk::Extent2D swapChainExtent(const vk::SurfaceCapabilitiesKHR &capabilities, Resolution resolution)
 {
-    if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max()) 
+    if(capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max())
         return capabilities.currentExtent;
     vk::Extent2D extent = {resolution.width, resolution.height};
     extent.width = std::clamp(extent.width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
@@ -317,7 +317,7 @@ vk::SwapchainCreateInfoKHR &Vulkan::CreateInfo::swapChain()
     .setPresentMode(presentMode)
     .setClipped(true)
     .setOldSwapchain(nullptr);
-    return swapChainCreateInfo; 
+    return swapChainCreateInfo;
 }
 
 Vulkan::SwapChain::SwapChain(vk::raii::Device &device, const vk::SwapchainCreateInfoKHR &swapChainCreateInfo) : swapChain{device, swapChainCreateInfo}
@@ -325,21 +325,21 @@ Vulkan::SwapChain::SwapChain(vk::raii::Device &device, const vk::SwapchainCreate
     extent = swapChainCreateInfo.imageExtent;
     imageFormat = swapChainCreateInfo.imageFormat;
 }
-               
+
 vk::ShaderModuleCreateInfo &Vulkan::CreateInfo::shaderModule(std::vector<uint32_t> &code)
-{ 
+{
     shaderModuleCreateInfos.emplace_back()
-    .setCodeSize(code.size() * sizeof(uint32_t))
-    .setPCode(code.data());
+                           .setCodeSize(code.size() * sizeof(uint32_t))
+                           .setPCode(code.data());
     return shaderModuleCreateInfos.back();
 }
 
 vk::PipelineShaderStageCreateInfo &Vulkan::CreateInfo::pipelineShaderStage(vk::raii::ShaderModule &shaderModule, vk::ShaderStageFlagBits stage)
 {
     pipelineShaderStageCreateInfos.emplace_back()
-    .setStage(vk::ShaderStageFlagBits(stage))
-    .setModule(shaderModule)
-    .setPName("main");
+                                  .setStage(vk::ShaderStageFlagBits(stage))
+                                  .setModule(shaderModule)
+                                  .setPName("main");
     return pipelineShaderStageCreateInfos.back();
 }
 
@@ -410,7 +410,7 @@ vk::PipelineMultisampleStateCreateInfo &Vulkan::CreateInfo::multisample()
     .setPSampleMask(nullptr)
     .setAlphaToCoverageEnable(false)
     .setAlphaToOneEnable(false);
-    return multisampleCreateInfo; 
+    return multisampleCreateInfo;
 }
 
 vk::PipelineColorBlendAttachmentState &Vulkan::CreateInfo::colorBlendAttachment()
@@ -424,9 +424,9 @@ vk::PipelineColorBlendAttachmentState &Vulkan::CreateInfo::colorBlendAttachment(
     .setDstAlphaBlendFactor(vk::BlendFactor::eZero)
     .setAlphaBlendOp(vk::BlendOp::eAdd)
     .setColorWriteMask(vk::ColorComponentFlagBits::eR
-                        | vk::ColorComponentFlagBits::eG
-                        | vk::ColorComponentFlagBits::eB
-                        | vk::ColorComponentFlagBits::eA);
+                       | vk::ColorComponentFlagBits::eG
+                       | vk::ColorComponentFlagBits::eB
+                       | vk::ColorComponentFlagBits::eA);
     return colorBlendAttachmentState;
 }
 
@@ -566,7 +566,7 @@ vk::FenceCreateInfo &Vulkan::CreateInfo::fence()
     .setFlags(vk::FenceCreateFlagBits::eSignaled);
     return fenceCreateInfo;
 }
-                
+
 vk::DescriptorSetLayoutCreateInfo &Vulkan::CreateInfo::descriptorSetLayout()
 {
     binding
@@ -607,7 +607,7 @@ void Vulkan::recordCommandBuffer(SwapChain::Frame &frame, SwapChain::InFlight &i
     buffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipelines.graphics.layout, 0, {inFlight.descriptorSet.value()}, {});
     buffer.draw(3, 1, 0, 0);
     buffer.endRenderPass();
-    buffer.end();       
+    buffer.end();
 }
 
 void Vulkan::graphicsSubmit(size_t swapChainFrameID)
@@ -624,7 +624,7 @@ void Vulkan::graphicsSubmit(size_t swapChainFrameID)
     .setWaitSemaphores({*inFlight.semaphores.imageAvailable.value()})
     .setWaitDstStageMask(waitStage);
 
-    queues.graphics.submit({submitInfo}, *inFlight.fences.inFlight); 
+    queues.graphics.submit({submitInfo}, *inFlight.fences.inFlight);
 }
 
 void Vulkan::updateUniformBuffer(SwapChain::InFlight &inFlight)
@@ -633,29 +633,29 @@ void Vulkan::updateUniformBuffer(SwapChain::InFlight &inFlight)
 }
 
 void Vulkan::draw()
-{     
+{
     size_t timeout = std::numeric_limits<uint64_t>::max();
     auto &inFlight = swapChain.currentInFlight();
     while(device.waitForFences({inFlight.fences.inFlight.value()}, VK_TRUE, timeout) == vk::Result::eTimeout);
- 
-    uint32_t swapChainFrameID; 
+
+    uint32_t swapChainFrameID;
     vk::Result result;
     try
     {
         std::tie(result, swapChainFrameID) = swapChain.swapChain.acquireNextImage(timeout, *inFlight.semaphores.imageAvailable);
     }
-    catch (const vk::SystemError& err)
+    catch(const vk::SystemError& err)
     {
-        if (err.code() == vk::Result::eErrorOutOfDateKHR)
+        if(err.code() == vk::Result::eErrorOutOfDateKHR)
         {
             recreateSwapChain();
             return;
         }
         else
-            throw;        
+            throw;
     }
     updateUniformBuffer(inFlight);
-    graphicsSubmit(swapChainFrameID); 
+    graphicsSubmit(swapChainFrameID);
 
     vk::PresentInfoKHR presentInfo;
     presentInfo
@@ -666,17 +666,17 @@ void Vulkan::draw()
     {
         result = queues.present.presentKHR(presentInfo);
     }
-    catch (const vk::SystemError& err)
+    catch(const vk::SystemError& err)
     {
-        if (err.code() == vk::Result::eErrorOutOfDateKHR || err.code() == vk::Result::eSuboptimalKHR)
+        if(err.code() == vk::Result::eErrorOutOfDateKHR || err.code() == vk::Result::eSuboptimalKHR)
         {
             recreateSwapChain();
             resizeRequired = false;
         }
         else
-            throw;        
+            throw;
     }
-    if (resizeRequired) 
+    if(resizeRequired)
     {
         recreateSwapChain();
         resizeRequired = false;
@@ -687,13 +687,13 @@ void Vulkan::draw()
 vk::ImageViewCreateInfo &Vulkan::CreateInfo::imageView(vk::Format imageFormat)
 {
     imageViewCreateInfo
-        .setViewType(vk::ImageViewType::e2D)
-        .setFormat(imageFormat)
-        .setComponents({vk::ComponentSwizzle::eIdentity,
-                        vk::ComponentSwizzle::eIdentity,
-                        vk::ComponentSwizzle::eIdentity,
-                        vk::ComponentSwizzle::eIdentity})
-        .setSubresourceRange({vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1});
+    .setViewType(vk::ImageViewType::e2D)
+    .setFormat(imageFormat)
+    .setComponents({vk::ComponentSwizzle::eIdentity,
+                    vk::ComponentSwizzle::eIdentity,
+                    vk::ComponentSwizzle::eIdentity,
+                    vk::ComponentSwizzle::eIdentity})
+    .setSubresourceRange({vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1});
     return imageViewCreateInfo;
 }
 
@@ -719,8 +719,8 @@ std::unique_ptr<Vulkan::Buffer> Vulkan::Memory::buffer(vk::BufferUsageFlags usag
     buffer->allocator = &allocator;
     vk::BufferCreateInfo bufferInfo;
     bufferInfo
-        .setUsage(usage | vk::BufferUsageFlagBits::eTransferDst)
-        .setSize(size);
+    .setUsage(usage | vk::BufferUsageFlagBits::eTransferDst)
+    .setSize(size);
     VmaAllocationCreateInfo allocInfo = {};
     allocInfo.usage = VMA_MEMORY_USAGE_AUTO;
     allocInfo.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT;
@@ -734,36 +734,36 @@ vk::DescriptorPoolCreateInfo &Vulkan::CreateInfo::descriptorPool(size_t count)
     descriptorPoolSizes.clear();
     descriptorPoolSizes.push_back({vk::DescriptorType::eUniformBuffer, static_cast<uint32_t>(count)});
     descriptorPoolCreateInfo
-        .setMaxSets(count)
-        .setFlags(vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet)
-        .setPoolSizes(descriptorPoolSizes);
+    .setMaxSets(count)
+    .setFlags(vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet)
+    .setPoolSizes(descriptorPoolSizes);
     return descriptorPoolCreateInfo;
 }
 
 vk::DescriptorSetAllocateInfo &Vulkan::CreateInfo::descriptorSet(vk::raii::DescriptorPool &descriptorPool, size_t count)
 {
     descriptorSetLayouts.clear();
-    for (size_t i = 0; i < count; i++)
+    for(size_t i = 0; i < count; i++)
         descriptorSetLayouts.push_back(vulkan.descriptorSetLayout);
     descriptorSetAllocateInfo
-        .setDescriptorPool(descriptorPool)
-        .setSetLayouts(descriptorSetLayouts);
+    .setDescriptorPool(descriptorPool)
+    .setSetLayouts(descriptorSetLayouts);
     return descriptorSetAllocateInfo;
 }
 
 void Vulkan::createSwapChainFrames()
 {
     auto images = swapChain.swapChain.getImages();
-    if (swapChain.inFlightCount > images.size())
+    if(swapChain.inFlightCount > images.size())
         throw std::runtime_error("Requested inflight count (N-buffering) is greater than number of swapchain images");
-    if (swapChain.inFlightCount == 0)
+    if(swapChain.inFlightCount == 0)
         swapChain.inFlightCount = images.size();
     vk::raii::CommandBuffers commandBuffers(device, createInfo.commandBuffer(commandPools.graphics, swapChain.inFlightCount));
     swapChain.descriptorPool.emplace(device, createInfo.descriptorPool(swapChain.inFlightCount));
     vk::raii::DescriptorSets descriptorSets(device, createInfo.descriptorSet(swapChain.descriptorPool.value(), swapChain.inFlightCount));
     swapChain.frames.clear();
     size_t id = 0;
-    for (auto& image : images)
+    for(auto& image : images)
     {
         swapChain.frames.emplace_back();
         createInfo.createFrameBuffer(swapChain.frames.back(), image);
@@ -772,20 +772,20 @@ void Vulkan::createSwapChainFrames()
         createInfo.createFrameSync(swapChain.inFlight.back());
         swapChain.inFlight.back().uniformBuffer = memory.buffer(vk::BufferUsageFlagBits::eUniformBuffer, currentUniformBufferData.size());
         swapChain.inFlight.back().descriptorSet.emplace(std::move(descriptorSets[id]));
-        
+
         vk::DescriptorBufferInfo bufferInfo;
         bufferInfo
-            .setBuffer(swapChain.inFlight.back().uniformBuffer->buffer)
-            .setOffset(0)
-            .setRange(VK_WHOLE_SIZE);
+        .setBuffer(swapChain.inFlight.back().uniformBuffer->buffer)
+        .setOffset(0)
+        .setRange(VK_WHOLE_SIZE);
         vk::WriteDescriptorSet writeDescriptorSet;
         writeDescriptorSet
-            .setDstSet(*swapChain.inFlight.back().descriptorSet.value())
-            .setDstBinding(0)
-            .setDstArrayElement(0)
-            .setDescriptorType(vk::DescriptorType::eUniformBuffer)
-            .setDescriptorCount(1)
-            .setBufferInfo(bufferInfo);
+        .setDstSet(*swapChain.inFlight.back().descriptorSet.value())
+        .setDstBinding(0)
+        .setDstArrayElement(0)
+        .setDescriptorType(vk::DescriptorType::eUniformBuffer)
+        .setDescriptorCount(1)
+        .setBufferInfo(bufferInfo);
         device.updateDescriptorSets({writeDescriptorSet}, {});
         id++;
     }
@@ -826,14 +826,14 @@ void Vulkan::updateUniformBuffer(std::vector<uint32_t> buffer)
 void Vulkan::updateUniform(std::string name, float value)
 {
     int index = -1;
-    for (size_t i = 0; i < uniformNames.size(); i++)
-        if (uniformNames[i] == name)
+    for(size_t i = 0; i < uniformNames.size(); i++)
+        if(uniformNames[i] == name)
         {
             index = i;
             break;
         }
-    if (index > -1)
-        currentUniformBufferData[index] = *reinterpret_cast<uint32_t*>(&value);
+    if(index > -1)
+        currentUniformBufferData[index] = *reinterpret_cast<uint32_t * >(&value);
     else
         std::cerr << "Could not find uniform " << name << std::endl;
 }
