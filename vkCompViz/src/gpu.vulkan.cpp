@@ -34,11 +34,34 @@ Vulkan::Vulkan(VulkanInitParams params) :
     init();
 }
 
+template<typename T>
+bool areVectorsSame(const std::vector<T> &a, const std::vector<T> &b)
+{
+    if(a.size() != b.size())
+        return false;
+    for(size_t i = 0; i < a.size(); i++)
+        if(a[i] != b[i])
+            return false;
+    return true;
+}
+
 std::vector<std::string> Vulkan::VulkanInitParams::Shaders::uniformNames() const
 {
-    //TODO check if all names are the same in all compute shaders
-    // throw std::runtime_error("The uniform buffer does not contain the same member variables in all compute shaders");
-    return fragment.uniformNames;
+    if (compute.size() == 0)
+        return {};
+    
+    for (size_t i = 1; i < compute.size(); i++)
+        if (!areVectorsSame(compute[0].uniformNames, compute[i].uniformNames))
+            throw std::runtime_error("The uniform buffer does not contain the same member variables in all compute shaders");
+    return compute[0].uniformNames;
+}
+
+size_t Vulkan::VulkanInitParams::Shaders::uniformBufferSize() const
+{
+    size_t size = 0;
+    for (auto& computeShader : compute)
+        size = std::max(computeShader.uniformBufferSize, size);
+    return size;
 }
 
 vk::ApplicationInfo &Vulkan::CreateInfo::application()

@@ -95,8 +95,38 @@ void App::run(ComputeParameters const &computeParameters)
         vulkanInitParams.shaders.fragment = shader->loadFromFile("splitScreenFS");
     }
     //for and pass shaders, input, output and uniforms to vulkan
-    //std::shared_ptr<Loader::Image> image = std::make_shared<Loader::ImageFfmpeg>("../resources/texture.png");
+    for (auto &computeShader : computeParameters.computeShaders)
+        vulkanInitParams.shaders.compute.push_back(shader->loadFromFile(computeShader));
+    std::vector<std::shared_ptr<Loader::Image>> inputTextures;
+    for (auto &texture : computeParameters.textures.input)        
+    {
+        inputTextures.push_back(std::make_shared<Loader::ImageFfmpeg>(texture));
+        vulkanInitParams.textures.input.push_back(inputTextures.back());
+    }
+
+    for (auto &texture : computeParameters.textures.output)        
+    {
+        std::size_t width = texture.resolution.width;
+        std::size_t height = texture.resolution.height;
+        if(texture.sameResolutionAsInputID != -1)
+        {
+            auto input = inputTextures[texture.sameResolutionAsInputID];
+            width = input->width();
+            height = input->height();
+        }
+        Loader::Image::Format format = Loader::Image::Format::RGBA_8_INT;
+        if(texture.floatFormat)
+            format = Loader::Image::Format::RGBA_32_FLOAT;
+        if(texture.sameFormatAsInputID != -1)
+        {
+            auto input = inputTextures[texture.sameFormatAsInputID];
+            format = input->imageFormat();
+        }
+        vulkanInitParams.textures.output.push_back(std::make_shared<Loader::ImageFfmpeg>(width, height, 0, format, texture.path, nullptr));
+    }
     gpu = std::make_unique<Gpu::Vulkan>(vulkanInitParams);    
+    for (auto &uniform : computeParameters.uniforms)
+        gpu->updateUniform(uniform.first, uniform.second);
     if(window)
     {
         ParameterParser parameters;
