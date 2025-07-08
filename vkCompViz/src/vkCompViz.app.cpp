@@ -15,24 +15,26 @@ void App::useWindow(Window::Parameters const &windowParameters)
 
 [[nodiscard]] std::vector<std::string> split(std::string input, char delimiter)
 {
-    input += delimiter;
     std::vector<std::string> result;
-    size_t position = 0;
-    while(position < input.size())
+    size_t position = input.find(delimiter);
+    if(position == std::string::npos)
+        result.push_back(input);
+    while(position != std::string::npos)
     {
-        position = input.find(delimiter);
-        auto token = input.substr(0, position);
-        result.push_back(token);
+        result.push_back(input.substr(0, position));
         input.erase(0, position+1);
+        position = input.find(delimiter);
+        if(position == std::string::npos)
+            result.push_back(input);
     }
     return result;
 }
 
-float App::ParameterParser::get(std::string name, float defaultValue)
+float App::ParameterParser::get(std::string name, float defaultValue) const
 {
     if(parametersMap.find(name) == parametersMap.end())
         return defaultValue;
-    return parametersMap[name];
+    return parametersMap.at(name);
 }
 
 void App::ParameterParser::read()
@@ -91,15 +93,12 @@ void App::run(ComputeParameters const &computeParameters)
         vulkanInitParams.surface = std::bind(&Window::Window::getSurface, window.get(), std::placeholders::_1);
         vulkanInitParams.currentResolution = std::bind(&Window::Window::resolution, window.get());
         vulkanInitParams.resolution = window->resolution();
-        vulkanInitParams.shaderCodes.vertex = shader->loadFromFile("fullScreenVS");
-        vulkanInitParams.shaderCodes.fragment = shader->loadFromFile("splitScreenFS");
+        vulkanInitParams.shaders.vertex = shader->loadFromFile("fullScreenVS");
+        vulkanInitParams.shaders.fragment = shader->loadFromFile("splitScreenFS");
         
         std::shared_ptr<Loader::Image> image = std::make_shared<Loader::ImageFfmpeg>("../resources/texture.png");
     }
     gpu = std::make_unique<Gpu::Vulkan>(vulkanInitParams);
-
-    std::vector<uint32_t> uniforms(1, 0);
-    float test = 0.0f;
     ParameterParser parameters;
 
     if(window)
@@ -109,15 +108,15 @@ void App::run(ComputeParameters const &computeParameters)
         {
             window->run();
             end = window->key("Escape") || window->quit();
-            test+= 0.001f; uniforms[0] = *reinterpret_cast<uint32_t*>(&test);
-            gpu->updateUniformBuffer(uniforms);
             gpu->draw();
             if(window->resized())
                 gpu->resize();
             if(window->key("space"))
             {
                 parameters.read();
-                test = parameters.get("a", test);
+                auto params = parameters.get();
+                for (auto &p : params)
+                    gpu->updateUniform(p.first, p.second);
             }
         }
     }

@@ -1,5 +1,4 @@
 import vertexFragmentCommons;
-
 struct Parameters
 {
     float test;

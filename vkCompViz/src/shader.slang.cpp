@@ -40,8 +40,9 @@ Slang::ComPtr<slang::ISession> SlangFactory::createSession() const
     return session;
 }
 
-std::vector<uint32_t> SlangFactory::loadFromFile(std::string shaderName) const
+Shader::Shader::Info SlangFactory::loadFromFile(std::string shaderName) const
 {
+    Shader::Shader::Info info;
     auto session = createSession();
     Slang::ComPtr<slang::IBlob> diagnostics;
     slang::IModule *shaderModule = session->loadModule(shaderName.c_str(), diagnostics.writeRef());
@@ -53,7 +54,7 @@ std::vector<uint32_t> SlangFactory::loadFromFile(std::string shaderName) const
     return compile(shaderModule, session);
 }
 
-std::vector<uint32_t> SlangFactory::loadFromString(std::string code) const
+Shader::Shader::Info SlangFactory::loadFromString(std::string code) const
 {
     auto session = createSession();
     Slang::ComPtr<slang::IBlob> diagnostics;
@@ -66,8 +67,9 @@ std::vector<uint32_t> SlangFactory::loadFromString(std::string code) const
     return compile(shaderModule, session);
 }
 
-std::vector<uint32_t> SlangFactory::compile(slang::IModule *shaderModule, Slang::ComPtr<slang::ISession> session) const
+Shader::Shader::Info SlangFactory::compile(slang::IModule *shaderModule, Slang::ComPtr<slang::ISession> session) const
 {
+    Shader::Shader::Info info;
     Slang::ComPtr<slang::IEntryPoint> entryPoint;
     shaderModule->findEntryPointByName("main", entryPoint.writeRef());
     slang::IComponentType* components[] = { shaderModule, entryPoint };
@@ -79,29 +81,28 @@ std::vector<uint32_t> SlangFactory::compile(slang::IModule *shaderModule, Slang:
     std::vector<uint32_t> code(data, data+spirvCode->getBufferSize()/sizeof(uint32_t));
     if(code.empty())
         throw std::runtime_error("Failed to compile shader");
+    info.code = std::move(code);
 
     auto programLayout = program->getLayout();
-    auto globalLayout = programLayout->getGlobalParamsVarLayout();
-    auto typeLayout = globalLayout->getTypeLayout();
-    
-    //if(typeLayout->getKind() == slang::TypeReflection::Kind::Struct)
+    for (size_t paramID = 0 ; paramID < programLayout->getParameterCount(); paramID++)
     {
-            int paramCount = typeLayout->getFieldCount();
-            std::cerr << "Count: " << paramCount << std::endl;
-            for (int i = 0; i < paramCount; i++)
-            {
-                auto param = typeLayout->getFieldByIndex(i);
-                auto paramTypeLayout = param->getTypeLayout();
-                std::cerr << "Name: " << param->getName() << std::endl;
-                int usedLayoutUnitCount = paramTypeLayout->getCategoryCount();
-                for (int i = 0; i < usedLayoutUnitCount; ++i)
-                {
-                    auto layoutUnit = paramTypeLayout->getCategoryByIndex(i);
-                    std::cerr << "Size: " << paramTypeLayout->getSize(layoutUnit) << std::endl;
-                }
-            }
+        auto varLayout = programLayout->getParameterByIndex(paramID);
+        auto paramTypeLayout = varLayout->getTypeLayout();
+        size_t fieldCount = paramTypeLayout->getFieldCount();
+        for (size_t fieldID = 0; fieldID < fieldCount; fieldID++)
+        {
+            auto fieldLayout = paramTypeLayout->getFieldByIndex(fieldID);
+            info.uniformNames.push_back(fieldLayout->getName());
+        }
+        int usedLayoutUnitCount = paramTypeLayout->getCategoryCount();
+        for (int unitID = 0; unitID < usedLayoutUnitCount; unitID++)
+        {
+            auto layoutUnit = paramTypeLayout->getCategoryByIndex(unitID);
+            info.uniformBufferSize = std::max(paramTypeLayout->getSize(layoutUnit), info.uniformBufferSize);
+        }
+            
     }
-    return code;
+    return info;
 }
 
 SlangFactory::~SlangFactory()

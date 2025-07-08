@@ -22,15 +22,23 @@ Vulkan::Vulkan(VulkanInitParams params) :
                     .compute{device, createInfo.commandPool(createInfo.computeQueueID())}},
     descriptorSetLayout{device, createInfo.descriptorSetLayout()},
     swapChain{device, createInfo.swapChain()},
-    currentUniformBufferData{static_cast<std::uint32_t>(params.shaderCodes.uniformBufferSize), 0},
-    shaders{.vertex{device, createInfo.shaderModule(params.shaderCodes.vertex)},
-            .fragment{device, createInfo.shaderModule(params.shaderCodes.fragment)},
+    currentUniformBufferData{static_cast<std::uint32_t>(params.shaders.uniformBufferUint32Count()), 0},
+    uniformNames{params.shaders.uniformNames()},
+    shaders{.vertex{device, createInfo.shaderModule(params.shaders.vertex.code)},
+            .fragment{device, createInfo.shaderModule(params.shaders.fragment.code)},
             .compute{}},
     pipelines{  .graphics{  .layout{device, createInfo.pipelineLayout()},
                             .renderPass{device, createInfo.renderPass()},
                             .pipeline{device, nullptr, createInfo.graphicsPipeline()}}}
 {
     init();
+}
+
+std::vector<std::string> Vulkan::VulkanInitParams::Shaders::uniformNames() const
+{
+    //TODO check if all names are the same in all compute shaders
+    // throw std::runtime_error("The uniform buffer does not contain the same member variables in all compute shaders");
+    return fragment.uniformNames;
 }
 
 vk::ApplicationInfo &Vulkan::CreateInfo::application()
@@ -801,6 +809,21 @@ void Vulkan::setInFlightFrames(std::size_t count)
 void Vulkan::updateUniformBuffer(std::vector<uint32_t> buffer)
 {
     std::copy(buffer.begin(), buffer.end(), currentUniformBufferData.begin());
+}
+
+void Vulkan::updateUniform(std::string name, float value)
+{
+    int index = -1;
+    for (size_t i = 0; i < uniformNames.size(); i++)
+        if (uniformNames[i] == name)
+        {
+            index = i;
+            break;
+        }
+    if (index > -1)
+        currentUniformBufferData[index] = *reinterpret_cast<uint32_t*>(&value);
+    else
+        std::cerr << "Could not find uniform " << name << std::endl;
 }
 
 void Vulkan::compute()

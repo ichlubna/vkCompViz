@@ -6,6 +6,7 @@ export import : interface;
 import std;
 import vulkan_hpp;
 import common;
+import shader;
 
 export namespace Gpu
 {
@@ -19,13 +20,15 @@ class Vulkan : public Gpu
                 std::function<std::uintptr_t(std::uintptr_t)> surface;
                 std::function<Resolution()> currentResolution;
                 Resolution resolution;
-                class ShaderCodes
+                class Shaders
                 {
                     public:
-                        std::vector<std::uint32_t> vertex;
-                        std::vector<std::uint32_t> fragment;
-                        size_t uniformBufferSize{4};
-                } shaderCodes;
+                        Shader::Shader::Info vertex;
+                        Shader::Shader::Info fragment;
+                        [[nodiscard]] size_t uniformBufferSize() const { return std::max(vertex.uniformBufferSize, fragment.uniformBufferSize); };
+                        [[nodiscard]] size_t uniformBufferUint32Count() const { return std::ceil(uniformBufferSize()/sizeof(uint32_t)); };
+                        [[nodiscard]] std::vector<std::string> uniformNames() const;
+                } shaders;
         };
         Vulkan(VulkanInitParams params);
         void draw() override;
@@ -35,6 +38,7 @@ class Vulkan : public Gpu
         std::size_t addInputTexture(std::shared_ptr<Loader::Image> image) override;
         std::size_t addOutputTexture(Loader::Image::ImageFormat imageFormat) override;
         void updateUniformBuffer(std::vector<uint32_t> buffer) override;
+        void updateUniform(std::string name, float value) override;
         ~Vulkan();
 
     private:
@@ -226,6 +230,7 @@ class Vulkan : public Gpu
         SwapChain swapChain;
         std::optional<vk::raii::SwapchainKHR> oldSwapchain;
         std::vector<std::uint32_t> currentUniformBufferData;
+        std::vector<std::string> uniformNames;
         class Shaders
         {
             public:

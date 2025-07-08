@@ -29,7 +29,8 @@ class App
                 std::map<std::string, float> parametersMap;
             public:
                 void read();
-                float get(std::string name, float defaultValue = 0.0f);
+                [[nodiscard]] float get(std::string name, float defaultValue = 0.0f) const;
+                [[nodiscard]] const std::map<std::string, float> &get() const {return parametersMap;}
         }; 
 
         App();
