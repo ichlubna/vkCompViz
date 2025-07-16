@@ -762,6 +762,7 @@ std::unique_ptr<Vulkan::OneTimeCommand> Vulkan::oneTimeCommand()
     auto command = std::make_unique<OneTimeCommand>();
     vk::raii::CommandBuffers commandBuffers(device, createInfo.commandBuffer(commandPools.graphics, 1));
     command->buffer.emplace(std::move(commandBuffers[0]));
+    command->queue = &queues.graphics;
     
     vk::CommandBufferBeginInfo beginInfo{};
     beginInfo.flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit;
@@ -823,8 +824,7 @@ void Vulkan::transitionImageLayout(vk::Image image, vk::ImageLayout oldLayout, v
         srcStage = vk::PipelineStageFlagBits::eTransfer;
         dstStage = vk::PipelineStageFlagBits::eFragmentShader | vk::PipelineStageFlagBits::eComputeShader;
     }
-
-    buffer->command().pipelineBarrier(srcStage, dstStage, vk::DependencyFlags(), nullptr, nullptr, barrier);
+    buffer->command().pipelineBarrier(srcStage, dstStage, {}, nullptr, nullptr, barrier);
 }
 
 void Vulkan::copyBufferToImage(vk::Buffer inputBuffer, vk::Image image, size_t width, size_t height)

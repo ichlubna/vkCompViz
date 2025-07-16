@@ -300,9 +300,15 @@ class Vulkan : public Gpu
             public:
                 vk::raii::CommandBuffer &command() { return buffer.value(); }
                 std::optional<vk::raii::CommandBuffer> buffer;
+                vk::raii::Queue *queue;
                 ~OneTimeCommand()
                 {
-                        buffer.value().end();
+                    buffer.value().end();                        
+                    vk::SubmitInfo submitInfo;
+                    submitInfo
+                    .setCommandBuffers({*buffer.value()});
+                    queue->submit({submitInfo}, nullptr);
+                    queue->waitIdle();
                 }  
         };
         std::vector<Texture> inputTextures;
