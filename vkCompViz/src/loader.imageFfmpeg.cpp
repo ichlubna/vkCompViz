@@ -6,6 +6,18 @@ module loader;
 import std;
 using namespace Loader;
 
+size_t ImageFfmpeg::channels() const
+{
+    const AVPixFmtDescriptor *desc = av_pix_fmt_desc_get(static_cast<enum AVPixelFormat>(frame->format));
+    return desc->nb_components;
+}
+
+size_t ImageFfmpeg::channelSize() const
+{
+    const AVPixFmtDescriptor *desc = av_pix_fmt_desc_get(static_cast<enum AVPixelFormat>(frame->format));
+    return desc->comp[0].depth / 8;
+}
+
 AVFrame *frameFromFile(std::string path)
 {
     AVFormatContext *formatContext;
@@ -77,7 +89,10 @@ ImageFfmpeg::ImageFfmpeg(size_t width, size_t height, [[maybe_unused]] size_t st
     frame->width = width;
     frame->height = height;
     format = imageFormat;
-    // TODO convert to AV
+    if(format == Image::Format::RGBA_8_INT)
+        frame->format = AV_PIX_FMT_RGBA;
+    else
+        frame->format = AV_PIX_FMT_RGBAF32;
     path = outputPath;
     if(data)
     {

@@ -64,6 +64,23 @@ class Vulkan : public Gpu
                     vmaDestroyBuffer(*allocator, buffer, allocation);
                 }
         };
+        class Texture
+        {
+            public:
+                VkImage image;
+                /*
+                vk::raii::Image image;
+                vk::raii::DeviceMemory memory;
+                vk::raii::ImageView view;
+                vk::raii::Sampler sampler;
+                */
+                VmaAllocation allocation;
+                VmaAllocator *allocator;
+                ~Texture()
+                {
+                    vmaDestroyImage(*allocator, image, allocation);
+                }
+        };
         class SwapChain
         {
             public:
@@ -80,6 +97,8 @@ class Vulkan : public Gpu
                     public:
                         std::optional<vk::raii::CommandBuffer> commandBuffer;
                         std::unique_ptr<Buffer> uniformBuffer;
+                        std::optional<vk::raii::DescriptorSet> descriptorSet;
+                        std::vector<std::unique_ptr<Texture>> outputTextures;
                         class Sempahores
                         {
                             public:
@@ -91,7 +110,6 @@ class Vulkan : public Gpu
                             public:
                                 std::optional<vk::raii::Fence> inFlight;
                         } fences;
-                        std::optional<vk::raii::DescriptorSet> descriptorSet;
                 };
                 void nextInFlight()
                 {
@@ -153,11 +171,13 @@ class Vulkan : public Gpu
                 [[nodiscard]] vk::SemaphoreCreateInfo &semaphore();
                 [[nodiscard]] vk::FenceCreateInfo &fence();
                 [[nodiscard]] vk::ImageViewCreateInfo &imageView(vk::Format imageFormat);
+                [[nodiscard]] vk::ImageCreateInfo &image(vk::Format imageFormat, Resolution resolution);
                 [[nodiscard]] vk::DescriptorSetLayoutCreateInfo &descriptorSetLayout();
                 [[nodiscard]] vk::DescriptorPoolCreateInfo &descriptorPool(std::size_t count);
                 [[nodiscard]] vk::DescriptorSetAllocateInfo &descriptorSet(vk::raii::DescriptorPool &descriptorPool, std::size_t count);
                 void createFrameBuffer(Vulkan::SwapChain::Frame &frame, vk::Image image);
                 void createFrameSync(SwapChain::InFlight &frame);
+                [[nodiscard]] const std::vector<std::shared_ptr<Loader::Image>> &outputImages() const { return params.textures.output; }
 
             private:
                 Vulkan &vulkan;
@@ -185,6 +205,7 @@ class Vulkan : public Gpu
                 vk::SemaphoreCreateInfo semaphoreCreateInfo{};
                 vk::FenceCreateInfo fenceCreateInfo{};
                 vk::BufferCreateInfo bufferCreateInfo{};
+                vk::ImageCreateInfo imageCreateInfo{};
                 vk::AttachmentDescription colorAttachment{};
                 vk::AttachmentReference colorAttachmentReference{};
                 vk::SubpassDescription subpass{};
@@ -204,6 +225,7 @@ class Vulkan : public Gpu
                 std::vector<vk::ImageView> frameBufferAttachments;
                 std::vector<vk::DescriptorPoolSize> descriptorPoolSizes;
                 std::vector<vk::DescriptorSetLayout> descriptorSetLayouts;
+                std::vector<uint32_t> queueFamilyIndices;
                 [[nodiscard]] std::vector<const char *> &allInstanceExtensions();
                 std::vector<const char *> allExtensions;
                 inline static const std::vector<const char *> instanceExtensions{"VK_KHR_portability_enumeration"};
@@ -228,13 +250,16 @@ class Vulkan : public Gpu
         class Memory
         {
             public:
-                Memory(vk::raii::Instance &instance, vk::raii::PhysicalDevice &physicalDevice, vk::raii::Device &device);
+                Memory(vk::raii::Instance &instance, vk::raii::PhysicalDevice &physicalDevice, vk::raii::Device &device, Vulkan &vulkan);
                 VmaAllocator allocator;
                 [[nodiscard]] std::unique_ptr<Buffer> buffer(vk::BufferUsageFlags usage, size_t size);
+                [[nodiscard]] std::unique_ptr<Texture> texture(std::shared_ptr<Loader::Image> image);
                 ~Memory()
                 {
                     vmaDestroyAllocator(allocator);
                 }
+            private:
+                Vulkan &vulkan;
         } memory;
         class Queues
         {
@@ -272,26 +297,7 @@ class Vulkan : public Gpu
                         vk::raii::Pipeline pipeline;
                 } graphics;
         } pipelines;
-        class Texture
-        {
-            public:
-                vk::raii::Image image;
-                vk::raii::DeviceMemory memory;
-                vk::raii::ImageView view;
-                vk::raii::Sampler sampler;
-                VmaAllocation allocation;
-                VmaAllocator *allocator;
-                ~Texture()
-                {
-                    vmaDestroyImage(*allocator, *image, allocation);
-                }
-        };
-        class Textures
-        {
-            public:
-                std::vector<Texture> input;
-                std::vector<Texture> output;
-        } textures;
+        std::vector<Texture> inputTextures;
         bool resizeRequired{false};
         void recordCommandBuffer(SwapChain::Frame &frame, SwapChain::InFlight &inFlight);
         void recreateSwapChain();
@@ -299,6 +305,11 @@ class Vulkan : public Gpu
         void graphicsSubmit(std::size_t swapChainFrameID);
         void createAllocator();
         void updateUniformBuffer(SwapChain::InFlight &inFlight);
+        vk::raii::CommandBuffer &beginInFlightCommandBuffer();
+        void copyBuffer(vk::Buffer src, vk::Buffer dst, vk::DeviceSize size);
+        void transitionImageLayout(vk::Image image, vk::ImageLayout oldLayout, vk::ImageLayout newLayout);
+        void copyBufferToImage(vk::Buffer buffer, vk::Image image, size_t width, size_t height);
+        void updateDescriptorSets(SwapChain::InFlight &inFlight);
         void init() override;
 };
 }

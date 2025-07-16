@@ -15,23 +15,25 @@ class ImageFfmpeg : public Image
     public:
         ImageFfmpeg(std::string path);
         ImageFfmpeg(size_t width, size_t height, [[maybe_unused]] size_t stride, Format imageFormat, std::string path, uint8_t *data = nullptr);
-        [[nodiscard]] const unsigned char *data() const
+        [[nodiscard]] const unsigned char *data() const override
         {
             return frame->data[0];
         }
-        [[nodiscard]] virtual size_t width() const
+        [[nodiscard]] virtual size_t width() const override
         {
             return frame->width;
         }
-        [[nodiscard]] virtual size_t height() const
+        [[nodiscard]] virtual size_t height() const override
         {
             return frame->height;
         }
-        [[nodiscard]] virtual size_t stride() const
+        [[nodiscard]] virtual size_t stride() const override
         {
             return frame->linesize[0];
         }
-        [[nodiscard]] virtual Format imageFormat() const
+        [[nodiscard]] size_t channels() const override;
+        [[nodiscard]] size_t channelSize() const override;
+        [[nodiscard]] virtual Format imageFormat() const override
         {
             return format;
         };
