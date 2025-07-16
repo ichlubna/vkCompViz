@@ -50,6 +50,14 @@ AVFrame *frameFromFile(std::string path)
 void convertFrame(AVFrame *input, AVFrame *output)
 {
     struct SwsContext *cRGB = nullptr;
+
+    if(input->format == AV_PIX_FMT_YUVJ420P)
+        input->format = AV_PIX_FMT_YUV420P;
+    else if(input->format == AV_PIX_FMT_YUVJ422P)
+        input->format = AV_PIX_FMT_YUV422P;
+    else if(input->format == AV_PIX_FMT_YUVJ444P)
+        input->format = AV_PIX_FMT_YUV444P;
+
     cRGB = sws_getCachedContext(cRGB, input->width, input->height, static_cast<enum AVPixelFormat>(input->format), output->width, output->height, static_cast<AVPixelFormat>(output->format), SWS_BICUBIC, nullptr, nullptr, nullptr);
     sws_scale(cRGB, (const uint8_t *const *)input->data, input->linesize, 0, input->height, output->data, output->linesize);
 }

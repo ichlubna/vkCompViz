@@ -90,7 +90,7 @@ void App::windowInitParams()
         vulkanInitParams.currentResolution = std::bind(&Window::Window::resolution, window.get());
         vulkanInitParams.resolution = window->resolution();
         vulkanInitParams.shaders.vertex = shader->loadFromFile("fullScreenVS");
-        vulkanInitParams.shaders.fragment = shader->loadFromFile("splitScreenFS");
+        vulkanInitParams.shaders.fragment = shader->loadFromFile("textureDisplayFS");
     }
 }
 
