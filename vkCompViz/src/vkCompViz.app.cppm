@@ -51,6 +51,7 @@ class App
         App();
         void useWindow(Window::Parameters const &windowParameters);
         void run(ComputeParameters const &computeParameters);
+        [[nodiscard]] const Resolution getImageResolution(std::string path) const;
         ~App();
 
     private:

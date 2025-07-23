@@ -16,7 +16,7 @@ class Gpu
         };
         Gpu() = default;
         virtual void draw() = 0;
-        virtual void compute(std::vector<WorkGroupCount> workGroupCounts) = 0;
+        virtual void compute(std::vector<WorkGroupCount> shaderWorkGroupCounts) = 0;
         virtual void resize() = 0;
         virtual void setInFlightFrames(std::size_t count) = 0;
         virtual void updateUniformBuffer(std::vector<std::uint32_t> buffer) = 0;

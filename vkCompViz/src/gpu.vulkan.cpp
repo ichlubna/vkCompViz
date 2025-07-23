@@ -646,9 +646,9 @@ void Vulkan::init()
     createSwapChainFrames();
 }
 
-void Vulkan::recordCommandBuffer(SwapChain::Frame &frame, SwapChain::InFlight &inFlight)
+void Vulkan::recordGraphicsCommandBuffer(SwapChain::Frame &frame, SwapChain::InFlight &inFlight)
 {
-    auto &buffer = *inFlight.commandBuffer;
+    auto &buffer = *inFlight.commandBuffers.graphics;
     buffer.begin({});
     buffer.beginRenderPass(createInfo.renderPassBegin(*frame.frameBuffer), vk::SubpassContents::eInline);
     buffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipelines.graphics.pipeline);
@@ -664,14 +664,15 @@ void Vulkan::graphicsSubmit(size_t swapChainFrameID)
 {
     auto &inFlight = swapChain.currentInFlight();
     device.resetFences({*inFlight.fences.inFlight});
-    recordCommandBuffer(swapChain.frames[swapChainFrameID], inFlight);
+    recordGraphicsCommandBuffer(swapChain.frames[swapChainFrameID], inFlight);
 
     std::vector<vk::PipelineStageFlags> waitStage{vk::PipelineStageFlagBits::eColorAttachmentOutput};
+    std::vector<vk::Semaphore> waitSemaphores{*inFlight.semaphores.computeFinished.value(), *inFlight.semaphores.imageAvailable.value()};
     vk::SubmitInfo submitInfo;
     submitInfo
-    .setCommandBuffers({*inFlight.commandBuffer.value()})
+    .setCommandBuffers({*inFlight.commandBuffers.graphics.value()})
     .setSignalSemaphores({*inFlight.semaphores.renderFinished.value()})
-    .setWaitSemaphores({*inFlight.semaphores.imageAvailable.value()})
+    .setWaitSemaphores(waitSemaphores)
     .setWaitDstStageMask(waitStage);
 
     queues.graphics.submit({submitInfo}, *inFlight.fences.inFlight);
@@ -686,6 +687,11 @@ void Vulkan::draw()
 {
     size_t timeout = std::numeric_limits<uint64_t>::max();
     auto &inFlight = swapChain.currentInFlight();
+
+    while(device.waitForFences({inFlight.fences.computeInFlight.value()}, VK_TRUE, timeout) == vk::Result::eTimeout);
+    updateUniformBuffer(inFlight);
+    computeSubmit();
+
     while(device.waitForFences({inFlight.fences.inFlight.value()}, VK_TRUE, timeout) == vk::Result::eTimeout);
 
     uint32_t swapChainFrameID;
@@ -704,7 +710,6 @@ void Vulkan::draw()
         else
             throw;
     }
-    updateUniformBuffer(inFlight);
     graphicsSubmit(swapChainFrameID);
 
     vk::PresentInfoKHR presentInfo;
@@ -752,7 +757,9 @@ void Vulkan::CreateInfo::createFrameSync(SwapChain::InFlight &frame)
 {
     frame.semaphores.imageAvailable = std::move(vk::raii::Semaphore(vulkan.device, semaphore()));
     frame.semaphores.renderFinished = std::move(vk::raii::Semaphore(vulkan.device, semaphore()));
+    frame.semaphores.computeFinished = std::move(vk::raii::Semaphore(vulkan.device, semaphore()));
     frame.fences.inFlight = std::move(vk::raii::Fence(vulkan.device, fence()));
+    frame.fences.computeInFlight = std::move(vk::raii::Fence(vulkan.device, fence()));
 }
 
 void Vulkan::CreateInfo::createFrameBuffer(Vulkan::SwapChain::Frame &frame, vk::Image image)
@@ -1016,7 +1023,8 @@ void Vulkan::createSwapChainFrames()
         throw std::runtime_error("Requested inflight count (N-buffering) is greater than number of swapchain images");
     if(swapChain.inFlightCount == 0)
         swapChain.inFlightCount = images.size();
-    vk::raii::CommandBuffers commandBuffers(device, createInfo.commandBuffer(commandPools.graphics, swapChain.inFlightCount));
+    vk::raii::CommandBuffers graphicsCommandBuffers(device, createInfo.commandBuffer(commandPools.graphics, swapChain.inFlightCount));
+    vk::raii::CommandBuffers computeCommandBuffers(device, createInfo.commandBuffer(commandPools.compute, swapChain.inFlightCount));
     swapChain.descriptorPool.emplace(device, createInfo.descriptorPool(swapChain.inFlightCount));
     vk::raii::DescriptorSets descriptorSets(device, createInfo.descriptorSet(swapChain.descriptorPool.value(), swapChain.inFlightCount));
     swapChain.frames.clear();
@@ -1026,7 +1034,8 @@ void Vulkan::createSwapChainFrames()
         swapChain.frames.emplace_back();
         createInfo.createFrameBuffer(swapChain.frames.back(), image);
         swapChain.inFlight.emplace_back();
-        swapChain.inFlight.back().commandBuffer.emplace(std::move(commandBuffers[id]));
+        swapChain.inFlight.back().commandBuffers.graphics.emplace(std::move(graphicsCommandBuffers[id]));
+        swapChain.inFlight.back().commandBuffers.compute.emplace(std::move(computeCommandBuffers[id]));
         createInfo.createFrameSync(swapChain.inFlight.back());
         swapChain.inFlight.back().uniformBuffer = memory.buffer(vk::BufferUsageFlagBits::eUniformBuffer, currentUniformBufferData.size());
         swapChain.inFlight.back().descriptorSet.emplace(std::move(descriptorSets[id]));
@@ -1085,9 +1094,37 @@ void Vulkan::updateUniform(std::string name, float value)
         std::cerr << "Could not find uniform " << name << std::endl;
 }
 
-void Vulkan::compute(std::vector<WorkGroupCount> workGroupCounts)
+void Vulkan::recordComputeCommandBuffer(SwapChain::InFlight &inFlight)
 {
-    
+    auto &buffer = *inFlight.commandBuffers.compute;
+    buffer.begin({});
+    for(size_t i = 0; i < workGroupCounts.size(); i++)
+    {
+        buffer.bindPipeline(vk::PipelineBindPoint::eCompute, pipelines.compute.pipelines[i]);
+        buffer.bindDescriptorSets(vk::PipelineBindPoint::eCompute, pipelines.compute.layout, 0, {inFlight.descriptorSet.value()}, {});
+        buffer.dispatch(workGroupCounts[i].x, workGroupCounts[i].y, workGroupCounts[i].z);
+    }
+    //TODO BARRIER
+    buffer.end(); 
+    workGroupCounts.clear();
+}
+
+void Vulkan::computeSubmit()
+{
+    auto &inFlight = swapChain.currentInFlight();
+    device.resetFences({*inFlight.fences.computeInFlight});
+    recordComputeCommandBuffer(inFlight);
+
+    vk::SubmitInfo submitInfo;
+    submitInfo
+    .setCommandBuffers({*inFlight.commandBuffers.compute.value()})
+    .setSignalSemaphores({*inFlight.semaphores.computeFinished.value()});
+    queues.compute.submit({submitInfo}, *inFlight.fences.computeInFlight);
+}
+
+void Vulkan::compute(std::vector<WorkGroupCount> shaderWorkGroupCounts)
+{
+    workGroupCounts = shaderWorkGroupCounts;
 }
 
 Vulkan::~Vulkan()

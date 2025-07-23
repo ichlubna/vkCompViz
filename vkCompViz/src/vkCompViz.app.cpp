@@ -173,6 +173,12 @@ void App::run(ComputeParameters const &computeParameters)
     mainLoop();
 }
 
+const Resolution App::getImageResolution(std::string path) const
+{
+    Loader::ImageFfmpeg image(path);
+    return {static_cast<std::uint32_t>(image.width()), static_cast<std::uint32_t>(image.height())};
+}
+
 App::~App()
 {
 }

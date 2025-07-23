@@ -24,6 +24,7 @@ int main(int argc, char *argv[])
         params.uniforms.push_back({"factor", args["-f"]});
 
         vkCompViz::App app;
+        auto resolution = app.getImageResolution(args["-i1"]);
         app.useWindow({.resolution = {800, 600}, .title = "simpleBlending"});
         app.run(params);
     }

@@ -45,7 +45,7 @@ class Vulkan : public Gpu
         };
         Vulkan(VulkanInitParams params);
         void draw() override;
-        void compute(std::vector<WorkGroupCount> workGroupCounts) override;
+        void compute(std::vector<WorkGroupCount> shaderWorkGroupCounts) override;
         void resize() override;
         void setInFlightFrames(std::size_t count) override;
         void updateUniformBuffer(std::vector<uint32_t> buffer) override;
@@ -90,7 +90,12 @@ class Vulkan : public Gpu
                 class InFlight
                 {
                     public:
-                        std::optional<vk::raii::CommandBuffer> commandBuffer;
+                        class CommandBuffers
+                        {
+                            public:
+                                std::optional<vk::raii::CommandBuffer> graphics;
+                                std::optional<vk::raii::CommandBuffer> compute;
+                        } commandBuffers;
                         std::unique_ptr<Buffer> uniformBuffer;
                         std::optional<vk::raii::DescriptorSet> descriptorSet;
                         std::vector<std::unique_ptr<Texture>> outputTextures;
@@ -99,11 +104,13 @@ class Vulkan : public Gpu
                             public:
                                 std::optional<vk::raii::Semaphore> imageAvailable;
                                 std::optional<vk::raii::Semaphore> renderFinished;
+                                std::optional<vk::raii::Semaphore> computeFinished;
                         } semaphores;
                         class Fences
                         {
                             public:
                                 std::optional<vk::raii::Fence> inFlight;
+                                std::optional<vk::raii::Fence> computeInFlight;
                         } fences;
                 };
                 void nextInFlight()
@@ -331,11 +338,14 @@ class Vulkan : public Gpu
                 static constexpr size_t INPUT_TEXTURE_SAMPLER{3};
         };
         std::vector<Texture> inputTextures;
+        std::vector<WorkGroupCount> workGroupCounts;
         bool resizeRequired{false};
-        void recordCommandBuffer(SwapChain::Frame &frame, SwapChain::InFlight &inFlight);
+        void recordGraphicsCommandBuffer(SwapChain::Frame &frame, SwapChain::InFlight &inFlight);
+        void recordComputeCommandBuffer(SwapChain::InFlight &inFlight);
         void recreateSwapChain();
         void createSwapChainFrames();
         void graphicsSubmit(std::size_t swapChainFrameID);
+        void computeSubmit();
         void createAllocator();
         void updateUniformBuffer(SwapChain::InFlight &inFlight);
         void copyBuffer(vk::Buffer src, vk::Buffer dst, vk::DeviceSize size);
