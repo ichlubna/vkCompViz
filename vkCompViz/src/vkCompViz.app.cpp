@@ -147,6 +147,7 @@ void App::mainLoop()
         {
             window->run();
             end = window->key("Escape") || window->quit();
+            gpu->compute({{1,1,1}});
             gpu->draw();
             if(window->resized())
                 gpu->resize();

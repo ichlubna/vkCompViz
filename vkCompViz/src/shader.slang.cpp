@@ -103,7 +103,16 @@ Shader::Shader::Info SlangFactory::compile(slang::IModule *shaderModule, Slang::
                 info.uniformBufferSize = std::max(paramTypeLayout->getSize(layoutUnit), info.uniformBufferSize);
             }
         }
+    }
 
+    auto entryPointLayout = program->getLayout()->getEntryPointByIndex(0);
+    if(entryPointLayout->getStage() == SLANG_STAGE_COMPUTE)
+    {
+        SlangUInt size[3];
+        entryPointLayout->getComputeThreadGroupSize(3, size);
+        info.workGroupSize.x = size[0];
+        info.workGroupSize.y = size[1];
+        info.workGroupSize.z = size[2];
     }
     return info;
 }

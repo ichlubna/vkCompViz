@@ -17,7 +17,7 @@ int main(int argc, char *argv[])
             throw std::invalid_argument("Missing parameters");
 
         vkCompViz::App::ComputeParameters params;
-        params.computeShaders.push_back("blendFS.slang");
+        params.computeShaders.push_back("blend.slang");
         params.textures.input.push_back(args["-i1"]);
         params.textures.input.push_back(args["-i2"]);
         params.textures.output.push_back({.path = args["-o"], .sameResolutionAsInputID = 0, .sameFormatAsInputID = 0});

@@ -9,8 +9,15 @@ class Shader
         class Info
         {
             public:
+                class WorkGroupSize
+                {
+                    public:
+                    std::size_t x{0};
+                    std::size_t y{0};
+                    std::size_t z{0};
+                } workGroupSize;
                 std::vector<std::uint32_t> code;
-                std::size_t uniformBufferSize{0};
+                std::size_t uniformBufferSize{0}; 
                 std::vector<std::string> uniformNames;
         };
         Shader() {};

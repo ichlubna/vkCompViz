@@ -45,7 +45,7 @@ class Vulkan : public Gpu
         };
         Vulkan(VulkanInitParams params);
         void draw() override;
-        void compute() override;
+        void compute(std::vector<WorkGroupCount> workGroupCounts) override;
         void resize() override;
         void setInFlightFrames(std::size_t count) override;
         void updateUniformBuffer(std::vector<uint32_t> buffer) override;
@@ -159,6 +159,7 @@ class Vulkan : public Gpu
                 [[nodiscard]] vk::PipelineLayoutCreateInfo &pipelineLayout();
                 [[nodiscard]] vk::RenderPassCreateInfo &renderPass();
                 [[nodiscard]] vk::GraphicsPipelineCreateInfo &graphicsPipeline();
+                [[nodiscard]] vk::ComputePipelineCreateInfo &computePipeline(vk::raii::ShaderModule &shaderModule);
                 [[nodiscard]] vk::FramebufferCreateInfo &frameBuffer(vk::raii::ImageView &attachment);
                 [[nodiscard]] vk::CommandPoolCreateInfo &commandPool(std::size_t queueFamilyID);
                 [[nodiscard]] vk::CommandBufferAllocateInfo &commandBuffer(vk::raii::CommandPool &commandPool, std::uint32_t count);
@@ -166,8 +167,8 @@ class Vulkan : public Gpu
                 [[nodiscard]] vk::SemaphoreCreateInfo &semaphore();
                 [[nodiscard]] vk::FenceCreateInfo &fence();
                 [[nodiscard]] vk::ImageViewCreateInfo &imageView(vk::Format imageFormat, vk::Image image);
-                [[nodiscard]] vk::ImageCreateInfo &image(vk::Format imageFormat, Resolution resolution);
-                [[nodiscard]] vk::DescriptorSetLayoutCreateInfo &descriptorSetLayout();
+                [[nodiscard]] vk::ImageCreateInfo &image(vk::Format imageFormat, Resolution resolution, bool storage);
+                [[nodiscard]] vk::DescriptorSetLayoutCreateInfo &descriptorSetLayout(size_t inputTextureCount, size_t outputTextureCount);
                 [[nodiscard]] vk::DescriptorPoolCreateInfo &descriptorPool(std::size_t count);
                 [[nodiscard]] vk::DescriptorSetAllocateInfo &descriptorSet(vk::raii::DescriptorPool &descriptorPool, std::size_t count);
                 [[nodiscard]] vk::SamplerCreateInfo &sampler();
@@ -182,6 +183,7 @@ class Vulkan : public Gpu
                 vk::InstanceCreateInfo instanceCreateInfo{};
                 vk::DeviceCreateInfo deviceCreateInfo{};
                 vk::PhysicalDeviceFeatures physicalDeviceFeatures{};
+                vk::PhysicalDeviceVulkan12Features physicalDeviceVulkan12Features{};
                 vk::SwapchainCreateInfoKHR swapChainCreateInfo{};
                 vk::PipelineDynamicStateCreateInfo dynamicStateCreateInfo{};
                 vk::PipelineVertexInputStateCreateInfo vertexInputCreateInfo{};
@@ -207,6 +209,7 @@ class Vulkan : public Gpu
                 vk::SubpassDescription subpass{};
                 vk::SubpassDependency subpassDependency{};
                 vk::GraphicsPipelineCreateInfo graphicsPipelineCreateInfo{};
+                vk::ComputePipelineCreateInfo computePipelineCreateInfo{};
                 vk::Viewport pipelineViewport{};
                 vk::Rect2D pipelineScissor{};
                 vk::DescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo{};
@@ -214,6 +217,7 @@ class Vulkan : public Gpu
                 vk::DescriptorSetAllocateInfo descriptorSetAllocateInfo{};
                 vk::SamplerCreateInfo samplerCreateInfo{};
                 vk::ClearValue clearColor{{0.02f, 0.01f, 0.01f, 1.0f}};
+                vk::PipelineShaderStageCreateInfo shaderStage{};
                 std::vector<vk::ShaderModuleCreateInfo> shaderModuleCreateInfos;
                 std::vector<vk::PipelineShaderStageCreateInfo> pipelineShaderStageCreateInfos;
                 std::vector<vk::DeviceQueueCreateInfo> queueCreateInfos;
@@ -250,7 +254,7 @@ class Vulkan : public Gpu
                 Memory(vk::raii::Instance &instance, vk::raii::PhysicalDevice &physicalDevice, vk::raii::Device &device, Vulkan &vulkan);
                 VmaAllocator allocator;
                 [[nodiscard]] std::unique_ptr<Buffer> buffer(vk::BufferUsageFlags usage, size_t size);
-                [[nodiscard]] std::unique_ptr<Texture> texture(std::shared_ptr<Loader::Image> image);
+                [[nodiscard]] std::unique_ptr<Texture> texture(std::shared_ptr<Loader::Image> image, bool storage);
                 ~Memory()
                 {
                     vmaDestroyAllocator(allocator);
@@ -294,6 +298,13 @@ class Vulkan : public Gpu
                         vk::raii::RenderPass renderPass;
                         vk::raii::Pipeline pipeline;
                 } graphics;
+                class Compute
+                {
+                    public:
+                        Compute(std::vector<vk::raii::ShaderModule> &shaders, vk::raii::Device &device, CreateInfo &createInfo);
+                        vk::raii::PipelineLayout layout;
+                        std::vector<vk::raii::Pipeline> pipelines;
+                }compute;
         } pipelines;
         class OneTimeCommand
         {
@@ -311,6 +322,14 @@ class Vulkan : public Gpu
                     queue->waitIdle();
                 }  
         };
+        class Bindings
+        {
+            public:
+                static constexpr size_t UNIFORM{0};
+                static constexpr size_t OUTPUT_TEXTURE_SAMPLER{1};
+                static constexpr size_t OUTPUT_TEXTURE_STORAGE{2};
+                static constexpr size_t INPUT_TEXTURE_SAMPLER{3};
+        };
         std::vector<Texture> inputTextures;
         bool resizeRequired{false};
         void recordCommandBuffer(SwapChain::Frame &frame, SwapChain::InFlight &inFlight);
@@ -324,6 +343,7 @@ class Vulkan : public Gpu
         void copyBufferToImage(vk::Buffer buffer, vk::Image image, size_t width, size_t height);
         void updateDescriptorSets(SwapChain::InFlight &inFlight);
         std::unique_ptr<OneTimeCommand> oneTimeCommand();
+        [[nodiscard]] std::vector<vk::raii::ShaderModule> createComputeShaders(std::vector<Shader::Shader::Info> &computeShaders);
         void init() override;
 };
 }

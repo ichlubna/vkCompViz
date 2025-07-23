@@ -9,7 +9,8 @@ target_sources(${PROJECT_NAME}
     external/arguments/arguments.cxx
 )
 set(RESOURCE_FILES
-    examples/${PROJECT_NAME}/shaders/blendFS.slang
+    examples/${PROJECT_NAME}/shaders/blend.slang
+    examples/${PROJECT_NAME}/shaders/inputs.slang
 )
 copyResources()
 target_compile_features(${PROJECT_NAME}
