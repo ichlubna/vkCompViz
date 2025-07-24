@@ -22,14 +22,16 @@ ninja format
 See the existing examples for reference. Especially, [Simple Blending](examples/simpleBlending) and [Separable Filter](examples/separableFilter) are simple and contain explanatory comments. It is recommended to use them as templates for new examples.
 
 The bindings in shaders are:  
-| 0 | Uniform buffer (One common buffer for all shaders) |
-| 1 | Sampler for output textures |
-| 2 | Writeable output textures |
-| 3 | Sampler for input textures |
-| 4 | Readable input textures |
+
+| 0 | Uniform buffer (One common buffer for all shaders) | 
+| 1 | Sampler for output textures | 
+| 2 | Writeable output textures | 
+| 3 | Sampler for input textures | 
+| 4 | Readable input textures | 
 The first output texture is considered the final one and is displayed in the window. Its content is also stored to file.  
 
 Keys for window application:  
-| Esc | Exit program |
-| Space | Edit uniforms in runtime |
-| F1 | Store the the result |
+
+| Esc | Exit program | 
+| Space | Edit uniforms in runtime | 
+| F1 | Store the the result | 
