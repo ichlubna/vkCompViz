@@ -30,6 +30,7 @@ The bindings in shaders are:
 | 2 | Writeable output textures | 
 | 3 | Sampler for input textures | 
 | 4 | Readable input textures | 
+
 The first output texture is considered the final one and is displayed in the window. Its content is also stored to file.  
 
 Keys for window application:  
