@@ -2,7 +2,7 @@ module vkCompViz;
 import std;
 using namespace vkCompViz;
 
-App::App()
+App::App() : shader{std::make_unique<Shader::SlangFactory>()}
 {
 }
 
@@ -137,7 +137,7 @@ void App::initUniforms(ComputeParameters const &computeParameters) const
         gpu->updateUniform(uniform.first, uniform.second);
 }
 
-void App::mainLoop()
+void App::mainLoop(ComputeParameters const &computeParameters)
 {
     if(window)
     {
@@ -147,7 +147,7 @@ void App::mainLoop()
         {
             window->run();
             end = window->key("Escape") || window->quit();
-            gpu->compute({{1,1,1}});
+            gpu->compute(computeParameters.workGroupCounts);
             gpu->draw();
             if(window->resized())
                 gpu->resize();
@@ -164,19 +164,32 @@ void App::mainLoop()
 
 void App::run(ComputeParameters const &computeParameters)
 {
-    shader = std::make_unique<Shader::SlangFactory>();
     windowInitParams();
     initComputeShaders(computeParameters);
     initTextures(computeParameters);
     gpu = std::make_unique<Gpu::Vulkan>(vulkanInitParams);
     initUniforms(computeParameters);
-    mainLoop();
+    mainLoop(computeParameters);
 }
 
 const Resolution App::getImageResolution(std::string path) const
 {
     Loader::ImageFfmpeg image(path);
     return {static_cast<std::uint32_t>(image.width()), static_cast<std::uint32_t>(image.height())};
+}
+
+const Shader::Shader::Info::WorkGroupSize App::getShaderWorkGroupSize(std::string path) const
+{
+    auto compiledShader = shader->loadFromFile(path);
+    return {compiledShader.workGroupSize};
+}
+
+
+const Gpu::Gpu::WorkGroupCount App::calculateWorkGroupCount(Shader::Shader::Info::WorkGroupSize workGroupSize, Shader::Shader::Info::ThreadCount threadCount) const
+{
+    return {static_cast<std::size_t>(std::ceil(static_cast<float>(threadCount.x) / workGroupSize.x)),
+            static_cast<std::size_t>(std::ceil(static_cast<float>(threadCount.y) / workGroupSize.y)),
+            static_cast<std::size_t>(std::ceil(static_cast<float>(threadCount.z) / workGroupSize.z))};
 }
 
 App::~App()

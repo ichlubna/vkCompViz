@@ -19,6 +19,7 @@ class Shader
                 std::vector<std::uint32_t> code;
                 std::size_t uniformBufferSize{0}; 
                 std::vector<std::string> uniformNames;
+                using ThreadCount = WorkGroupSize;
         };
         Shader() {};
         [[nodiscard]] virtual Info loadFromFile(std::string path) const = 0;

@@ -29,6 +29,7 @@ class App
                         std::vector<Output> output;
                 } textures;
                 std::vector<std::string> computeShaders;
+                std::vector<Gpu::Gpu::WorkGroupCount> workGroupCounts;
                 std::vector<std::pair<std::string, float >> uniforms;
         };
         class WindowParameters
@@ -52,6 +53,8 @@ class App
         void useWindow(Window::Parameters const &windowParameters);
         void run(ComputeParameters const &computeParameters);
         [[nodiscard]] const Resolution getImageResolution(std::string path) const;
+        [[nodiscard]] const Shader::Shader::Info::WorkGroupSize getShaderWorkGroupSize(std::string path) const;
+        [[nodiscard]] const Gpu::Gpu::WorkGroupCount calculateWorkGroupCount(Shader::Shader::Info::WorkGroupSize workGroupSize, Shader::Shader::Info::ThreadCount threadCount) const;
         ~App();
 
     private:
@@ -63,7 +66,7 @@ class App
         void initComputeShaders(ComputeParameters const &computeParameters);
         void initTextures(ComputeParameters const &computeParameters); 
         void initUniforms(ComputeParameters const &computeParameters) const;
-        void mainLoop();
+        void mainLoop(ComputeParameters const &computeParameters);
 };
 
 }

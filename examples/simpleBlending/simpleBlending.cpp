@@ -25,7 +25,9 @@ int main(int argc, char *argv[])
 
         vkCompViz::App app;
         auto resolution = app.getImageResolution(args["-i1"]);
-        app.useWindow({.resolution = {800, 600}, .title = "simpleBlending"});
+        auto workGroupSize = app.getShaderWorkGroupSize("blend.slang");
+        params.workGroupCounts = {app.calculateWorkGroupCount(workGroupSize, {resolution.width, resolution.height, 1})};
+        app.useWindow({.resolution = resolution, .title = "simpleBlending"});
         app.run(params);
     }
     catch(const std::exception &e)
