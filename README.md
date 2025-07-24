@@ -23,6 +23,8 @@ See the existing examples for reference. Especially, [Simple Blending](examples/
 
 The bindings in shaders are:  
 
+| Binding | Resource |
+|---|---|
 | 0 | Uniform buffer (One common buffer for all shaders) | 
 | 1 | Sampler for output textures | 
 | 2 | Writeable output textures | 
@@ -32,6 +34,8 @@ The first output texture is considered the final one and is displayed in the win
 
 Keys for window application:  
 
+| Key | Action |
+|---|---|
 | Esc | Exit program | 
 | Space | Edit uniforms in runtime | 
 | F1 | Store the the result | 
