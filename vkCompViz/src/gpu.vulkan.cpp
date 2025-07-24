@@ -666,7 +666,7 @@ void Vulkan::graphicsSubmit(size_t swapChainFrameID)
     device.resetFences({*inFlight.fences.inFlight});
     recordGraphicsCommandBuffer(swapChain.frames[swapChainFrameID], inFlight);
 
-    std::vector<vk::PipelineStageFlags> waitStage{vk::PipelineStageFlagBits::eColorAttachmentOutput};
+    std::vector<vk::PipelineStageFlags> waitStage{vk::PipelineStageFlagBits::eVertexInput, vk::PipelineStageFlagBits::eColorAttachmentOutput};
     std::vector<vk::Semaphore> waitSemaphores{*inFlight.semaphores.computeFinished.value(), *inFlight.semaphores.imageAvailable.value()};
     vk::SubmitInfo submitInfo;
     submitInfo
@@ -1124,6 +1124,7 @@ void Vulkan::computeSubmit()
 
 void Vulkan::compute(std::vector<WorkGroupCount> shaderWorkGroupCounts)
 {
+    // TODO check that all inflight frames are updated before clearing the vector
     workGroupCounts = shaderWorkGroupCounts;
 }
 
