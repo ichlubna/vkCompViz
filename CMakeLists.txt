@@ -8,4 +8,5 @@ set(CMAKE_CXX_MODULE_STD 1)
 project(vkCompVizRoot)
 add_subdirectory("vkCompViz")
 
-addExample("simpleBlending" "A simplest hello-world example that blends two images together")
+addExample("simpleBlending" "Simple blending of two images")
+addExample("separableFilter" "Separable blur computed in two passes (compute shaders)")

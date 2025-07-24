@@ -1,3 +1,6 @@
 [submodule "examples/external/arguments"]
 	path = examples/external/arguments
 	url = git@github.com:ichlubna/arguments.git
+[submodule "examples/separableFilter/external/arguments"]
+	path = examples/separableFilter/external/arguments
+	url = https://github.com/ichlubna/arguments.git
