@@ -91,21 +91,27 @@ ImageFfmpeg::ImageFfmpeg(std::string inputPath) : Image()
     av_frame_free(&decodedFrame);
 }
 
-ImageFfmpeg::ImageFfmpeg(size_t width, size_t height, [[maybe_unused]] size_t stride, Format imageFormat, std::string outputPath, uint8_t *data) : Image()
+ImageFfmpeg::ImageFfmpeg(size_t width, size_t height, [[maybe_unused]] size_t stride, Format imageFormat, uint8_t *data) : Image()
 {
     frame = av_frame_alloc();
     frame->width = width;
     frame->height = height;
     format = imageFormat;
+    size_t pixelSize = 0;
     if(format == Image::Format::RGBA_8_INT)
+    {
         frame->format = AV_PIX_FMT_RGBA;
+        pixelSize = 4;
+    }
     else
+    {
         frame->format = AV_PIX_FMT_RGBAF32;
-    path = outputPath;
+        pixelSize = 4*sizeof(float);
+    }
     if(data)
     {
         av_frame_get_buffer(frame, 0);
-        throw std::runtime_error("Not implemented yet");
+        memcpy(frame->data[0], data, width * height * pixelSize);
     }
 }
 

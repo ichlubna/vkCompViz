@@ -127,7 +127,7 @@ void App::initTextures(ComputeParameters const &computeParameters)
             auto input = inputTextures[texture.sameFormatAsInputID];
             format = input->imageFormat();
         }
-        vulkanInitParams.textures.output.push_back(std::make_shared<Loader::ImageFfmpeg>(width, height, 0, format, texture.path, nullptr));
+        vulkanInitParams.textures.output.push_back(std::make_shared<Loader::ImageFfmpeg>(width, height, 0, format, nullptr));
     }
 }
 
@@ -158,6 +158,12 @@ void App::mainLoop(ComputeParameters const &computeParameters)
                 for(auto &p : params)
                     gpu->updateUniform(p.first, p.second);
             }
+            if(window->key("F1"))
+            {
+                const auto now = std::chrono::system_clock::now();
+                auto name = std::format("{:%d-%m-%Y %H:%M:%OS}", now); 
+                saveResultImage((std::filesystem::path(computeParameters.outputPath) / std::filesystem::path(name)).string() + computeParameters.outputExtension); 
+            }
         }
     }
 }
@@ -184,12 +190,17 @@ const Shader::Shader::Info::WorkGroupSize App::getShaderWorkGroupSize(std::strin
     return {compiledShader.workGroupSize};
 }
 
-
 const Gpu::Gpu::WorkGroupCount App::calculateWorkGroupCount(Shader::Shader::Info::WorkGroupSize workGroupSize, Shader::Shader::Info::ThreadCount threadCount) const
 {
     return {static_cast<std::size_t>(std::ceil(static_cast<float>(threadCount.x) / workGroupSize.x)),
             static_cast<std::size_t>(std::ceil(static_cast<float>(threadCount.y) / workGroupSize.y)),
             static_cast<std::size_t>(std::ceil(static_cast<float>(threadCount.z) / workGroupSize.z))};
+}
+
+
+void App::saveResultImage(std::string path) const
+{
+    gpu->resultTexture()->save(path);
 }
 
 App::~App()

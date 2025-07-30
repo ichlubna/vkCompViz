@@ -12,7 +12,8 @@ bool Glfw::Keys::pressed(std::string name) const
     {
         {"escape", GLFW_KEY_ESCAPE},
         {"enter", GLFW_KEY_ENTER},
-        {"space", GLFW_KEY_SPACE}
+        {"space", GLFW_KEY_SPACE},
+        {"f1", GLFW_KEY_F1}
     };
     auto lowerName = name;
     transform(lowerName.begin(), lowerName.end(), lowerName.begin(), ::tolower);

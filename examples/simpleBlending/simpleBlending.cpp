@@ -7,28 +7,48 @@ int main(int argc, char *argv[])
 {
     try
     {
+        // Handling input parameters by Arguments library
         std::string help =  "This program blends two images together with a factor.\n"
                             "Usage: ./simpleBlending -i1 pathToFirstImage -i2 pathToSecondImage -f floatFactor -o pathToOutputImage\n";
         Arguments args(argc, argv);
         if(args.printHelpIfPresent(help))
             return EXIT_SUCCESS;
-
         if(!args["-i1"] || !args["-i2"] || !args["-f"] || !args["-o"])
             throw std::invalid_argument("Missing parameters");
 
+        // This object contains parameters of the computation process
         vkCompViz::App::ComputeParameters params;
+        // Order of the elements in the following vectors of resources matters (compute order, bound arrays of resources in shaders)
+        // Compute pipeline is represented by a vector of shader source names
         params.computeShaders.push_back("blend.slang");
+        // Input textures
         params.textures.input.push_back(args["-i1"]);
         params.textures.input.push_back(args["-i2"]);
-        params.textures.output.push_back({.path = args["-o"], .sameResolutionAsInputID = 0, .sameFormatAsInputID = 0});
+        // Output textures where the first one is considered as the final result which is displayed and stored
+        // Format and resolution can be set or copied from the input texture where the ID is its index in the input textures vector
+        params.textures.output.push_back({.sameResolutionAsInputID = 0, .sameFormatAsInputID = 0});
+        // The default uniform values can be set here
         params.uniforms.push_back({"factor", args["-f"]});
+        // The output screenshots taken by F1 can be stored to a given directory with a given extension, the name is created from date and time
+        params.outputPath = std::filesystem::path(args["-o"]).remove_filename().string();
+        params.outputExtension = ".png";
 
+        // Init the application
         vkCompViz::App app;
+        // Get the resolution of one of the input images
         auto resolution = app.getImageResolution(args["-i1"]);
+        // Get the work group size of the compute shader
         auto workGroupSize = app.getShaderWorkGroupSize("blend.slang");
+        // The number of workgroups for each compute shader is defined in this vector
+        // The function inside is a helper to compute the necessary count of workgroups
         params.workGroupCounts = {app.calculateWorkGroupCount(workGroupSize, {resolution.width, resolution.height, 1})};
+       
+        // Tells the application to use a window 
         app.useWindow({.resolution = resolution, .title = "simpleBlending"});
+        // Runs the rendering and computation
         app.run(params);
+        // Storing the result screenshot at the end
+        app.saveResultImage(args["-o"]);
     }
     catch(const std::exception &e)
     {

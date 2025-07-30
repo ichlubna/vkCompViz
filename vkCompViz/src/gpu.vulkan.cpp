@@ -808,7 +808,7 @@ vk::ImageCreateInfo &Vulkan::CreateInfo::image(vk::Format imageFormat, Resolutio
     queueFamilyIndices.push_back(computeQueueID());
     auto usageFlags = vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled;
     if(storage)
-        usageFlags |= vk::ImageUsageFlagBits::eStorage;
+        usageFlags |= vk::ImageUsageFlagBits::eStorage | vk::ImageUsageFlagBits::eTransferSrc;
 
     imageCreateInfo
     .setFormat(imageFormat)
@@ -892,6 +892,26 @@ void Vulkan::transitionImageLayout(vk::Image image, vk::ImageLayout oldLayout, v
         srcStage = vk::PipelineStageFlagBits::eTransfer;
         dstStage = vk::PipelineStageFlagBits::eFragmentShader | vk::PipelineStageFlagBits::eComputeShader;
     }
+    else if(oldLayout == vk::ImageLayout::eGeneral && newLayout == vk::ImageLayout::eTransferSrcOptimal)
+    {
+        barrier
+        .setSrcAccessMask(vk::AccessFlagBits::eShaderRead | vk::AccessFlagBits::eShaderWrite)
+        .setDstAccessMask(vk::AccessFlagBits::eTransferRead);
+        srcStage = vk::PipelineStageFlagBits::eFragmentShader | vk::PipelineStageFlagBits::eComputeShader;
+        dstStage = vk::PipelineStageFlagBits::eTransfer;
+    }
+    else if(oldLayout == vk::ImageLayout::eTransferSrcOptimal && newLayout == vk::ImageLayout::eGeneral)
+    {
+        barrier
+        .setSrcAccessMask(vk::AccessFlagBits::eTransferRead)
+        .setDstAccessMask(vk::AccessFlagBits::eShaderRead | vk::AccessFlagBits::eShaderWrite);
+        srcStage = vk::PipelineStageFlagBits::eTransfer;
+        dstStage = vk::PipelineStageFlagBits::eFragmentShader | vk::PipelineStageFlagBits::eComputeShader;
+    }
+    else
+    {
+        throw std::runtime_error("Unsupported layout transition");
+    }
     buffer->command().pipelineBarrier(srcStage, dstStage, {}, nullptr, nullptr, barrier);
 }
 
@@ -900,6 +920,13 @@ void Vulkan::copyBufferToImage(vk::Buffer inputBuffer, vk::Image image, size_t w
     auto buffer = oneTimeCommand();
     vk::BufferImageCopy region(0, 0, 0, {vk::ImageAspectFlagBits::eColor, 0, 0, 1}, {0, 0, 0}, {static_cast<uint32_t>(width), static_cast<uint32_t>(height), 1});
     buffer->command().copyBufferToImage(inputBuffer, image, vk::ImageLayout::eTransferDstOptimal, region);
+}
+
+void Vulkan::copyImageToBuffer(vk::Image image, vk::Buffer outputBuffer, size_t width, size_t height)
+{
+    auto buffer = oneTimeCommand();
+    vk::BufferImageCopy region(0, 0, 0, {vk::ImageAspectFlagBits::eColor, 0, 0, 1}, {0, 0, 0}, {static_cast<uint32_t>(width), static_cast<uint32_t>(height), 1});
+    buffer->command().copyImageToBuffer(image, vk::ImageLayout::eTransferSrcOptimal, outputBuffer, region);
 }
 
 std::unique_ptr<Vulkan::Texture> Vulkan::Memory::texture(std::shared_ptr<Loader::Image> image, bool storage)
@@ -1172,8 +1199,31 @@ void Vulkan::computeSubmit()
 
 void Vulkan::compute(std::vector<WorkGroupCount> shaderWorkGroupCounts)
 {
-    // TODO check that all inflight frames are updated before clearing the vector
     workGroupCounts = shaderWorkGroupCounts;
+}
+
+std::shared_ptr<Loader::Image> Vulkan::resultTexture()
+{
+    const auto &inFlight = swapChain.currentInFlight();
+    auto &output = inFlight.outputTextures.front();
+    auto initialOutputImage = createInfo.outputImages().front();
+
+    auto stagingBuffer = memory.buffer(vk::BufferUsageFlagBits::eTransferDst, initialOutputImage->size());
+    transitionImageLayout(output->image, vk::ImageLayout::eGeneral, vk::ImageLayout::eTransferSrcOptimal);
+    copyImageToBuffer(output->image, static_cast<vk::Buffer>(stagingBuffer->buffer), initialOutputImage->width(), initialOutputImage->height());
+
+    void *gpuData;
+    vmaMapMemory(*stagingBuffer->allocator, stagingBuffer->allocation, &gpuData);
+    auto result = std::make_shared<Loader::ImageFfmpeg>(initialOutputImage->width(), initialOutputImage->height(), 1, initialOutputImage->imageFormat(), reinterpret_cast<uint8_t *>(gpuData));
+    vmaUnmapMemory(*stagingBuffer->allocator, stagingBuffer->allocation);
+    transitionImageLayout(output->image, vk::ImageLayout::eTransferSrcOptimal, vk::ImageLayout::eGeneral);
+    return result;
+}
+
+std::vector<float> Vulkan::resultBuffer()
+{
+    std::vector<float> result;
+    return result;
 }
 
 Vulkan::~Vulkan()

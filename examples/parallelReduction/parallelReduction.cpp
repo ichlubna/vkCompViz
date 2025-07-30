@@ -20,7 +20,7 @@ int main(int argc, char *argv[])
         params.computeShaders.push_back("blend.slang");
         params.textures.input.push_back(args["-i1"]);
         params.textures.input.push_back(args["-i2"]);
-        params.textures.output.push_back({.path = args["-o"], .sameResolutionAsInputID = 0, .sameFormatAsInputID = 0});
+//        params.textures.output.push_back({.path = args["-o"], .sameResolutionAsInputID = 0, .sameFormatAsInputID = 0});
         params.uniforms.push_back({"factor", args["-f"]});
 
         vkCompViz::App app;

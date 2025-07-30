@@ -19,7 +19,7 @@ A path to Artistic Style (astyle) program can be defined with `ccmake` and the p
 ninja format
 ```
 ## Usage
-See the existing examples for reference. Especially, [Simple Blending](examples/simpleBlending) and [Separable Filter](examples/separableFilter) are simple and contain explanatory comments. It is recommended to use them as templates for new examples.
+See the existing examples for reference. Especially, [Simple Blending](examples/simpleBlending) and [Parallel Reduction](examples/parallelReduction) are simple and contain explanatory comments. It is recommended to use them as templates for new examples.
 
 The bindings in shaders are:  
 

@@ -39,8 +39,8 @@ class Vulkan : public Gpu
                 class Textures
                 {
                     public:
-                        std::vector<std::shared_ptr<Loader::Image >> input;
-                        std::vector<std::shared_ptr<Loader::Image >> output;
+                        std::vector<std::shared_ptr<Loader::Image>> input;
+                        std::vector<std::shared_ptr<Loader::Image>> output;
                 } textures;
         };
         Vulkan(VulkanInitParams params);
@@ -50,6 +50,8 @@ class Vulkan : public Gpu
         void setInFlightFrames(std::size_t count) override;
         void updateUniformBuffer(std::vector<uint32_t> buffer) override;
         void updateUniform(std::string name, float value) override;
+        [[nodiscard]] std::shared_ptr<Loader::Image> resultTexture() override;
+        [[nodiscard]] std::vector<float> resultBuffer() override;
         ~Vulkan();
 
     private:
@@ -355,6 +357,7 @@ class Vulkan : public Gpu
         void copyBuffer(vk::Buffer src, vk::Buffer dst, vk::DeviceSize size);
         void transitionImageLayout(vk::Image image, vk::ImageLayout oldLayout, vk::ImageLayout newLayout);
         void copyBufferToImage(vk::Buffer buffer, vk::Image image, size_t width, size_t height);
+        void copyImageToBuffer(vk::Image image, vk::Buffer outputBuffer, size_t width, size_t height);
         void updateDescriptorSets(SwapChain::InFlight &inFlight);
         void createInputTextures();
         std::unique_ptr<OneTimeCommand> oneTimeCommand();

@@ -19,7 +19,6 @@ class App
                         class Output
                         {
                             public:
-                                std::string path{""};
                                 Resolution resolution{0, 0};
                                 bool floatFormat{false};
                                 int sameResolutionAsInputID{-1};
@@ -31,6 +30,8 @@ class App
                 std::vector<std::string> computeShaders;
                 std::vector<Gpu::Gpu::WorkGroupCount> workGroupCounts;
                 std::vector<std::pair<std::string, float >> uniforms;
+                std::string outputPath{"./"};
+                std::string outputExtension{".png"}; 
         };
         class WindowParameters
         {
@@ -55,6 +56,7 @@ class App
         [[nodiscard]] const Resolution getImageResolution(std::string path) const;
         [[nodiscard]] const Shader::Shader::Info::WorkGroupSize getShaderWorkGroupSize(std::string path) const;
         [[nodiscard]] const Gpu::Gpu::WorkGroupCount calculateWorkGroupCount(Shader::Shader::Info::WorkGroupSize workGroupSize, Shader::Shader::Info::ThreadCount threadCount) const;
+        void saveResultImage(std::string path) const;
         ~App();
 
     private:

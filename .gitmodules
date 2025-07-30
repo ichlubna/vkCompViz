@@ -4,3 +4,6 @@
 [submodule "examples/separableFilter/external/arguments"]
 	path = examples/separableFilter/external/arguments
 	url = https://github.com/ichlubna/arguments.git
+[submodule "build/examples/parallelReduction/external/arguments"]
+	path = build/examples/parallelReduction/external/arguments
+	url = https://github.com/ichlubna/arguments.git

@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 4.0)
+set(CMAKE_COLOR_DIAGNOSTICS ON)
 include(functions.cmake)
 # This hash works only with version 4.0.1, needs to be updated according to:
 # https://github.com/Kitware/CMake/blob/v4.0.1/Help/dev/experimental.rst
@@ -8,5 +9,5 @@ set(CMAKE_CXX_MODULE_STD 1)
 project(vkCompVizRoot)
 add_subdirectory("vkCompViz")
 
-addExample("simpleBlending" "Simple blending of two images")
-addExample("separableFilter" "Separable blur computed in two passes (compute shaders)")
+addExample("simpleBlending" "Simple blending of two images using textures")
+addExample("parallelReduction" "Average value of an array using global and local memory and multiple passes")
