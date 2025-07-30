@@ -143,6 +143,7 @@ void App::mainLoop(ComputeParameters const &computeParameters)
     {
         ParameterParser parameters;
         bool end = false;
+        bool screenshotTaken = false;
         while(!end)
         {
             window->run();
@@ -158,12 +159,17 @@ void App::mainLoop(ComputeParameters const &computeParameters)
                 for(auto &p : params)
                     gpu->updateUniform(p.first, p.second);
             }
-            if(window->key("F1"))
+            if(window->key("F1") && !screenshotTaken)
             {
+                screenshotTaken = true;
                 const auto now = std::chrono::system_clock::now();
                 auto name = std::format("{:%d-%m-%Y %H:%M:%OS}", now); 
-                saveResultImage((std::filesystem::path(computeParameters.outputPath) / std::filesystem::path(name)).string() + computeParameters.outputExtension); 
+                auto path = (std::filesystem::path(computeParameters.outputPath) / std::filesystem::path(name)).string() + computeParameters.outputExtension;
+                saveResultImage(path); 
+                std::cout << "Screenshot saved to " << path << std::endl; 
             }
+            else if(!window->key("F1"))
+                screenshotTaken = false;
         }
     }
 }

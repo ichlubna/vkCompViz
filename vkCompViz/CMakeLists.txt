@@ -21,6 +21,7 @@ target_sources(${PROJECT_NAME}
     src/gpu.vulkan.cppm
     src/window.cppm
     src/window.interface.cppm
+    src/glfwKeyStrings.cppm
     src/window.glfw.cppm
     src/loader.cppm
     src/loader.interface.cppm

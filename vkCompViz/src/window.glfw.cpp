@@ -2,21 +2,15 @@ module;
 #include <bits/stdc++.h>
 #include <glm/glm.hpp>
 module window;
+import glfwKeyStrings;
 using namespace Window;
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
 bool Glfw::Keys::pressed(std::string name) const
 {
-    const std::unordered_map<std::string, int> keyNames
-    {
-        {"escape", GLFW_KEY_ESCAPE},
-        {"enter", GLFW_KEY_ENTER},
-        {"space", GLFW_KEY_SPACE},
-        {"f1", GLFW_KEY_F1}
-    };
     auto lowerName = name;
-    transform(lowerName.begin(), lowerName.end(), lowerName.begin(), ::tolower);
+    transform(lowerName.begin(), lowerName.end(), lowerName.begin(), ::toupper);
     return pressedKeys.contains(keyNames.find(lowerName)->second);
 }
 

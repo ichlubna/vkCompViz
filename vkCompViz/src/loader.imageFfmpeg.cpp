@@ -3,6 +3,7 @@ module;
 #include <string>
 #include "ffmpeg.h"
 module loader;
+import common;
 import std;
 using namespace Loader;
 
@@ -20,6 +21,9 @@ size_t ImageFfmpeg::channelSize() const
 
 AVFrame *frameFromFile(std::string path)
 {
+    if(!DEBUG)
+        av_log_set_level(AV_LOG_ERROR);
+
     AVFormatContext *formatContext;
     formatContext = avformat_alloc_context();
     if(avformat_open_input(&formatContext, path.c_str(), nullptr, nullptr) != 0)
@@ -117,6 +121,9 @@ ImageFfmpeg::ImageFfmpeg(size_t width, size_t height, [[maybe_unused]] size_t st
 
 void ImageFfmpeg::save(std::string outputPath) const
 {
+    if(!DEBUG)
+        av_log_set_level(AV_LOG_ERROR);
+
     std::string outputFilePath = outputPath;
     if(outputPath == "")
         outputFilePath = outputPath;
