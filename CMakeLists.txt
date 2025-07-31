@@ -10,4 +10,4 @@ project(vkCompVizRoot)
 add_subdirectory("vkCompViz")
 
 addExample("simpleBlending" "Simple blending of two images using textures")
-addExample("parallelReduction" "Average value of an array using global and local memory and multiple passes")
+addExample("parallelReduction" "Average value of an array using global and local memory, multiple passes and benchmarks")

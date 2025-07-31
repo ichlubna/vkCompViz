@@ -6,11 +6,6 @@ App::App() : shader{std::make_unique<Shader::SlangFactory>()}
 {
 }
 
-void App::useWindow(Window::Parameters const &windowParameters)
-{
-    window = std::make_unique<Window::Glfw>(windowParameters);
-}
-
 [[nodiscard]] std::vector<std::string> split(std::string input, char delimiter)
 {
     std::vector<std::string> result;
@@ -80,36 +75,38 @@ void App::ParameterParser::read()
         lastName.clear();
 }
 
-void App::windowInitParams()
+void App::windowInit()
 {
-    if(window)
-    {
-        vulkanInitParams.requiredExtensions = window->requiredExtensions();
-        // This is used to keep the Vulkan initialization uninterrupted in constructor, the surface and resolution is obtained via function pointer from window
-        vulkanInitParams.surface = std::bind(&Window::Window::getSurface, window.get(), std::placeholders::_1);
-        vulkanInitParams.currentResolution = std::bind(&Window::Window::resolution, window.get());
-        vulkanInitParams.resolution = window->resolution();
-        vulkanInitParams.shaders.vertex = shader->loadFromFile("fullScreenVS");
-        vulkanInitParams.shaders.fragment = shader->loadFromFile("textureDisplayFS");
-    }
+    Window::Parameters windowParameters;
+    windowParameters.title = parameters.window.title;
+    windowParameters.resolution = parameters.window.resolution;
+    window = std::make_unique<Window::Glfw>(windowParameters);
+
+    vulkanInitParams.requiredExtensions = window->requiredExtensions();
+    // This is used to keep the Vulkan initialization uninterrupted in constructor, the surface and resolution is obtained via function pointer from window
+    vulkanInitParams.surface = std::bind(&Window::Window::getSurface, window.get(), std::placeholders::_1);
+    vulkanInitParams.currentResolution = std::bind(&Window::Window::resolution, window.get());
+    vulkanInitParams.resolution = window->resolution();
+    vulkanInitParams.shaders.vertex = shader->loadFromFile("fullScreenVS");
+    vulkanInitParams.shaders.fragment = shader->loadFromFile("textureDisplayFS");
 }
 
-void App::initComputeShaders(ComputeParameters const &computeParameters)
+void App::initComputeShaders()
 {
-    for(auto &computeShader : computeParameters.computeShaders)
+    for(auto &computeShader : parameters.shaders.compute)
         vulkanInitParams.shaders.compute.push_back(shader->loadFromFile(computeShader));
 }
 
-void App::initTextures(ComputeParameters const &computeParameters)
+void App::initTextures()
 {
     std::vector<std::shared_ptr<Loader::Image >> inputTextures;
-    for(auto &texture : computeParameters.textures.input)
+    for(auto &texture : parameters.textures.input)
     {
         inputTextures.push_back(std::make_shared<Loader::ImageFfmpeg>(texture));
         vulkanInitParams.textures.input.push_back(inputTextures.back());
     }
 
-    for(auto &texture : computeParameters.textures.output)
+    for(auto &texture : parameters.textures.output)
     {
         std::size_t width = texture.resolution.width;
         std::size_t height = texture.resolution.height;
@@ -131,31 +128,31 @@ void App::initTextures(ComputeParameters const &computeParameters)
     }
 }
 
-void App::initUniforms(ComputeParameters const &computeParameters) const
+void App::initUniforms() const
 {
-    for(auto &uniform : computeParameters.uniforms)
+    for(auto &uniform : parameters.shaders.uniforms)
         gpu->updateUniform(uniform.first, uniform.second);
 }
 
-void App::mainLoop(ComputeParameters const &computeParameters)
+void App::mainLoop()
 {
     if(window)
     {
-        ParameterParser parameters;
+        ParameterParser inputParameters;
         bool end = false;
         bool screenshotTaken = false;
         while(!end)
         {
             window->run();
             end = window->key("Escape") || window->quit();
-            gpu->compute(computeParameters.workGroupCounts);
+            gpu->compute(parameters.shaders.workGroupCounts);
             gpu->draw();
             if(window->resized())
                 gpu->resize();
             if(window->key("space"))
             {
-                parameters.read();
-                auto params = parameters.get();
+                inputParameters.read();
+                auto params = inputParameters.get();
                 for(auto &p : params)
                     gpu->updateUniform(p.first, p.second);
             }
@@ -164,7 +161,7 @@ void App::mainLoop(ComputeParameters const &computeParameters)
                 screenshotTaken = true;
                 const auto now = std::chrono::system_clock::now();
                 auto name = std::format("{:%d-%m-%Y %H:%M:%OS}", now); 
-                auto path = (std::filesystem::path(computeParameters.outputPath) / std::filesystem::path(name)).string() + computeParameters.outputExtension;
+                auto path = (std::filesystem::path(parameters.screenshot.path) / std::filesystem::path(name)).string() + parameters.screenshot.extension;
                 saveResultImage(path); 
                 std::cout << "Screenshot saved to " << path << std::endl; 
             }
@@ -174,14 +171,16 @@ void App::mainLoop(ComputeParameters const &computeParameters)
     }
 }
 
-void App::run(ComputeParameters const &computeParameters)
+void App::run(App::Parameters const &inputParameters)
 {
-    windowInitParams();
-    initComputeShaders(computeParameters);
-    initTextures(computeParameters);
+    parameters = inputParameters;
+    if(parameters.window.enable)
+        windowInit();
+    initComputeShaders();
+    initTextures();
     gpu = std::make_unique<Gpu::Vulkan>(vulkanInitParams);
-    initUniforms(computeParameters);
-    mainLoop(computeParameters);
+    initUniforms();
+    mainLoop();
 }
 
 const Resolution App::getImageResolution(std::string path) const
@@ -207,6 +206,26 @@ const Gpu::Gpu::WorkGroupCount App::calculateWorkGroupCount(Shader::Shader::Info
 void App::saveResultImage(std::string path) const
 {
     gpu->resultTexture()->save(path);
+}
+
+float App::BenchmarkReport::computeTime() const
+{
+    return std::accumulate(times.compute.begin(), times.compute.end(), 0.0);
+}
+                
+void App::BenchmarkReport::store(std::string path) const
+{
+    std::ofstream file;
+    file.open (path);
+    file << "Frames in flight: " << inFlightFrames << std::endl;
+    file << "Compute time: " << computeTime() << " ms" << std::endl;
+    for(std::size_t i = 0; i < times.compute.size(); i++)
+        file << "\t" << "Shader " << i << ": " << times.compute[i] << " ms" << std::endl;
+    file << "Upload time: " << times.textureUpload+times.shaderStorageUpload << " ms" << std::endl;
+    file << "\t" << "Texture upload time: " << times.textureUpload << " ms" << std::endl;
+    file << "\t" << "Shader storage upload time: " << times.shaderStorageUpload << " ms" << std::endl;
+    file << "Used memory: " << usedMemory << " MB" << std::endl;
+    file.close();
 }
 
 App::~App()

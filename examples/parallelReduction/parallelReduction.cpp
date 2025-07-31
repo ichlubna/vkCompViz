@@ -7,28 +7,42 @@ int main(int argc, char *argv[])
 {
     try
     {
-        std::string help =  "This program blends two images together with a factor.\n"
-                            "Usage: ./simpleBlending -i1 pathToFirstImage -i2 pathToSecondImage -f floatFactor -o pathToOutputImage\n";
+        std::string help =  "This program computes am average value of an input array of random floats.\n"
+                            "Usage: ./parallelReduction -s sizeOfTheArray\n";
         Arguments args(argc, argv);
         if(args.printHelpIfPresent(help))
             return EXIT_SUCCESS;
 
-        if(!args["-i1"] || !args["-i2"] || !args["-f"] || !args["-o"])
+        if(!args["-s"])
             throw std::invalid_argument("Missing parameters");
 
-        vkCompViz::App::ComputeParameters params;
-        params.computeShaders.push_back("blend.slang");
-        params.textures.input.push_back(args["-i1"]);
-        params.textures.input.push_back(args["-i2"]);
-//        params.textures.output.push_back({.path = args["-o"], .sameResolutionAsInputID = 0, .sameFormatAsInputID = 0});
-        params.uniforms.push_back({"factor", args["-f"]});
+        // Creating a vector of random floats
+        std::vector<float> inputData(args["-s"]);
+        std::mt19937 rng(std::time(nullptr)); 
+        std::uniform_real_distribution<float> dist(0.0f, 1.0f);
+        std::generate(inputData.begin(), inputData.end(), [&]() {return dist(rng);}); 
+ 
+        // GPU version
 
-        vkCompViz::App app;
-        auto resolution = app.getImageResolution(args["-i1"]);
-        auto workGroupSize = app.getShaderWorkGroupSize("blend.slang");
-        params.workGroupCounts = {app.calculateWorkGroupCount(workGroupSize, {resolution.width, resolution.height, 1})};
-        app.useWindow({.resolution = resolution, .title = "simpleBlending"});
-        app.run(params);
+        float gpuAverage = 0;
+        float gpuTime = 0;
+
+        // CPU version
+        auto start = std::chrono::steady_clock::now();
+        float sum = std::accumulate(inputData.begin(), inputData.end(), 0.0);
+        float cpuAverage = sum / inputData.size();
+        auto end = std::chrono::steady_clock::now();
+        float cpuTime = std::chrono::duration<float, std::milli>(end - start).count();  
+       
+         // Report
+        std::cout << "GPU" << std::endl;
+        std::cout << "Average: " << gpuAverage << std::endl;
+        std::cout << "Time: " << gpuTime << " ms" << std::endl;
+
+        std::cout << "CPU" << std::endl;
+        std::cout << "Average: " << cpuAverage << std::endl;
+        std::cout << "Time: " << cpuTime << " ms" << std::endl;
+        
     }
     catch(const std::exception &e)
     {

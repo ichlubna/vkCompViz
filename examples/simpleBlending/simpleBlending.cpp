@@ -16,11 +16,10 @@ int main(int argc, char *argv[])
         if(!args["-i1"] || !args["-i2"] || !args["-f"] || !args["-o"])
             throw std::invalid_argument("Missing parameters");
 
-        // This object contains parameters of the computation process
-        vkCompViz::App::ComputeParameters params;
+        vkCompViz::App::Parameters params;
         // Order of the elements in the following vectors of resources matters (compute order, bound arrays of resources in shaders)
         // Compute pipeline is represented by a vector of shader source names
-        params.computeShaders.push_back("blend.slang");
+        params.shaders.compute.push_back("blend.slang");
         // Input textures
         params.textures.input.push_back(args["-i1"]);
         params.textures.input.push_back(args["-i2"]);
@@ -28,10 +27,10 @@ int main(int argc, char *argv[])
         // Format and resolution can be set or copied from the input texture where the ID is its index in the input textures vector
         params.textures.output.push_back({.sameResolutionAsInputID = 0, .sameFormatAsInputID = 0});
         // The default uniform values can be set here
-        params.uniforms.push_back({"factor", args["-f"]});
+        params.shaders.uniforms.push_back({"factor", args["-f"]});
         // The output screenshots taken by F1 can be stored to a given directory with a given extension, the name is created from date and time
-        params.outputPath = std::filesystem::path(args["-o"]).remove_filename().string();
-        params.outputExtension = ".png";
+        params.screenshot.path = std::filesystem::path(args["-o"]).remove_filename().string();
+        params.screenshot.extension = ".png";
 
         // Init the application
         vkCompViz::App app;
@@ -41,10 +40,12 @@ int main(int argc, char *argv[])
         auto workGroupSize = app.getShaderWorkGroupSize("blend.slang");
         // The number of workgroups for each compute shader is defined in this vector
         // The function inside is a helper to compute the necessary count of workgroups
-        params.workGroupCounts = {app.calculateWorkGroupCount(workGroupSize, {resolution.width, resolution.height, 1})};
+        params.shaders.workGroupCounts = {app.calculateWorkGroupCount(workGroupSize, {resolution.width, resolution.height, 1})};
        
-        // Tells the application to use a window 
-        app.useWindow({.resolution = resolution, .title = "simpleBlending"});
+        // Tells the application to use a window with given properties 
+        params.window.enable = true;
+        params.window.resolution = resolution;
+        params.window.title = "Simple Blending";
         // Runs the rendering and computation
         app.run(params);
         // Storing the result screenshot at the end
