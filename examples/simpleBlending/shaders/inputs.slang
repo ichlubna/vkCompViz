@@ -12,3 +12,5 @@ RWTexture2D<float4> outputTexture[1];
 SamplerState inputSampler[2];
 [[vk::binding(4, 0)]]
 Texture2D<float4> inputTexture[2];
+[[vk::binding(5, 0)]]
+RWStructuredBuffer<float> buffer;

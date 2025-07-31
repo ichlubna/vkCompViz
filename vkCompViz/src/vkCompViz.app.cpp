@@ -99,13 +99,21 @@ void App::initComputeShaders()
 
 void App::initTextures()
 {
-    std::vector<std::shared_ptr<Loader::Image >> inputTextures;
-    for(auto &texture : parameters.textures.input)
-    {
-        inputTextures.push_back(std::make_shared<Loader::ImageFfmpeg>(texture));
-        vulkanInitParams.textures.input.push_back(inputTextures.back());
-    }
+    std::uint8_t dummyData[4] = {255, 0, 0, 255};
+    auto dummy = std::make_shared<Loader::ImageFfmpeg>(1, 1, 1, Loader::Image::Format::RGBA_8_INT, dummyData);
 
+    std::vector<std::shared_ptr<Loader::Image >> inputTextures;
+    if(parameters.textures.input.empty())
+        vulkanInitParams.textures.input.push_back(dummy); 
+    else
+        for(auto &texture : parameters.textures.input)
+        {
+            inputTextures.push_back(std::make_shared<Loader::ImageFfmpeg>(texture));
+            vulkanInitParams.textures.input.push_back(inputTextures.back());
+        }
+
+    if(parameters.textures.output.empty())
+        vulkanInitParams.textures.output.push_back(dummy); 
     for(auto &texture : parameters.textures.output)
     {
         std::size_t width = texture.resolution.width;
@@ -171,13 +179,21 @@ void App::mainLoop()
     }
 }
 
+void App::initShaderStorageBuffer()
+{
+    vulkanInitParams.shaderStorageBuffer.size = parameters.shaders.storageBuffer.size;
+    vulkanInitParams.shaderStorageBuffer.initialData = parameters.shaders.storageBuffer.initialData;
+}
+
 void App::run(App::Parameters const &inputParameters)
 {
     parameters = inputParameters;
-    if(parameters.window.enable)
+    // TODO
+    //if(parameters.window.enable)
         windowInit();
     initComputeShaders();
     initTextures();
+    initShaderStorageBuffer();
     gpu = std::make_unique<Gpu::Vulkan>(vulkanInitParams);
     initUniforms();
     mainLoop();
@@ -202,30 +218,9 @@ const Gpu::Gpu::WorkGroupCount App::calculateWorkGroupCount(Shader::Shader::Info
             static_cast<std::size_t>(std::ceil(static_cast<float>(threadCount.z) / workGroupSize.z))};
 }
 
-
 void App::saveResultImage(std::string path) const
 {
     gpu->resultTexture()->save(path);
-}
-
-float App::BenchmarkReport::computeTime() const
-{
-    return std::accumulate(times.compute.begin(), times.compute.end(), 0.0);
-}
-                
-void App::BenchmarkReport::store(std::string path) const
-{
-    std::ofstream file;
-    file.open (path);
-    file << "Frames in flight: " << inFlightFrames << std::endl;
-    file << "Compute time: " << computeTime() << " ms" << std::endl;
-    for(std::size_t i = 0; i < times.compute.size(); i++)
-        file << "\t" << "Shader " << i << ": " << times.compute[i] << " ms" << std::endl;
-    file << "Upload time: " << times.textureUpload+times.shaderStorageUpload << " ms" << std::endl;
-    file << "\t" << "Texture upload time: " << times.textureUpload << " ms" << std::endl;
-    file << "\t" << "Shader storage upload time: " << times.shaderStorageUpload << " ms" << std::endl;
-    file << "Used memory: " << usedMemory << " MB" << std::endl;
-    file.close();
 }
 
 App::~App()

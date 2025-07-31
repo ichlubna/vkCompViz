@@ -42,6 +42,12 @@ class Vulkan : public Gpu
                         std::vector<std::shared_ptr<Loader::Image>> input;
                         std::vector<std::shared_ptr<Loader::Image>> output;
                 } textures;
+                class ShaderStorageBuffer
+                {
+                    public:
+                        std::size_t size;
+                        std::vector<float> initialData;
+                } shaderStorageBuffer;
         };
         Vulkan(VulkanInitParams params);
         void draw() override;
@@ -98,9 +104,14 @@ class Vulkan : public Gpu
                                 std::optional<vk::raii::CommandBuffer> graphics;
                                 std::optional<vk::raii::CommandBuffer> compute;
                         } commandBuffers;
-                        std::unique_ptr<Buffer> uniformBuffer;
                         std::optional<vk::raii::DescriptorSet> descriptorSet;
                         std::vector<std::unique_ptr<Texture>> outputTextures;
+                        class Buffers
+                        {
+                            public:
+                                std::unique_ptr<Buffer> uniform;
+                                std::unique_ptr<Buffer> shaderStorage;
+                        } buffers;
                         class Sempahores
                         {
                             public:
@@ -117,12 +128,19 @@ class Vulkan : public Gpu
                 };
                 void nextInFlight()
                 {
+                    previousInFlightID = inFlightID;
                     inFlightID = (inFlightID + 1) % inFlightCount;
                 };
                 [[nodiscard]] InFlight &currentInFlight()
                 {
                     return inFlight[inFlightID];
                 };
+                [[nodiscard]] InFlight &lastComputedInFlight()
+                {
+                    if(previousInFlightID < 0)
+                        throw std::runtime_error("No frames were computed yet");
+                    return inFlight[previousInFlightID]; 
+                }
                 SwapChain(vk::raii::Device &device, const vk::SwapchainCreateInfoKHR &swapChainCreateInfo);
                 vk::raii::SwapchainKHR swapChain;
                 vk::Format imageFormat;
@@ -131,6 +149,7 @@ class Vulkan : public Gpu
                 std::vector<InFlight> inFlight;
                 std::uint32_t inFlightID{0};
                 std::uint32_t inFlightCount{0};
+                int previousInFlightID{-1};
         };
         class CreateInfo
         {
@@ -185,6 +204,8 @@ class Vulkan : public Gpu
                 void createFrameSync(SwapChain::InFlight &frame);
                 [[nodiscard]] const std::vector<std::shared_ptr<Loader::Image>> &outputImages() const { return params.textures.output; }
                 [[nodiscard]] const std::vector<std::shared_ptr<Loader::Image>> &inputImages() const { return params.textures.input; }
+                [[nodiscard]] std::size_t shaderStorageBufferSize() const { return params.shaderStorageBuffer.size; }
+                [[nodiscard]] const std::vector<float> &shaderStorageBufferData() const { return params.shaderStorageBuffer.initialData; }
 
             private:
                 Vulkan &vulkan;
@@ -323,15 +344,7 @@ class Vulkan : public Gpu
                 vk::raii::CommandBuffer &command() { return buffer.value(); }
                 std::optional<vk::raii::CommandBuffer> buffer;
                 vk::raii::Queue *queue;
-                ~OneTimeCommand()
-                {
-                    buffer.value().end();                        
-                    vk::SubmitInfo submitInfo;
-                    submitInfo
-                    .setCommandBuffers({*buffer.value()});
-                    queue->submit({submitInfo}, nullptr);
-                    queue->waitIdle();
-                }  
+                ~OneTimeCommand();
         };
         class Bindings
         {
@@ -341,6 +354,7 @@ class Vulkan : public Gpu
                 static constexpr size_t OUTPUT_TEXTURE_STORAGE{2};
                 static constexpr size_t INPUT_TEXTURE_SAMPLER{3};
                 static constexpr size_t INPUT_TEXTURE{4};
+                static constexpr size_t SHADER_STORAGE{5};
         };
         std::vector<std::unique_ptr<Texture>> inputTextures;
         std::vector<WorkGroupCount> workGroupCounts;
@@ -354,6 +368,7 @@ class Vulkan : public Gpu
         void computeSubmit();
         void createAllocator();
         void updateUniformBuffer(SwapChain::InFlight &inFlight);
+        void updateShaderStorageBuffer(SwapChain::InFlight &inFlight);
         void copyBuffer(vk::Buffer src, vk::Buffer dst, vk::DeviceSize size);
         void transitionImageLayout(vk::Image image, vk::ImageLayout oldLayout, vk::ImageLayout newLayout);
         void copyBufferToImage(vk::Buffer buffer, vk::Image image, size_t width, size_t height);

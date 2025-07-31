@@ -6,6 +6,7 @@ add_library(${PROJECT_NAME} SHARED)
 target_sources(${PROJECT_NAME}
     PUBLIC
     src/vkCompViz.app.cpp
+    src/gpu.interface.cpp
     src/gpu.vulkan.cpp
     src/window.glfw.cpp
     src/loader.imageFfmpeg.cpp

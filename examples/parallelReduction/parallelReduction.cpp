@@ -23,6 +23,20 @@ int main(int argc, char *argv[])
         std::generate(inputData.begin(), inputData.end(), [&]() {return dist(rng);}); 
  
         // GPU version
+        vkCompViz::App::Parameters params;
+        // Using the reduction shader
+        params.shaders.compute.push_back("reduction.slang");
+        vkCompViz::App app;
+        auto workGroupSize = app.getShaderWorkGroupSize("reduction.slang");
+        params.shaders.workGroupCounts = {app.calculateWorkGroupCount(workGroupSize, {inputData.size(), 1, 1})};
+        params.shaders.storageBuffer.size = inputData.size() * sizeof(float);
+        params.shaders.storageBuffer.initialData = inputData;
+        // This app will not use a window, can be also run on headless machines, only one iteration is run
+        params.window.enable = false;
+        app.run(params);       
+        auto result = app.resultBuffer(); 
+        auto benchmarks = app.benchmarkReports();
+        //benchmarks[0]....
 
         float gpuAverage = 0;
         float gpuTime = 0;

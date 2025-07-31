@@ -618,6 +618,12 @@ vk::DescriptorSetLayoutCreateInfo &Vulkan::CreateInfo::descriptorSetLayout(size_
     .setDescriptorType(vk::DescriptorType::eSampledImage)
     .setDescriptorCount(inputTextureCount) 
     .setStageFlags(vk::ShaderStageFlagBits::eCompute); 
+    
+    bindings.emplace_back()
+    .setBinding(Bindings::SHADER_STORAGE)
+    .setDescriptorType(vk::DescriptorType::eStorageBuffer)
+    .setDescriptorCount(1)
+    .setStageFlags(vk::ShaderStageFlagBits::eCompute); 
 
     descriptorSetLayoutCreateInfo
     .setBindings(bindings);
@@ -695,7 +701,15 @@ void Vulkan::graphicsSubmit(size_t swapChainFrameID)
 
 void Vulkan::updateUniformBuffer(SwapChain::InFlight &inFlight)
 {
-    vmaCopyMemoryToAllocation(*inFlight.uniformBuffer->allocator, currentUniformBufferData.data(), inFlight.uniformBuffer->allocation, 0, currentUniformBufferData.size()*sizeof(uint32_t));
+    vmaCopyMemoryToAllocation(*inFlight.buffers.uniform->allocator, currentUniformBufferData.data(), inFlight.buffers.uniform->allocation, 0, currentUniformBufferData.size()*sizeof(uint32_t));
+}
+
+void Vulkan::updateShaderStorageBuffer(SwapChain::InFlight &inFlight)
+{
+    if(createInfo.shaderStorageBufferData().empty())
+        return;
+    vmaCopyMemoryToAllocation(*inFlight.buffers.shaderStorage->allocator, createInfo.shaderStorageBufferData().data(), inFlight.buffers.shaderStorage->allocation, 0, createInfo.shaderStorageBufferData().size()*sizeof(float));
+    device.waitIdle();
 }
 
 void Vulkan::draw()
@@ -837,6 +851,16 @@ std::unique_ptr<Vulkan::OneTimeCommand> Vulkan::oneTimeCommand()
     command->buffer.value().begin(beginInfo);
     return command;
 }
+
+Vulkan::OneTimeCommand::~OneTimeCommand()
+{
+    buffer.value().end();                        
+    vk::SubmitInfo submitInfo;
+    submitInfo
+    .setCommandBuffers({*buffer.value()});
+    queue->submit({submitInfo}, nullptr);
+    queue->waitIdle();
+}  
 
 void Vulkan::copyBuffer(vk::Buffer src, vk::Buffer dst, vk::DeviceSize size)
 { 
@@ -983,6 +1007,7 @@ vk::DescriptorPoolCreateInfo &Vulkan::CreateInfo::descriptorPool(size_t inputTex
 {
     descriptorPoolSizes.clear();
     descriptorPoolSizes.push_back({vk::DescriptorType::eUniformBuffer, static_cast<uint32_t>(inFlightFramesCount)});
+    descriptorPoolSizes.push_back({vk::DescriptorType::eStorageBuffer, static_cast<uint32_t>(inFlightFramesCount)});
     descriptorPoolSizes.push_back({vk::DescriptorType::eCombinedImageSampler, static_cast<uint32_t>(inFlightFramesCount * (inputTextureCount + outputTextureCount))});
     descriptorPoolSizes.push_back({vk::DescriptorType::eStorageImage, static_cast<uint32_t>(inFlightFramesCount * outputTextureCount)});
     descriptorPoolSizes.push_back({vk::DescriptorType::eSampledImage, static_cast<uint32_t>(inFlightFramesCount * inputTextureCount)});
@@ -1008,7 +1033,7 @@ void Vulkan::updateDescriptorSets(SwapChain::InFlight &inFlight)
 {
     vk::DescriptorBufferInfo bufferInfo;
     bufferInfo
-    .setBuffer(inFlight.uniformBuffer->buffer)
+    .setBuffer(inFlight.buffers.uniform->buffer)
     .setOffset(0)
     .setRange(VK_WHOLE_SIZE);
     
@@ -1080,6 +1105,20 @@ void Vulkan::updateDescriptorSets(SwapChain::InFlight &inFlight)
         .setDescriptorType(vk::DescriptorType::eSampledImage)
         .setDescriptorCount(inImageInfosStorage.size())
         .setPImageInfo(inImageInfosStorage.data());
+    
+    vk::DescriptorBufferInfo storageBufferInfo;
+    storageBufferInfo
+    .setBuffer(inFlight.buffers.shaderStorage->buffer)
+    .setOffset(0)
+    .setRange(VK_WHOLE_SIZE);
+
+    writeDescriptorSets.emplace_back()
+        .setDstSet(*inFlight.descriptorSet.value())
+        .setDstBinding(Bindings::SHADER_STORAGE)
+        .setDstArrayElement(0)
+        .setDescriptorType(vk::DescriptorType::eStorageBuffer)
+        .setDescriptorCount(1)
+        .setBufferInfo(storageBufferInfo);
 
     device.updateDescriptorSets(writeDescriptorSets, {});
 }
@@ -1102,16 +1141,18 @@ void Vulkan::createSwapChainFrames()
     {
         swapChain.frames.emplace_back();
         createInfo.createFrameBuffer(swapChain.frames.back(), image);
-        swapChain.inFlight.emplace_back();
-        swapChain.inFlight.back().commandBuffers.graphics.emplace(std::move(graphicsCommandBuffers[id]));
-        swapChain.inFlight.back().commandBuffers.compute.emplace(std::move(computeCommandBuffers[id]));
-        createInfo.createFrameSync(swapChain.inFlight.back());
-        swapChain.inFlight.back().uniformBuffer = memory.buffer(vk::BufferUsageFlagBits::eUniformBuffer, currentUniformBufferData.size());
+        auto &inFlight = swapChain.inFlight.emplace_back();
+        inFlight.commandBuffers.graphics.emplace(std::move(graphicsCommandBuffers[id]));
+        inFlight.commandBuffers.compute.emplace(std::move(computeCommandBuffers[id]));
+        createInfo.createFrameSync(inFlight);
+        inFlight.buffers.uniform = memory.buffer(vk::BufferUsageFlagBits::eUniformBuffer, currentUniformBufferData.size());
         swapChain.inFlight.back().descriptorSet.emplace(std::move(descriptorSets[id]));
         auto outputImages = createInfo.outputImages();
         for(auto const &outputImage : outputImages)
-           swapChain.inFlight.back().outputTextures.emplace_back(memory.texture(outputImage, true)); 
-        updateDescriptorSets(swapChain.inFlight.back());
+           inFlight.outputTextures.emplace_back(memory.texture(outputImage, true)); 
+        inFlight.buffers.shaderStorage = memory.buffer(vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eTransferSrc, createInfo.shaderStorageBufferSize());
+        updateShaderStorageBuffer(inFlight);
+        updateDescriptorSets(inFlight);
         id++;
     }
 }
@@ -1222,7 +1263,16 @@ std::shared_ptr<Loader::Image> Vulkan::resultTexture()
 
 std::vector<float> Vulkan::resultBuffer()
 {
-    std::vector<float> result;
+    const auto &inFlight = swapChain.lastComputedInFlight();
+    size_t size = createInfo.shaderStorageBufferSize();
+    auto stagingBuffer = memory.buffer(vk::BufferUsageFlagBits::eTransferDst, size);
+    std::vector<float> result(size);
+    
+    void *gpuData;
+    copyBuffer(inFlight.buffers.shaderStorage->buffer, stagingBuffer->buffer, size);
+    vmaMapMemory(*stagingBuffer->allocator, stagingBuffer->allocation, &gpuData);
+    memcpy(result.data(), gpuData, size);
+    vmaUnmapMemory(*stagingBuffer->allocator, stagingBuffer->allocation);    
     return result;
 }
 

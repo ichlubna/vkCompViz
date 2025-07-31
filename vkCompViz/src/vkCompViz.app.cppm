@@ -33,6 +33,12 @@ class App
                         std::vector<std::string> compute;
                         std::vector<Gpu::Gpu::WorkGroupCount> workGroupCounts;
                         std::vector<std::pair<std::string, float >> uniforms;
+                        class StorageBuffer
+                        {
+                            public:
+                                std::size_t size{4};
+                                std::vector<float> initialData;
+                        } storageBuffer;
                 } shaders;
                 class Screenshot
                 {
@@ -45,30 +51,14 @@ class App
                     public:
                         std::size_t iterations{0};
                         std::string path{"./"};
-                        std::string extension{".csv"};
                 } benchmark;
                 class Window
                 {
                     public:
                         bool enable {true};
-                        Resolution resolution {1920, 1080};
+                        Resolution resolution {640, 480};
                         std::string title {"No title"};
                 } window;
-        };
-        class BenchmarkReport
-        {
-            public:
-                std::size_t inFlightFrames {1};
-                class Times
-                {
-                    public:
-                        std::vector<float> compute;
-                        float textureUpload {0};
-                        float shaderStorageUpload {0};
-                } times;
-                float usedMemory {0};
-                [[nodiscard]] float computeTime() const;
-                void store(std::string path) const;
         };
         class ParameterParser
         {
@@ -87,6 +77,11 @@ class App
         [[nodiscard]] const Shader::Shader::Info::WorkGroupSize getShaderWorkGroupSize(std::string path) const;
         [[nodiscard]] const Gpu::Gpu::WorkGroupCount calculateWorkGroupCount(Shader::Shader::Info::WorkGroupSize workGroupSize, Shader::Shader::Info::ThreadCount threadCount) const;
         void saveResultImage(std::string path) const;
+        std::vector<float> resultBuffer() const { return gpu->resultBuffer(); };
+        [[nodiscard]] const std::vector<Gpu::Gpu::BenchmarkReport> benchmarkReports() const 
+        {
+            return gpu->benchmarkReports();
+        }
         ~App();
 
     private:
@@ -99,6 +94,7 @@ class App
         void initComputeShaders();
         void initTextures(); 
         void initUniforms() const;
+        void initShaderStorageBuffer();
         void mainLoop();
 };
 

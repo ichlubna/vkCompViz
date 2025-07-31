@@ -19,6 +19,7 @@ int main(int argc, char *argv[])
         vkCompViz::App::Parameters params;
         // Order of the elements in the following vectors of resources matters (compute order, bound arrays of resources in shaders)
         // Compute pipeline is represented by a vector of shader source names
+        // Shader names refer to Slang files in the shader directory in the example sources
         params.shaders.compute.push_back("blend.slang");
         // Input textures
         params.textures.input.push_back(args["-i1"]);
@@ -31,6 +32,11 @@ int main(int argc, char *argv[])
         // The output screenshots taken by F1 can be stored to a given directory with a given extension, the name is created from date and time
         params.screenshot.path = std::filesystem::path(args["-o"]).remove_filename().string();
         params.screenshot.extension = ".png";
+        // The benchmark report file taken by F2 will be stored to a given directory
+        params.benchmark.path = std::filesystem::path(args["-o"]).remove_filename().string();
+        // Additionally, a number of compute iterations can be set for benchmark, the app would run draw given number of frames and end
+        // If the number is non-zero, the app stores the report for each frame
+        //params.benchmark.iterations = 5;
 
         // Init the application
         vkCompViz::App app;
