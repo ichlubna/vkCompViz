@@ -49,7 +49,7 @@ class App
                 class Benchmark
                 {
                     public:
-                        std::size_t iterations{0};
+                        bool enable{false};
                         std::string path{"./"};
                 } benchmark;
                 class Window

@@ -26,17 +26,25 @@ int main(int argc, char *argv[])
         vkCompViz::App::Parameters params;
         // Using the reduction shader
         params.shaders.compute.push_back("reduction.slang");
+        params.shaders.compute.push_back("reduction.slang");
         vkCompViz::App app;
         auto workGroupSize = app.getShaderWorkGroupSize("reduction.slang");
-        params.shaders.workGroupCounts = {app.calculateWorkGroupCount(workGroupSize, {inputData.size(), 1, 1})};
+        params.shaders.workGroupCounts.push_back(app.calculateWorkGroupCount(workGroupSize, {inputData.size(), 1, 1}));
+        params.shaders.workGroupCounts.push_back({1,1,1});
         params.shaders.storageBuffer.size = inputData.size() * sizeof(float);
         params.shaders.storageBuffer.initialData = inputData;
-        // This app will not use a window, can be also run on headless machines, only one iteration is run
+        // This app will not use a window, can be also run on headless machines, will run only one compute cycle
         params.window.enable = false;
+        // Enables benchmarking - measuring of time and memory usage, it is the same as pressing F2 in windowed mode
+        // Report is not saved to file but available as showed below
+        params.benchmark.enable = true;
         app.run(params);       
-        auto result = app.resultBuffer(); 
+        auto result = app.resultBuffer();
+        // The benchmark reports are also available here
         auto benchmarks = app.benchmarkReports();
         //benchmarks[0]....
+
+        std::cerr << inputData[0] << " " << result[0] << std::endl;
 
         float gpuAverage = 0;
         float gpuTime = 0;

@@ -93,6 +93,10 @@ void App::windowInit()
 
 void App::initComputeShaders()
 {
+    if (parameters.shaders.compute.empty())
+        throw std::runtime_error("No compute shader specified");
+    if (parameters.shaders.compute.size() != parameters.shaders.workGroupCounts.size())
+        throw std::runtime_error("The number of compute shaders must be equal to the number of work group counts");
     for(auto &computeShader : parameters.shaders.compute)
         vulkanInitParams.shaders.compute.push_back(shader->loadFromFile(computeShader));
 }
@@ -144,7 +148,7 @@ void App::initUniforms() const
 
 void App::mainLoop()
 {
-    if(window)
+    if(parameters.window.enable)
     {
         ParameterParser inputParameters;
         bool end = false;
@@ -176,6 +180,14 @@ void App::mainLoop()
             else if(!window->key("F1"))
                 screenshotTaken = false;
         }
+    }
+    else
+    {
+        // TODO remove
+        window->run();
+        gpu->compute(parameters.shaders.workGroupCounts);
+        gpu->draw();
+
     }
 }
 

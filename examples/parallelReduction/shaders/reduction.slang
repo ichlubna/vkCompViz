@@ -4,6 +4,9 @@
 [numthreads(256,1,1)]
 void main(uint3 threadID : SV_DispatchThreadID)
 {
-    sharedBuffer[0] = 5;
-    buffer[0] = sharedBuffer[0];
+    if (threadID.x == 0 && threadID.y == 0 && threadID.z == 0)
+    {
+        sharedBuffer[0] = buffer[0]+1.0f;
+        buffer[0] = sharedBuffer[0];
+    }
 }

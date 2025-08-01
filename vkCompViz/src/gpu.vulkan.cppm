@@ -53,7 +53,6 @@ class Vulkan : public Gpu
         void draw() override;
         void compute(std::vector<WorkGroupCount> shaderWorkGroupCounts) override;
         void resize() override;
-        void setInFlightFrames(std::size_t count) override;
         void updateUniformBuffer(std::vector<uint32_t> buffer) override;
         void updateUniform(std::string name, float value) override;
         [[nodiscard]] std::shared_ptr<Loader::Image> resultTexture() override;

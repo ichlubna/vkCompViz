@@ -1178,12 +1178,6 @@ void Vulkan::resize()
     resizeRequired = true;
 }
 
-void Vulkan::setInFlightFrames(std::size_t count)
-{
-    swapChain.inFlightCount = count;
-    resize();
-};
-
 void Vulkan::updateUniformBuffer(std::vector<uint32_t> buffer)
 {
     std::copy(buffer.begin(), buffer.end(), currentUniformBufferData.begin());
@@ -1213,8 +1207,15 @@ void Vulkan::recordComputeCommandBuffer(SwapChain::InFlight &inFlight)
         buffer.bindPipeline(vk::PipelineBindPoint::eCompute, pipelines.compute.pipelines[i]);
         buffer.bindDescriptorSets(vk::PipelineBindPoint::eCompute, pipelines.compute.layout, 0, {inFlight.descriptorSet.value()}, {});
         buffer.dispatch(workGroupCounts[i].x, workGroupCounts[i].y, workGroupCounts[i].z);
+        if(i < workGroupCounts.size() - 1)
+        {
+            vk::MemoryBarrier memoryBarrier;
+            memoryBarrier
+            .setSrcAccessMask(vk::AccessFlagBits::eShaderWrite)
+            .setDstAccessMask(vk::AccessFlagBits::eShaderRead);
+            buffer.pipelineBarrier(vk::PipelineStageFlagBits::eComputeShader, vk::PipelineStageFlagBits::eComputeShader, {}, memoryBarrier, {}, {});
+        }
     }
-    //TODO BARRIER
     buffer.end();
 }
 
@@ -1245,7 +1246,7 @@ void Vulkan::compute(std::vector<WorkGroupCount> shaderWorkGroupCounts)
 
 std::shared_ptr<Loader::Image> Vulkan::resultTexture()
 {
-    const auto &inFlight = swapChain.currentInFlight();
+    const auto &inFlight = swapChain.lastComputedInFlight();
     auto &output = inFlight.outputTextures.front();
     auto initialOutputImage = createInfo.outputImages().front();
 
