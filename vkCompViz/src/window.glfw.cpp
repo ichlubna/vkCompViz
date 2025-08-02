@@ -11,6 +11,8 @@ bool Glfw::Keys::pressed(std::string name) const
 {
     auto lowerName = name;
     transform(lowerName.begin(), lowerName.end(), lowerName.begin(), ::toupper);
+    lowerName.erase(std::remove(lowerName.begin(), lowerName.end(), ' '), lowerName.end());
+    lowerName.erase(std::remove(lowerName.begin(), lowerName.end(), '_'), lowerName.end());
     return pressedKeys.contains(keyNames.find(lowerName)->second);
 }
 

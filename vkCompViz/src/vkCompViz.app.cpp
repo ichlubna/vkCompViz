@@ -200,8 +200,8 @@ void App::initShaderStorageBuffer()
 void App::run(App::Parameters const &inputParameters)
 {
     parameters = inputParameters;
-    // TODO
-    //if(parameters.window.enable)
+    vulkanInitParams.window = parameters.window.enable;
+    if(parameters.window.enable)
         windowInit();
     initComputeShaders();
     initTextures();

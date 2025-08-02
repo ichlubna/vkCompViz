@@ -19,6 +19,7 @@ class Vulkan : public Gpu
                 std::vector<const char *> requiredExtensions;
                 std::function<std::uintptr_t(std::uintptr_t)> surface;
                 std::function<Resolution()> currentResolution;
+                bool window {true};
                 Resolution resolution;
                 class Shaders
                 {
@@ -141,7 +142,7 @@ class Vulkan : public Gpu
                     return inFlight[previousInFlightID]; 
                 }
                 SwapChain(vk::raii::Device &device, const vk::SwapchainCreateInfoKHR &swapChainCreateInfo);
-                vk::raii::SwapchainKHR swapChain;
+                std::optional<vk::raii::SwapchainKHR> swapChain;
                 vk::Format imageFormat;
                 vk::Extent2D extent;
                 std::vector<Frame> frames;
@@ -205,6 +206,8 @@ class Vulkan : public Gpu
                 [[nodiscard]] const std::vector<std::shared_ptr<Loader::Image>> &inputImages() const { return params.textures.input; }
                 [[nodiscard]] std::size_t shaderStorageBufferSize() const { return params.shaderStorageBuffer.size; }
                 [[nodiscard]] const std::vector<float> &shaderStorageBufferData() const { return params.shaderStorageBuffer.initialData; }
+                [[nodiscard]] VkSurfaceKHR surface();
+                [[nodiscard]] bool windowEnabled() const { return params.window; }
 
             private:
                 Vulkan &vulkan;
@@ -276,7 +279,7 @@ class Vulkan : public Gpu
         CreateInfo createInfo;
         vk::raii::Context context;
         vk::raii::Instance instance;
-        vk::raii::SurfaceKHR surface;
+        std::optional<vk::raii::SurfaceKHR> surface;
         vk::raii::PhysicalDevice physicalDevice;
         vk::raii::Device device;
         class Memory
@@ -325,9 +328,10 @@ class Vulkan : public Gpu
                 class Graphics
                 {
                     public:
-                        vk::raii::PipelineLayout layout;
-                        vk::raii::RenderPass renderPass;
-                        vk::raii::Pipeline pipeline;
+                        Graphics(vk::raii::Device &device, CreateInfo &createInfo) : layout{std::in_place, device, createInfo.pipelineLayout()}, renderPass{std::in_place, device, createInfo.renderPass()}, pipeline{std::in_place, device, nullptr, createInfo.graphicsPipeline()} {};
+                        std::optional<vk::raii::PipelineLayout> layout;
+                        std::optional<vk::raii::RenderPass> renderPass;
+                        std::optional<vk::raii::Pipeline> pipeline;
                 } graphics;
                 class Compute
                 {
