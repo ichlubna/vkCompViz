@@ -91,7 +91,7 @@ class App
         std::unique_ptr<Shader::Shader> shader;
         Gpu::Vulkan::VulkanInitParams vulkanInitParams;
         void windowInit();
-        void initComputeShaders();
+        void initShaders();
         void initTextures(); 
         void initUniforms() const;
         void initShaderStorageBuffer();

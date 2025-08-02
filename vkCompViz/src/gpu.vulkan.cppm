@@ -141,7 +141,7 @@ class Vulkan : public Gpu
                         throw std::runtime_error("No frames were computed yet");
                     return inFlight[previousInFlightID]; 
                 }
-                SwapChain(vk::raii::Device &device, const vk::SwapchainCreateInfoKHR &swapChainCreateInfo);
+                SwapChain(vk::raii::Device &device, const vk::SwapchainCreateInfoKHR &swapChainCreateInfo, bool windowEnabled);
                 std::optional<vk::raii::SwapchainKHR> swapChain;
                 vk::Format imageFormat;
                 vk::Extent2D extent;
@@ -265,7 +265,7 @@ class Vulkan : public Gpu
                 std::vector<const char *> allExtensions;
                 inline static const std::vector<const char *> instanceExtensions{"VK_KHR_portability_enumeration"};
                 inline static const std::vector<const char *> validationLayers{"VK_LAYER_KHRONOS_validation"};
-                inline static const std::vector<const char *> deviceExtensions{"VK_KHR_swapchain", "VK_KHR_shader_draw_parameters", "VK_KHR_compute_shader_derivatives"};
+                std::vector<const char *> deviceExtensions{"VK_KHR_shader_draw_parameters", "VK_KHR_compute_shader_derivatives"};
                 inline static const std::vector<vk::DynamicState> dynamicStates{vk::DynamicState::eViewport, vk::DynamicState::eScissor};
                 class QueueIndices
                 {
@@ -328,7 +328,7 @@ class Vulkan : public Gpu
                 class Graphics
                 {
                     public:
-                        Graphics(vk::raii::Device &device, CreateInfo &createInfo) : layout{std::in_place, device, createInfo.pipelineLayout()}, renderPass{std::in_place, device, createInfo.renderPass()}, pipeline{std::in_place, device, nullptr, createInfo.graphicsPipeline()} {};
+                        Graphics(vk::raii::Device &device, CreateInfo &createInfo);
                         std::optional<vk::raii::PipelineLayout> layout;
                         std::optional<vk::raii::RenderPass> renderPass;
                         std::optional<vk::raii::Pipeline> pipeline;

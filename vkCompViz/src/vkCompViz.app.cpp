@@ -87,12 +87,12 @@ void App::windowInit()
     vulkanInitParams.surface = std::bind(&Window::Window::getSurface, window.get(), std::placeholders::_1);
     vulkanInitParams.currentResolution = std::bind(&Window::Window::resolution, window.get());
     vulkanInitParams.resolution = window->resolution();
-    vulkanInitParams.shaders.vertex = shader->loadFromFile("fullScreenVS");
-    vulkanInitParams.shaders.fragment = shader->loadFromFile("textureDisplayFS");
 }
 
-void App::initComputeShaders()
+void App::initShaders()
 {
+    vulkanInitParams.shaders.vertex = shader->loadFromFile("fullScreenVS");
+    vulkanInitParams.shaders.fragment = shader->loadFromFile("textureDisplayFS");
     if (parameters.shaders.compute.empty())
         throw std::runtime_error("No compute shader specified");
     if (parameters.shaders.compute.size() != parameters.shaders.workGroupCounts.size())
@@ -183,8 +183,6 @@ void App::mainLoop()
     }
     else
     {
-        // TODO remove
-        window->run();
         gpu->compute(parameters.shaders.workGroupCounts);
         gpu->draw();
 
@@ -203,7 +201,7 @@ void App::run(App::Parameters const &inputParameters)
     vulkanInitParams.window = parameters.window.enable;
     if(parameters.window.enable)
         windowInit();
-    initComputeShaders();
+    initShaders();
     initTextures();
     initShaderStorageBuffer();
     gpu = std::make_unique<Gpu::Vulkan>(vulkanInitParams);

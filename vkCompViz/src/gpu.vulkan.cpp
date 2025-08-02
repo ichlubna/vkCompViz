@@ -11,7 +11,6 @@ Vulkan::Vulkan(VulkanInitParams params) :
     createInfo{*this, params},
     context{},
     instance{context, createInfo.instance()},
-    surface{std::in_place, instance, createInfo.surface()},
     physicalDevice{createInfo.bestPhysicalDevice()},
     device{physicalDevice, createInfo.device()},
     memory{instance, physicalDevice, device, *this},
@@ -22,7 +21,7 @@ Vulkan::Vulkan(VulkanInitParams params) :
                     .compute{device, createInfo.commandPool(createInfo.computeQueueID())}},
     sampler{device, createInfo.sampler()},
     descriptorSetLayout{device, createInfo.descriptorSetLayout(params.textures.input.size(), params.textures.output.size())},
-    swapChain{device, createInfo.swapChain()},
+    swapChain{device, createInfo.swapChain(), createInfo.windowEnabled()},
     currentUniformBufferData{static_cast<std::uint32_t>(params.shaders.uniformBufferUint32Count()), 0},
     uniformNames{params.shaders.uniformNames()},
     shaders{.vertex{device, createInfo.shaderModule(params.shaders.vertex.code)},
@@ -206,12 +205,13 @@ DeviceRating::DeviceRating(const vk::raii::PhysicalDevice *testedDevice, const v
             uniqueCapabilities.insert("Compute");
             queueIndex.compute = queueFamilyID;
         }
-        if(device->getSurfaceSupportKHR(queueFamilyID, *testedSurface))
-        {
-            score++;
-            uniqueCapabilities.insert("Present");
-            queueIndex.present = queueFamilyID;
-        }
+        if(windowEnabled)
+            if(device->getSurfaceSupportKHR(queueFamilyID, *testedSurface))
+            {
+                score++;
+                uniqueCapabilities.insert("Present");
+                queueIndex.present = queueFamilyID;
+            }
     }
 
     for(size_t i = 0; i < VK_UUID_SIZE; i++)
@@ -220,6 +220,11 @@ DeviceRating::DeviceRating(const vk::raii::PhysicalDevice *testedDevice, const v
 
 vk::raii::PhysicalDevice Vulkan::CreateInfo::bestPhysicalDevice()
 {
+    if(windowEnabled())
+    {
+        vulkan.surface.emplace(vulkan.instance, surface());
+        deviceExtensions.push_back("VK_KHR_swapchain");
+    }
     vk::raii::PhysicalDevices physicalDevices(vulkan.instance);
     if(physicalDevices.empty())
         throw std::runtime_error("No physical devices found");
@@ -282,6 +287,16 @@ vk::DeviceCreateInfo &Vulkan::CreateInfo::device()
     return deviceCreateInfo;
 }
 
+Vulkan::Pipelines::Graphics::Graphics(vk::raii::Device &device, Vulkan::CreateInfo &createInfo)
+{
+    if(createInfo.windowEnabled())
+    {
+        layout.emplace(device, createInfo.pipelineLayout());
+        renderPass.emplace(device, createInfo.renderPass());
+        pipeline.emplace(device, nullptr, createInfo.graphicsPipeline());
+    }
+};
+
 vk::SurfaceFormatKHR swapChainSurfaceFormat(const std::vector<vk::SurfaceFormatKHR> &availableFormats)
 {
     for(const auto& availableFormat : availableFormats)
@@ -310,6 +325,8 @@ vk::Extent2D swapChainExtent(const vk::SurfaceCapabilitiesKHR &capabilities, Res
 
 vk::SwapchainCreateInfoKHR &Vulkan::CreateInfo::swapChain()
 {
+    if(!windowEnabled())
+        return swapChainCreateInfo;
     auto surfaceCapabilities = vulkan.physicalDevice.getSurfaceCapabilitiesKHR(vulkan.surface.value());
     auto surfaceFormat = swapChainSurfaceFormat(vulkan.physicalDevice.getSurfaceFormatsKHR(vulkan.surface.value()));
     auto presentMode = swapChainPresentMode(vulkan.physicalDevice.getSurfacePresentModesKHR(vulkan.surface.value()));
@@ -335,8 +352,10 @@ vk::SwapchainCreateInfoKHR &Vulkan::CreateInfo::swapChain()
     return swapChainCreateInfo;
 }
 
-Vulkan::SwapChain::SwapChain(vk::raii::Device &device, const vk::SwapchainCreateInfoKHR &swapChainCreateInfo) : swapChain{std::in_place, device, swapChainCreateInfo}
+Vulkan::SwapChain::SwapChain(vk::raii::Device &device, const vk::SwapchainCreateInfoKHR &swapChainCreateInfo, bool windowEnabled)
 {
+    if(windowEnabled)
+        swapChain.emplace(device, swapChainCreateInfo);
     extent = swapChainCreateInfo.imageExtent;
     imageFormat = swapChainCreateInfo.imageFormat;
 }
@@ -730,49 +749,52 @@ void Vulkan::draw()
     updateUniformBuffer(inFlight);
     computeSubmit();
 
-    while(device.waitForFences({inFlight.fences.inFlight.value()}, VK_TRUE, timeout) == vk::Result::eTimeout);
+    if(createInfo.windowEnabled())
+    {
+        while(device.waitForFences({inFlight.fences.inFlight.value()}, VK_TRUE, timeout) == vk::Result::eTimeout);
 
-    uint32_t swapChainFrameID;
-    vk::Result result;
-    try
-    {
-        std::tie(result, swapChainFrameID) = swapChain.swapChain.value().acquireNextImage(timeout, *inFlight.semaphores.imageAvailable);
-    }
-    catch(const vk::SystemError& err)
-    {
-        if(err.code() == vk::Result::eErrorOutOfDateKHR)
+        uint32_t swapChainFrameID;
+        vk::Result result;
+        try
         {
-            recreateSwapChain();
-            return;
+            std::tie(result, swapChainFrameID) = swapChain.swapChain.value().acquireNextImage(timeout, *inFlight.semaphores.imageAvailable);
         }
-        else
-            throw;
-    }
-    graphicsSubmit(swapChainFrameID);
+        catch(const vk::SystemError& err)
+        {
+            if(err.code() == vk::Result::eErrorOutOfDateKHR)
+            {
+                recreateSwapChain();
+                return;
+            }
+            else
+                throw;
+        }
+        graphicsSubmit(swapChainFrameID);
 
-    vk::PresentInfoKHR presentInfo;
-    presentInfo
-    .setWaitSemaphores({*inFlight.semaphores.renderFinished.value()})
-    .setSwapchains({*swapChain.swapChain.value()})
-    .setPImageIndices(&swapChainFrameID);
-    try
-    {
-        result = queues.present.presentKHR(presentInfo);
-    }
-    catch(const vk::SystemError& err)
-    {
-        if(err.code() == vk::Result::eErrorOutOfDateKHR || err.code() == vk::Result::eSuboptimalKHR)
+        vk::PresentInfoKHR presentInfo;
+        presentInfo
+        .setWaitSemaphores({*inFlight.semaphores.renderFinished.value()})
+        .setSwapchains({*swapChain.swapChain.value()})
+        .setPImageIndices(&swapChainFrameID);
+        try
+        {
+            result = queues.present.presentKHR(presentInfo);
+        }
+        catch(const vk::SystemError& err)
+        {
+            if(err.code() == vk::Result::eErrorOutOfDateKHR || err.code() == vk::Result::eSuboptimalKHR)
+            {
+                recreateSwapChain();
+                resizeRequired = false;
+            }
+            else
+                throw;
+        }
+        if(resizeRequired)
         {
             recreateSwapChain();
             resizeRequired = false;
         }
-        else
-            throw;
-    }
-    if(resizeRequired)
-    {
-        recreateSwapChain();
-        resizeRequired = false;
     }
     swapChain.nextInFlight();
 }
@@ -1135,34 +1157,39 @@ void Vulkan::updateDescriptorSets(SwapChain::InFlight &inFlight)
 void Vulkan::createSwapChainFrames()
 {
     createInputTextures();
-    auto images = swapChain.swapChain.value().getImages();
-    if(swapChain.inFlightCount > images.size())
-        throw std::runtime_error("Requested inflight count (N-buffering) is greater than number of swapchain images");
-    if(swapChain.inFlightCount == 0)
-        swapChain.inFlightCount = images.size();
+    std::vector<vk::Image> images;
+    if(createInfo.windowEnabled())
+    {
+        images = swapChain.swapChain.value().getImages();
+        if(swapChain.inFlightCount > images.size())
+            throw std::runtime_error("Requested inflight count (N-buffering) is greater than number of swapchain images");
+        if(swapChain.inFlightCount == 0)
+            swapChain.inFlightCount = images.size();
+    }
+    else
+        swapChain.inFlightCount = 1;
     vk::raii::CommandBuffers graphicsCommandBuffers(device, createInfo.commandBuffer(commandPools.graphics, swapChain.inFlightCount));
     vk::raii::CommandBuffers computeCommandBuffers(device, createInfo.commandBuffer(commandPools.compute, swapChain.inFlightCount));
     swapChain.descriptorPool.emplace(device, createInfo.descriptorPool(createInfo.inputImages().size(), createInfo.outputImages().size(), swapChain.inFlightCount));
     vk::raii::DescriptorSets descriptorSets(device, createInfo.descriptorSet(swapChain.descriptorPool.value(), swapChain.inFlightCount));
     swapChain.frames.clear();
-    size_t id = 0;
-    for(auto& image : images)
+    for(size_t i = 0; i < swapChain.inFlightCount; i++)
     {
         swapChain.frames.emplace_back();
-        createInfo.createFrameBuffer(swapChain.frames.back(), image);
+        if(createInfo.windowEnabled())
+            createInfo.createFrameBuffer(swapChain.frames.back(), images[i]);
         auto &inFlight = swapChain.inFlight.emplace_back();
-        inFlight.commandBuffers.graphics.emplace(std::move(graphicsCommandBuffers[id]));
-        inFlight.commandBuffers.compute.emplace(std::move(computeCommandBuffers[id]));
+        inFlight.commandBuffers.graphics.emplace(std::move(graphicsCommandBuffers[i]));
+        inFlight.commandBuffers.compute.emplace(std::move(computeCommandBuffers[i]));
         createInfo.createFrameSync(inFlight);
         inFlight.buffers.uniform = memory.buffer(vk::BufferUsageFlagBits::eUniformBuffer, currentUniformBufferData.size());
-        swapChain.inFlight.back().descriptorSet.emplace(std::move(descriptorSets[id]));
+        swapChain.inFlight.back().descriptorSet.emplace(std::move(descriptorSets[i]));
         auto outputImages = createInfo.outputImages();
         for(auto const &outputImage : outputImages)
            inFlight.outputTextures.emplace_back(memory.texture(outputImage, true)); 
         inFlight.buffers.shaderStorage = memory.buffer(vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eTransferSrc, createInfo.shaderStorageBufferSize());
         updateShaderStorageBuffer(inFlight);
         updateDescriptorSets(inFlight);
-        id++;
     }
 }
 
@@ -1173,7 +1200,7 @@ void Vulkan::recreateSwapChain()
     oldSwapchain.emplace(std::move(swapChain.swapChain.value()));
     auto &swapChainCreateInfo = createInfo.swapChain();
     swapChainCreateInfo.setOldSwapchain(oldSwapchain.value());
-    swapChain = Vulkan::SwapChain{device, swapChainCreateInfo};
+    swapChain = Vulkan::SwapChain{device, swapChainCreateInfo, createInfo.windowEnabled()};
     createSwapChainFrames();
 }
 
