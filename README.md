@@ -6,6 +6,8 @@ The library can load input images, run a sequence of compute shaders, display th
 ## How to run
 Simple compilation of examples:
 ```
+git clone --recursive https://github.com/ichlubna/vkCompViz.git
+cd vkCompViz
 mkdir build
 cmake .. -G "Ninja"
 ninja
@@ -19,7 +21,7 @@ A path to Artistic Style (astyle) program can be defined with `ccmake` and the p
 ninja format
 ```
 ## Usage
-See the existing examples for reference. Especially, [Simple Blending](examples/simpleBlending) and [Parallel Reduction](examples/parallelReduction) are simple and contain explanatory comments. It is recommended to use them as templates for new examples.
+See the existing examples for reference. Especially, [Simple Blending](examples/simpleBlending), [Parallel Reduction](examples/parallelReduction), and [3D Viewer](examples/3DViewer) are simple and contain explanatory comments. It is recommended to use them as templates for new examples.
 
 The bindings in shaders are:  
 
@@ -42,3 +44,7 @@ Keys for window application:
 | Space | Edit uniforms in runtime | 
 | F1 | Store the the result |
 | F2 | Store benchmark report | 
+
+### TODO
+- RTX pipeline that can render to texture.
+- Add a class reflecting the input buffers and textures which can be asynchronously updated in runtime. GPU would update its data when changes happen. This can allow for data changes during runtime (e.g. video player).

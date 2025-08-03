@@ -1,78 +1,11 @@
 module vkCompViz;
+import parameterParser;
+import timer;
 import std;
 using namespace vkCompViz;
 
 App::App() : shader{std::make_unique<Shader::SlangFactory>()}
 {
-}
-
-[[nodiscard]] std::vector<std::string> split(std::string input, char delimiter)
-{
-    std::vector<std::string> result;
-    std::size_t position = input.find(delimiter);
-    if(position == std::string::npos)
-        result.push_back(input);
-    while(position != std::string::npos)
-    {
-        result.push_back(input.substr(0, position));
-        input.erase(0, position + 1);
-        position = input.find(delimiter);
-        if(position == std::string::npos)
-            result.push_back(input);
-    }
-    return result;
-}
-
-float App::ParameterParser::get(std::string name, float defaultValue) const
-{
-    if(parametersMap.find(name) == parametersMap.end())
-        return defaultValue;
-    return parametersMap.at(name);
-}
-
-void App::ParameterParser::read()
-{
-    std::cout << "Enter parameters as a=1.0 b=2.0..." << std::endl;
-    if(!lastName.empty())
-        std::cout << "Last parameter was " << lastName << " you can enter only value to update it" << std::endl;
-    parametersMap.clear();
-    std::string input;
-    std::getline(std::cin, input);
-
-    if(!lastName.empty())
-    {
-        bool singleValue = true;
-        try
-        {
-            std::stof(input);
-        }
-        catch(...)
-        {
-            singleValue = false;
-        }
-        if(singleValue)
-        {
-            parametersMap[lastName] = std::stof(input);
-            return;
-        }
-    }
-
-    auto parameters = split(input, ' ');
-    for(auto parameter : parameters)
-    {
-        auto nameValue = split(parameter, '=');
-        if(nameValue.size() != 2)
-        {
-            std::cout << "Invalid parameter format, use a=1.0 b=2.0..." << std::endl;
-            parametersMap.clear();
-            return;
-        }
-        parametersMap[nameValue[0]] = std::stof(nameValue[1]);
-        if(parameters.size() == 1)
-            lastName = nameValue[0];
-    }
-    if(parameters.size() != 1)
-        lastName.clear();
 }
 
 void App::windowInit()
@@ -91,8 +24,9 @@ void App::windowInit()
 
 void App::initShaders()
 {
-    vulkanInitParams.shaders.vertex = shader->loadFromFile("fullScreenVS");
-    vulkanInitParams.shaders.fragment = shader->loadFromFile("textureDisplayFS");
+    vulkanInitParams.shaders.vertex = shader->loadFromFile(parameters.shaders.vertex);
+    vulkanInitParams.shaders.fragment = shader->loadFromFile(parameters.shaders.fragment);
+    vulkanInitParams.shaders.vertexCount = parameters.shaders.vertexCount;
     if (parameters.shaders.compute.empty())
         throw std::runtime_error("No compute shader specified");
     if (parameters.shaders.compute.size() != parameters.shaders.workGroupCounts.size())
@@ -150,15 +84,17 @@ void App::mainLoop()
 {
     if(parameters.window.enable)
     {
+        float frameTime = (1.0f/parameters.window.fps)*1000.0f;
         ParameterParser inputParameters;
         bool end = false;
         bool screenshotTaken = false;
         while(!end)
         {
+            Timer timer;
             window->run();
             end = window->key("Escape") || window->quit();
-            gpu->compute(parameters.shaders.workGroupCounts);
-            gpu->draw();
+            gpu->computeSettings(parameters.shaders.workGroupCounts, parameters.benchmark.enable);
+            gpu->run();
             if(window->resized())
                 gpu->resize();
             if(window->key("space"))
@@ -179,13 +115,24 @@ void App::mainLoop()
             }
             else if(!window->key("F1"))
                 screenshotTaken = false;
+
+            for(auto const& binding : parameters.keyBindings)
+            {
+                if(window->key(binding.keyIncrease))
+                    gpu->addToUniform(binding.uniform, binding.step);
+                if(window->key(binding.keyDecrease))
+                    gpu->addToUniform(binding.uniform, -binding.step);
+            }
+            timer.waitUntilElapsed(frameTime);
         }
     }
     else
     {
-        gpu->compute(parameters.shaders.workGroupCounts);
-        gpu->draw();
-
+        for(std::size_t i = 0; i < parameters.shaders.iterations; i++)
+        {
+            gpu->computeSettings(parameters.shaders.workGroupCounts, parameters.benchmark.enable);
+            gpu->run();
+        }
     }
 }
 

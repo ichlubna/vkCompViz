@@ -615,42 +615,44 @@ vk::FenceCreateInfo &Vulkan::CreateInfo::fence()
 
 vk::DescriptorSetLayoutCreateInfo &Vulkan::CreateInfo::descriptorSetLayout(size_t inputTextureCount, size_t outputTextureCount)
 {
+    auto allStages = vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment | vk::ShaderStageFlagBits::eCompute;    
+
     bindings.clear();
     bindings.emplace_back()
     .setBinding(Bindings::UNIFORM)
     .setDescriptorType(vk::DescriptorType::eUniformBuffer)
     .setDescriptorCount(1)
-    .setStageFlags(vk::ShaderStageFlagBits::eCompute | vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment);
+    .setStageFlags(allStages);
   
     bindings.emplace_back()
     .setBinding(Bindings::OUTPUT_TEXTURE_SAMPLER)
     .setDescriptorType(vk::DescriptorType::eCombinedImageSampler)
     .setDescriptorCount(outputTextureCount) 
-    .setStageFlags(vk::ShaderStageFlagBits::eCompute | vk::ShaderStageFlagBits::eFragment); 
+    .setStageFlags(allStages); 
     
     bindings.emplace_back()
     .setBinding(Bindings::OUTPUT_TEXTURE_STORAGE)
     .setDescriptorType(vk::DescriptorType::eStorageImage)
     .setDescriptorCount(outputTextureCount) 
-    .setStageFlags(vk::ShaderStageFlagBits::eCompute); 
+    .setStageFlags(allStages); 
     
     bindings.emplace_back()
     .setBinding(Bindings::INPUT_TEXTURE_SAMPLER)
     .setDescriptorType(vk::DescriptorType::eCombinedImageSampler)
     .setDescriptorCount(inputTextureCount) 
-    .setStageFlags(vk::ShaderStageFlagBits::eCompute); 
+    .setStageFlags(allStages); 
     
     bindings.emplace_back()
     .setBinding(Bindings::INPUT_TEXTURE)
     .setDescriptorType(vk::DescriptorType::eSampledImage)
     .setDescriptorCount(inputTextureCount) 
-    .setStageFlags(vk::ShaderStageFlagBits::eCompute); 
+    .setStageFlags(allStages); 
     
     bindings.emplace_back()
     .setBinding(Bindings::SHADER_STORAGE)
     .setDescriptorType(vk::DescriptorType::eStorageBuffer)
     .setDescriptorCount(1)
-    .setStageFlags(vk::ShaderStageFlagBits::eCompute); 
+    .setStageFlags(allStages); 
 
     descriptorSetLayoutCreateInfo
     .setBindings(bindings);
@@ -703,7 +705,7 @@ void Vulkan::recordGraphicsCommandBuffer(SwapChain::Frame &frame, SwapChain::InF
     buffer.setViewport(0, {vk::Viewport(0, 0, swapChain.extent.width, swapChain.extent.height, 0, 1)});
     buffer.setScissor(0, {vk::Rect2D({0, 0}, swapChain.extent)});
     buffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipelines.graphics.layout.value(), 0, {inFlight.descriptorSet.value()}, {});
-    buffer.draw(3, 1, 0, 0);
+    buffer.draw(createInfo.vertexCount(), 1, 0, 0);
     buffer.endRenderPass();
     buffer.end();
 }
@@ -740,15 +742,8 @@ void Vulkan::updateShaderStorageBuffer(SwapChain::InFlight &inFlight)
     device.waitIdle();
 }
 
-void Vulkan::draw()
+void Vulkan::draw(SwapChain::InFlight &inFlight) 
 {
-    size_t timeout = std::numeric_limits<uint64_t>::max();
-    auto &inFlight = swapChain.currentInFlight();
-
-    while(device.waitForFences({inFlight.fences.computeInFlight.value()}, VK_TRUE, timeout) == vk::Result::eTimeout);
-    updateUniformBuffer(inFlight);
-    computeSubmit();
-
     if(createInfo.windowEnabled())
     {
         while(device.waitForFences({inFlight.fences.inFlight.value()}, VK_TRUE, timeout) == vk::Result::eTimeout);
@@ -796,6 +791,15 @@ void Vulkan::draw()
             resizeRequired = false;
         }
     }
+}
+
+void Vulkan::run()
+{
+    auto &inFlight = swapChain.currentInFlight();
+    while(device.waitForFences({inFlight.fences.computeInFlight.value()}, VK_TRUE, timeout) == vk::Result::eTimeout);
+    updateUniformBuffer(inFlight);
+    compute(inFlight);
+    draw(inFlight);
     swapChain.nextInFlight();
 }
 
@@ -923,6 +927,8 @@ void Vulkan::transitionImageLayout(vk::Image image, vk::ImageLayout oldLayout, v
     vk::PipelineStageFlags srcStage;
     vk::PipelineStageFlags dstStage;
 
+    auto allStages = vk::PipelineStageFlagBits::eVertexShader | vk::PipelineStageFlagBits::eFragmentShader | vk::PipelineStageFlagBits::eComputeShader;
+
     if(oldLayout == vk::ImageLayout::eUndefined && newLayout == vk::ImageLayout::eTransferDstOptimal)
     {
         barrier
@@ -937,7 +943,7 @@ void Vulkan::transitionImageLayout(vk::Image image, vk::ImageLayout oldLayout, v
         .setSrcAccessMask(vk::AccessFlagBits::eTransferWrite)
         .setDstAccessMask(vk::AccessFlagBits::eShaderRead);
         srcStage = vk::PipelineStageFlagBits::eTransfer;
-        dstStage = vk::PipelineStageFlagBits::eFragmentShader | vk::PipelineStageFlagBits::eComputeShader;
+        dstStage = allStages;
     }
     else if(oldLayout == vk::ImageLayout::eTransferDstOptimal && newLayout == vk::ImageLayout::eGeneral)
     {
@@ -945,14 +951,14 @@ void Vulkan::transitionImageLayout(vk::Image image, vk::ImageLayout oldLayout, v
         .setSrcAccessMask(vk::AccessFlagBits::eTransferWrite)
         .setDstAccessMask(vk::AccessFlagBits::eShaderRead | vk::AccessFlagBits::eShaderWrite);
         srcStage = vk::PipelineStageFlagBits::eTransfer;
-        dstStage = vk::PipelineStageFlagBits::eFragmentShader | vk::PipelineStageFlagBits::eComputeShader;
+        dstStage = allStages;
     }
     else if(oldLayout == vk::ImageLayout::eGeneral && newLayout == vk::ImageLayout::eTransferSrcOptimal)
     {
         barrier
         .setSrcAccessMask(vk::AccessFlagBits::eShaderRead | vk::AccessFlagBits::eShaderWrite)
         .setDstAccessMask(vk::AccessFlagBits::eTransferRead);
-        srcStage = vk::PipelineStageFlagBits::eFragmentShader | vk::PipelineStageFlagBits::eComputeShader;
+        srcStage = allStages;
         dstStage = vk::PipelineStageFlagBits::eTransfer;
     }
     else if(oldLayout == vk::ImageLayout::eTransferSrcOptimal && newLayout == vk::ImageLayout::eGeneral)
@@ -961,7 +967,7 @@ void Vulkan::transitionImageLayout(vk::Image image, vk::ImageLayout oldLayout, v
         .setSrcAccessMask(vk::AccessFlagBits::eTransferRead)
         .setDstAccessMask(vk::AccessFlagBits::eShaderRead | vk::AccessFlagBits::eShaderWrite);
         srcStage = vk::PipelineStageFlagBits::eTransfer;
-        dstStage = vk::PipelineStageFlagBits::eFragmentShader | vk::PipelineStageFlagBits::eComputeShader;
+        dstStage = allStages;
     }
     else
     {
@@ -1219,7 +1225,7 @@ void Vulkan::updateUniformBuffer(std::vector<uint32_t> buffer)
     std::copy(buffer.begin(), buffer.end(), currentUniformBufferData.begin());
 }
 
-void Vulkan::updateUniform(std::string name, float value)
+int Vulkan::uniformIndex(std::string name) const
 {
     int index = -1;
     for(size_t i = 0; i < uniformNames.size(); i++)
@@ -1228,10 +1234,27 @@ void Vulkan::updateUniform(std::string name, float value)
             index = i;
             break;
         }
+    if(index == -1)
+        std::cerr << "Could not find uniform " << name << std::endl;
+    return index;
+}
+
+void Vulkan::updateUniform(std::string name, float value)
+{
+    int index = uniformIndex(name);
     if(index > -1)
         currentUniformBufferData[index] = *reinterpret_cast<uint32_t * >(&value);
-    else
-        std::cerr << "Could not find uniform " << name << std::endl;
+}
+
+void Vulkan::addToUniform(std::string name, float value)
+{
+    int index = uniformIndex(name);
+    if(index > -1)
+    {
+        float uniformValue = *reinterpret_cast<float *>(&currentUniformBufferData[index]);
+        uniformValue += value;
+        currentUniformBufferData[index] = *reinterpret_cast<uint32_t * >(&uniformValue);
+    }
 }
 
 void Vulkan::recordComputeCommandBuffer(SwapChain::InFlight &inFlight)
@@ -1255,16 +1278,16 @@ void Vulkan::recordComputeCommandBuffer(SwapChain::InFlight &inFlight)
     buffer.end();
 }
 
-void Vulkan::computeSubmit()
+void Vulkan::compute(SwapChain::InFlight &inFlight)
 {
-    auto &inFlight = swapChain.currentInFlight();
     device.resetFences({*inFlight.fences.computeInFlight});
     recordComputeCommandBuffer(inFlight);
 
     vk::SubmitInfo submitInfo;
     submitInfo
-    .setCommandBuffers({*inFlight.commandBuffers.compute.value()})
-    .setSignalSemaphores({*inFlight.semaphores.computeFinished.value()});
+    .setCommandBuffers({*inFlight.commandBuffers.compute.value()});
+    if (createInfo.windowEnabled())
+        submitInfo.setSignalSemaphores({*inFlight.semaphores.computeFinished.value()});
     queues.compute.submit({submitInfo}, *inFlight.fences.computeInFlight);
     
     computedInFlight++;
@@ -1275,9 +1298,10 @@ void Vulkan::computeSubmit()
     }
 }
 
-void Vulkan::compute(std::vector<WorkGroupCount> shaderWorkGroupCounts)
+void Vulkan::computeSettings(std::vector<WorkGroupCount> shaderWorkGroupCounts, bool runBenchmark)
 {
     workGroupCounts = shaderWorkGroupCounts;
+    benchmark = runBenchmark;
 }
 
 std::shared_ptr<Loader::Image> Vulkan::resultTexture()

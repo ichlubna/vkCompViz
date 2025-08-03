@@ -26,6 +26,7 @@ class Vulkan : public Gpu
                     public:
                         Shader::Shader::Info vertex;
                         Shader::Shader::Info fragment;
+                        std::size_t vertexCount{3};
                         std::vector<Shader::Shader::Info> compute;
                         [[nodiscard]] size_t uniformBufferSize() const
                         {
@@ -51,11 +52,12 @@ class Vulkan : public Gpu
                 } shaderStorageBuffer;
         };
         Vulkan(VulkanInitParams params);
-        void draw() override;
-        void compute(std::vector<WorkGroupCount> shaderWorkGroupCounts) override;
+        void run() override;
+        void computeSettings(std::vector<WorkGroupCount> shaderWorkGroupCounts, bool runBenchmark) override;
         void resize() override;
         void updateUniformBuffer(std::vector<uint32_t> buffer) override;
         void updateUniform(std::string name, float value) override;
+        void addToUniform(std::string name, float value) override;
         [[nodiscard]] std::shared_ptr<Loader::Image> resultTexture() override;
         [[nodiscard]] std::vector<float> resultBuffer() override;
         ~Vulkan();
@@ -208,6 +210,7 @@ class Vulkan : public Gpu
                 [[nodiscard]] const std::vector<float> &shaderStorageBufferData() const { return params.shaderStorageBuffer.initialData; }
                 [[nodiscard]] VkSurfaceKHR surface();
                 [[nodiscard]] bool windowEnabled() const { return params.window; }
+                [[nodiscard]] std::size_t vertexCount() const { return params.shaders.vertexCount; }
 
             private:
                 Vulkan &vulkan;
@@ -361,6 +364,8 @@ class Vulkan : public Gpu
         };
         std::vector<std::unique_ptr<Texture>> inputTextures;
         std::vector<WorkGroupCount> workGroupCounts;
+        bool benchmark;
+        const size_t timeout = std::numeric_limits<uint64_t>::max();
         size_t computedInFlight{0};
         bool resizeRequired{false};
         void recordGraphicsCommandBuffer(SwapChain::Frame &frame, SwapChain::InFlight &inFlight);
@@ -368,7 +373,8 @@ class Vulkan : public Gpu
         void recreateSwapChain();
         void createSwapChainFrames();
         void graphicsSubmit(std::size_t swapChainFrameID);
-        void computeSubmit();
+        void compute(SwapChain::InFlight &inFlight);
+        void draw(SwapChain::InFlight &inFlight);
         void createAllocator();
         void updateUniformBuffer(SwapChain::InFlight &inFlight);
         void updateShaderStorageBuffer(SwapChain::InFlight &inFlight);
@@ -378,6 +384,7 @@ class Vulkan : public Gpu
         void copyImageToBuffer(vk::Image image, vk::Buffer outputBuffer, size_t width, size_t height);
         void updateDescriptorSets(SwapChain::InFlight &inFlight);
         void createInputTextures();
+        [[nodiscard]] int uniformIndex(std::string name) const;
         std::unique_ptr<OneTimeCommand> oneTimeCommand();
         [[nodiscard]] std::vector<vk::raii::ShaderModule> createComputeShaders(std::vector<Shader::Shader::Info> &computeShaders);
         void init() override;

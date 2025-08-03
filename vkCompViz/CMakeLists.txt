@@ -11,12 +11,15 @@ target_sources(${PROJECT_NAME}
     src/window.glfw.cpp
     src/loader.imageFfmpeg.cpp
     src/shader.slang.cpp
+    src/parameterParser.cpp
 )
 target_sources(${PROJECT_NAME}
     PUBLIC FILE_SET CXX_MODULES FILES
     include/vkCompViz.cppm
     src/common.cppm
     src/vkCompViz.app.cppm
+    src/parameterParser.cppm
+    src/timer.cppm
     src/gpu.cppm
     src/gpu.interface.cppm
     src/gpu.vulkan.cppm

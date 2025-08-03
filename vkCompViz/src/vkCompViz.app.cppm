@@ -32,6 +32,10 @@ class App
                     public:
                         std::vector<std::string> compute;
                         std::vector<Gpu::Gpu::WorkGroupCount> workGroupCounts;
+                        std::string vertex{"fullScreenVS.slang"};
+                        std::string fragment{"textureDisplayFS.slang"};
+                        std::size_t vertexCount{3};
+                        std::size_t iterations{1};
                         std::vector<std::pair<std::string, float >> uniforms;
                         class StorageBuffer
                         {
@@ -58,19 +62,19 @@ class App
                         bool enable {true};
                         Resolution resolution {640, 480};
                         std::string title {"No title"};
+                        float fps{60.0f};
                 } window;
+                class KeyBinding
+                {
+                    public:
+                    std::string uniform;
+                    std::string keyIncrease;
+                    std::string keyDecrease;
+                    float step{1.0f};
+                };
+                std::vector<KeyBinding> keyBindings;
         };
-        class ParameterParser
-        {
-            private:
-                std::string lastName{};
-                std::map<std::string, float> parametersMap;
-            public:
-                void read();
-                [[nodiscard]] float get(std::string name, float defaultValue = 0.0f) const;
-                [[nodiscard]] const std::map<std::string, float> &get() const {return parametersMap;}
-        };
-
+        
         App();
         void run(Parameters const &inputParameters);
         [[nodiscard]] const Resolution getImageResolution(std::string path) const;

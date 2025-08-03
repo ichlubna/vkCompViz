@@ -1,7 +1,6 @@
 function(copyResources)
     set(RESOURCE_FILES ${RESOURCE_FILES} 
         vkCompViz/shaders/fullScreenVS.slang
-        vkCompViz/shaders/splitScreenFS.slang
         vkCompViz/shaders/textureDisplayFS.slang
         vkCompViz/shaders/vertexFragmentCommons.slang
     )

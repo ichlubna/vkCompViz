@@ -11,3 +11,4 @@ add_subdirectory("vkCompViz")
 
 addExample("simpleBlending" "Simple blending of two images using textures")
 addExample("parallelReduction" "Average value of an array using global and local memory, multiple passes and benchmarks")
+addExample("3DViewer" "Renders a simple 3D model")

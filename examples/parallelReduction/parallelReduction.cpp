@@ -33,8 +33,10 @@ int main(int argc, char *argv[])
         params.shaders.workGroupCounts.push_back({1,1,1});
         params.shaders.storageBuffer.size = inputData.size() * sizeof(float);
         params.shaders.storageBuffer.initialData = inputData;
-        // This app will not use a window, can be also run on headless machines, will run only one compute cycle
+        // This app will not use a window, can be also run on headless machines
         params.window.enable = false;
+        // The number of the compute pipeline runs in the headless mode (default is one run)
+        params.shaders.iterations = 1;
         // Enables benchmarking - measuring of time and memory usage, it is the same as pressing F2 in windowed mode
         // Report is not saved to file but available as showed below
         params.benchmark.enable = true;
