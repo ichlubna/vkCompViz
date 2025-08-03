@@ -82,7 +82,7 @@ Shader::Shader::Info SlangFactory::compile(slang::IModule *shaderModule, Slang::
     if(code.empty())
         throw std::runtime_error("Failed to compile shader");
     info.code = std::move(code);
-    
+
     auto programLayout = program->getLayout();
     for(size_t paramID = 0 ; paramID < programLayout->getParameterCount(); paramID++)
     {

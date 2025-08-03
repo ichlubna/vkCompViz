@@ -110,7 +110,7 @@ ImageFfmpeg::ImageFfmpeg(size_t width, size_t height, [[maybe_unused]] size_t st
     else
     {
         frame->format = AV_PIX_FMT_RGBAF32;
-        pixelSize = 4*sizeof(float);
+        pixelSize = 4 * sizeof(float);
     }
     if(data)
     {
@@ -153,7 +153,7 @@ void ImageFfmpeg::save(std::string outputPath) const
     for(int fmtID = 0; fmtID < fmtCount; fmtID++)
         if(format == Image::Format::RGBA_8_INT)
         {
-            if (pixFmts[fmtID] == AV_PIX_FMT_RGBA || pixFmts[fmtID] == AV_PIX_FMT_YUVJ444P)
+            if(pixFmts[fmtID] == AV_PIX_FMT_RGBA || pixFmts[fmtID] == AV_PIX_FMT_YUVJ444P)
             {
                 outputFrame->format = pixFmts[fmtID];
                 break;
@@ -161,7 +161,7 @@ void ImageFfmpeg::save(std::string outputPath) const
         }
         else if(format == Image::Format::RGBA_32_FLOAT)
         {
-            if (pixFmts[fmtID] == AV_PIX_FMT_RGBAF32)
+            if(pixFmts[fmtID] == AV_PIX_FMT_RGBAF32)
             {
                 outputFrame->format = pixFmts[fmtID];
                 break;
@@ -170,7 +170,7 @@ void ImageFfmpeg::save(std::string outputPath) const
         else
             throw std::runtime_error("Unsupported image format");
     if(outputFrame->format == AV_PIX_FMT_NONE)
-        outputFrame->format = pixFmts[0];   
+        outputFrame->format = pixFmts[0];
     av_frame_get_buffer(outputFrame, 0);
     convertFrame(frame, outputFrame);
 
@@ -181,7 +181,7 @@ void ImageFfmpeg::save(std::string outputPath) const
     codecContext->width = outputFrame->width;
     codecContext->height = outputFrame->height;
     if(formatContext->oformat->flags & AVFMT_GLOBALHEADER)
-    codecContext->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
+        codecContext->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
     if(avcodec_open2(codecContext, codec, nullptr) < 0)
         throw std::runtime_error("Could not open the encoder");
     if(avcodec_parameters_from_context(stream->codecpar, codecContext) < 0)

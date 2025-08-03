@@ -47,8 +47,8 @@ int main(int argc, char *argv[])
         // The number of workgroups for each compute shader is defined in this vector
         // The function inside is a helper to compute the necessary count of workgroups
         params.shaders.workGroupCounts = {app.calculateWorkGroupCount(workGroupSize, {resolution.width, resolution.height, 1})};
-       
-        // Tells the application to use a window with given properties 
+
+        // Tells the application to use a window with given properties
         params.window.enable = true;
         params.window.resolution = resolution;
         params.window.title = "Simple Blending";

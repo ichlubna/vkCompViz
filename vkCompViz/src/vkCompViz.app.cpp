@@ -27,9 +27,9 @@ void App::initShaders()
     vulkanInitParams.shaders.vertex = shader->loadFromFile(parameters.shaders.vertex);
     vulkanInitParams.shaders.fragment = shader->loadFromFile(parameters.shaders.fragment);
     vulkanInitParams.shaders.vertexCount = parameters.shaders.vertexCount;
-    if (parameters.shaders.compute.empty())
+    if(parameters.shaders.compute.empty())
         throw std::runtime_error("No compute shader specified");
-    if (parameters.shaders.compute.size() != parameters.shaders.workGroupCounts.size())
+    if(parameters.shaders.compute.size() != parameters.shaders.workGroupCounts.size())
         throw std::runtime_error("The number of compute shaders must be equal to the number of work group counts");
     for(auto &computeShader : parameters.shaders.compute)
         vulkanInitParams.shaders.compute.push_back(shader->loadFromFile(computeShader));
@@ -42,7 +42,7 @@ void App::initTextures()
 
     std::vector<std::shared_ptr<Loader::Image >> inputTextures;
     if(parameters.textures.input.empty())
-        vulkanInitParams.textures.input.push_back(dummy); 
+        vulkanInitParams.textures.input.push_back(dummy);
     else
         for(auto &texture : parameters.textures.input)
         {
@@ -51,7 +51,7 @@ void App::initTextures()
         }
 
     if(parameters.textures.output.empty())
-        vulkanInitParams.textures.output.push_back(dummy); 
+        vulkanInitParams.textures.output.push_back(dummy);
     for(auto &texture : parameters.textures.output)
     {
         std::size_t width = texture.resolution.width;
@@ -84,7 +84,7 @@ void App::mainLoop()
 {
     if(parameters.window.enable)
     {
-        float frameTime = (1.0f/parameters.window.fps)*1000.0f;
+        float frameTime = (1.0f / parameters.window.fps) * 1000.0f;
         ParameterParser inputParameters;
         bool end = false;
         bool screenshotTaken = false;
@@ -108,10 +108,10 @@ void App::mainLoop()
             {
                 screenshotTaken = true;
                 const auto now = std::chrono::system_clock::now();
-                auto name = std::format("{:%d-%m-%Y %H:%M:%OS}", now); 
+                auto name = std::format("{:%d-%m-%Y %H:%M:%OS}", now);
                 auto path = (std::filesystem::path(parameters.screenshot.path) / std::filesystem::path(name)).string() + parameters.screenshot.extension;
-                saveResultImage(path); 
-                std::cout << "Screenshot saved to " << path << std::endl; 
+                saveResultImage(path);
+                std::cout << "Screenshot saved to " << path << std::endl;
             }
             else if(!window->key("F1"))
                 screenshotTaken = false;

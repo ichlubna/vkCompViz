@@ -9,5 +9,8 @@ export class ParameterParser
     public:
         void read();
         [[nodiscard]] float get(std::string name, float defaultValue = 0.0f) const;
-        [[nodiscard]] const std::map<std::string, float> &get() const {return parametersMap;}
+        [[nodiscard]] const std::map<std::string, float> &get() const
+        {
+            return parametersMap;
+        }
 };

@@ -42,8 +42,8 @@ class Vulkan : public Gpu
                 class Textures
                 {
                     public:
-                        std::vector<std::shared_ptr<Loader::Image>> input;
-                        std::vector<std::shared_ptr<Loader::Image>> output;
+                        std::vector<std::shared_ptr<Loader::Image >> input;
+                        std::vector<std::shared_ptr<Loader::Image >> output;
                 } textures;
                 class ShaderStorageBuffer
                 {
@@ -108,7 +108,7 @@ class Vulkan : public Gpu
                                 std::optional<vk::raii::CommandBuffer> compute;
                         } commandBuffers;
                         std::optional<vk::raii::DescriptorSet> descriptorSet;
-                        std::vector<std::unique_ptr<Texture>> outputTextures;
+                        std::vector<std::unique_ptr<Texture >> outputTextures;
                         class Buffers
                         {
                             public:
@@ -142,7 +142,7 @@ class Vulkan : public Gpu
                 {
                     if(previousInFlightID < 0)
                         throw std::runtime_error("No frames were computed yet");
-                    return inFlight[previousInFlightID]; 
+                    return inFlight[previousInFlightID];
                 }
                 SwapChain(vk::raii::Device &device, const vk::SwapchainCreateInfoKHR &swapChainCreateInfo, bool windowEnabled);
                 std::optional<vk::raii::SwapchainKHR> swapChain;
@@ -205,13 +205,28 @@ class Vulkan : public Gpu
                 [[nodiscard]] vk::SamplerCreateInfo &sampler();
                 void createFrameBuffer(Vulkan::SwapChain::Frame &frame, vk::Image image);
                 void createFrameSync(SwapChain::InFlight &frame);
-                [[nodiscard]] const std::vector<std::shared_ptr<Loader::Image>> &outputImages() const { return params.textures.output; }
-                [[nodiscard]] const std::vector<std::shared_ptr<Loader::Image>> &inputImages() const { return params.textures.input; }
-                [[nodiscard]] std::size_t shaderStorageBufferSize() const { return params.shaderStorageBuffer.size; }
-                [[nodiscard]] const std::vector<float> &shaderStorageBufferData() const { return params.shaderStorageBuffer.initialData; }
+                [[nodiscard]] const std::vector<std::shared_ptr<Loader::Image >> &outputImages() const { return params.textures.output; }
+                [[nodiscard]] const std::vector<std::shared_ptr<Loader::Image >> &inputImages() const
+                {
+                    return params.textures.input;
+                }
+                [[nodiscard]] std::size_t shaderStorageBufferSize() const
+                {
+                    return params.shaderStorageBuffer.size;
+                }
+                [[nodiscard]] const std::vector<float> &shaderStorageBufferData() const
+                {
+                    return params.shaderStorageBuffer.initialData;
+                }
                 [[nodiscard]] VkSurfaceKHR surface();
-                [[nodiscard]] bool windowEnabled() const { return params.window; }
-                [[nodiscard]] std::size_t vertexCount() const { return params.shaders.vertexCount; }
+                [[nodiscard]] bool windowEnabled() const
+                {
+                    return params.window;
+                }
+                [[nodiscard]] std::size_t vertexCount() const
+                {
+                    return params.shaders.vertexCount;
+                }
 
             private:
                 Vulkan &vulkan;
@@ -292,7 +307,7 @@ class Vulkan : public Gpu
                 Memory(vk::raii::Instance &instance, vk::raii::PhysicalDevice &physicalDevice, vk::raii::Device &device, Vulkan &vulkan);
                 VmaAllocator allocator;
                 [[nodiscard]] std::unique_ptr<Buffer> buffer(vk::BufferUsageFlags usage, size_t size);
-                [[nodiscard]] std::unique_ptr<Texture> texture(std::shared_ptr<Loader::Image> image, bool storage=false);
+                [[nodiscard]] std::unique_ptr<Texture> texture(std::shared_ptr<Loader::Image> image, bool storage = false);
                 ~Memory()
                 {
                     vmaDestroyAllocator(allocator);
@@ -343,12 +358,15 @@ class Vulkan : public Gpu
                         Compute(std::vector<vk::raii::ShaderModule> &shaders, vk::raii::Device &device, CreateInfo &createInfo);
                         vk::raii::PipelineLayout layout;
                         std::vector<vk::raii::Pipeline> pipelines;
-                }compute;
+                } compute;
         } pipelines;
         class OneTimeCommand
         {
             public:
-                vk::raii::CommandBuffer &command() { return buffer.value(); }
+                vk::raii::CommandBuffer &command()
+                {
+                    return buffer.value();
+                }
                 std::optional<vk::raii::CommandBuffer> buffer;
                 vk::raii::Queue *queue;
                 ~OneTimeCommand();
@@ -363,7 +381,7 @@ class Vulkan : public Gpu
                 static constexpr size_t INPUT_TEXTURE{4};
                 static constexpr size_t SHADER_STORAGE{5};
         };
-        std::vector<std::unique_ptr<Texture>> inputTextures;
+        std::vector<std::unique_ptr<Texture >> inputTextures;
         std::vector<WorkGroupCount> workGroupCounts;
         bool benchmark;
         const size_t timeout = std::numeric_limits<uint64_t>::max();

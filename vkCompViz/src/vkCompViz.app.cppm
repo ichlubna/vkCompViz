@@ -48,7 +48,7 @@ class App
                 {
                     public:
                         std::string path{"./"};
-                        std::string extension{".png"}; 
+                        std::string extension{".png"};
                 } screenshot;
                 class Benchmark
                 {
@@ -67,23 +67,26 @@ class App
                 class KeyBinding
                 {
                     public:
-                    std::string uniform;
-                    std::string keyIncrease;
-                    std::string keyDecrease;
-                    float step{1.0f};
+                        std::string uniform;
+                        std::string keyIncrease;
+                        std::string keyDecrease;
+                        float step{1.0f};
                 };
                 std::vector<KeyBinding> keyBindings;
                 std::string priorityUUID{""};
         };
-        
+
         App();
         void run(Parameters const &inputParameters);
         [[nodiscard]] const Resolution getImageResolution(std::string path) const;
         [[nodiscard]] const Shader::Shader::Info::WorkGroupSize getShaderWorkGroupSize(std::string path) const;
         [[nodiscard]] const Gpu::Gpu::WorkGroupCount calculateWorkGroupCount(Shader::Shader::Info::WorkGroupSize workGroupSize, Shader::Shader::Info::ThreadCount threadCount) const;
         void saveResultImage(std::string path) const;
-        std::vector<float> resultBuffer() const { return gpu->resultBuffer(); };
-        [[nodiscard]] const std::vector<Gpu::Gpu::BenchmarkReport> benchmarkReports() const 
+        std::vector<float> resultBuffer() const
+        {
+            return gpu->resultBuffer();
+        };
+        [[nodiscard]] const std::vector<Gpu::Gpu::BenchmarkReport> benchmarkReports() const
         {
             return gpu->benchmarkReports();
         }
@@ -97,7 +100,7 @@ class App
         Gpu::Vulkan::VulkanInitParams vulkanInitParams;
         void windowInit();
         void initShaders();
-        void initTextures(); 
+        void initTextures();
         void initUniforms() const;
         void initShaderStorageBuffer();
         void mainLoop();

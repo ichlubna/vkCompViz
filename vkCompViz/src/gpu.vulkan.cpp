@@ -35,7 +35,7 @@ Vulkan::Vulkan(VulkanInitParams params) :
 
 VkSurfaceKHR Vulkan::CreateInfo::surface()
 {
-    if (windowEnabled()) 
+    if(windowEnabled())
         return reinterpret_cast<VkSurfaceKHR>(params.surface(reinterpret_cast<std::uintptr_t>(static_cast<VkInstance>(*vulkan.instance))));
     else
         throw std::runtime_error("Window not enabled but requesting surface");
@@ -562,11 +562,11 @@ vk::GraphicsPipelineCreateInfo &Vulkan::CreateInfo::graphicsPipeline()
 }
 
 vk::ComputePipelineCreateInfo &Vulkan::CreateInfo::computePipeline(vk::raii::ShaderModule &shaderModule)
-{ 
+{
     shaderStage
     .setModule(shaderModule)
     .setPName("main")
-    .setStage(vk::ShaderStageFlagBits::eCompute); 
+    .setStage(vk::ShaderStageFlagBits::eCompute);
 
     computePipelineCreateInfo
     .setStage(shaderStage)
@@ -628,44 +628,44 @@ vk::FenceCreateInfo &Vulkan::CreateInfo::fence()
 
 vk::DescriptorSetLayoutCreateInfo &Vulkan::CreateInfo::descriptorSetLayout(size_t inputTextureCount, size_t outputTextureCount)
 {
-    auto allStages = vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment | vk::ShaderStageFlagBits::eCompute;    
+    auto allStages = vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment | vk::ShaderStageFlagBits::eCompute;
 
     bindings.clear();
     bindings.emplace_back()
-    .setBinding(Bindings::UNIFORM)
-    .setDescriptorType(vk::DescriptorType::eUniformBuffer)
-    .setDescriptorCount(1)
-    .setStageFlags(allStages);
-  
+            .setBinding(Bindings::UNIFORM)
+            .setDescriptorType(vk::DescriptorType::eUniformBuffer)
+            .setDescriptorCount(1)
+            .setStageFlags(allStages);
+
     bindings.emplace_back()
-    .setBinding(Bindings::OUTPUT_TEXTURE_SAMPLER)
-    .setDescriptorType(vk::DescriptorType::eCombinedImageSampler)
-    .setDescriptorCount(outputTextureCount) 
-    .setStageFlags(allStages); 
-    
+            .setBinding(Bindings::OUTPUT_TEXTURE_SAMPLER)
+            .setDescriptorType(vk::DescriptorType::eCombinedImageSampler)
+            .setDescriptorCount(outputTextureCount)
+            .setStageFlags(allStages);
+
     bindings.emplace_back()
-    .setBinding(Bindings::OUTPUT_TEXTURE_STORAGE)
-    .setDescriptorType(vk::DescriptorType::eStorageImage)
-    .setDescriptorCount(outputTextureCount) 
-    .setStageFlags(allStages); 
-    
+            .setBinding(Bindings::OUTPUT_TEXTURE_STORAGE)
+            .setDescriptorType(vk::DescriptorType::eStorageImage)
+            .setDescriptorCount(outputTextureCount)
+            .setStageFlags(allStages);
+
     bindings.emplace_back()
-    .setBinding(Bindings::INPUT_TEXTURE_SAMPLER)
-    .setDescriptorType(vk::DescriptorType::eCombinedImageSampler)
-    .setDescriptorCount(inputTextureCount) 
-    .setStageFlags(allStages); 
-    
+            .setBinding(Bindings::INPUT_TEXTURE_SAMPLER)
+            .setDescriptorType(vk::DescriptorType::eCombinedImageSampler)
+            .setDescriptorCount(inputTextureCount)
+            .setStageFlags(allStages);
+
     bindings.emplace_back()
-    .setBinding(Bindings::INPUT_TEXTURE)
-    .setDescriptorType(vk::DescriptorType::eSampledImage)
-    .setDescriptorCount(inputTextureCount) 
-    .setStageFlags(allStages); 
-    
+            .setBinding(Bindings::INPUT_TEXTURE)
+            .setDescriptorType(vk::DescriptorType::eSampledImage)
+            .setDescriptorCount(inputTextureCount)
+            .setStageFlags(allStages);
+
     bindings.emplace_back()
-    .setBinding(Bindings::SHADER_STORAGE)
-    .setDescriptorType(vk::DescriptorType::eStorageBuffer)
-    .setDescriptorCount(1)
-    .setStageFlags(allStages); 
+            .setBinding(Bindings::SHADER_STORAGE)
+            .setDescriptorType(vk::DescriptorType::eStorageBuffer)
+            .setDescriptorCount(1)
+            .setStageFlags(allStages);
 
     descriptorSetLayoutCreateInfo
     .setBindings(bindings);
@@ -692,8 +692,8 @@ std::vector<vk::raii::ShaderModule> Vulkan::createComputeShaders(std::vector<Sha
 }
 
 Vulkan::Pipelines::Compute::Compute(std::vector<vk::raii::ShaderModule> &shaders, vk::raii::Device &device, CreateInfo &createInfo) : layout{device, createInfo.pipelineLayout()}
-{ 
-    for (auto &shader : shaders)
+{
+    for(auto &shader : shaders)
         pipelines.push_back({device, nullptr, createInfo.computePipeline(shader)});
 }
 
@@ -701,7 +701,7 @@ void Vulkan::createInputTextures()
 {
     auto inputImages = createInfo.inputImages();
     for(auto const &inputImage : inputImages)
-       inputTextures.emplace_back(memory.texture(inputImage)); 
+        inputTextures.emplace_back(memory.texture(inputImage));
 }
 
 void Vulkan::init()
@@ -727,7 +727,7 @@ void Vulkan::graphicsSubmit(size_t swapChainFrameID)
 {
     auto &inFlight = swapChain.currentInFlight();
     device.resetFences({*inFlight.fences.inFlight});
-    
+
     recordGraphicsCommandBuffer(swapChain.frames[swapChainFrameID], inFlight);
 
     std::vector<vk::PipelineStageFlags> waitStage{vk::PipelineStageFlagBits::eVertexInput, vk::PipelineStageFlagBits::eColorAttachmentOutput};
@@ -755,7 +755,7 @@ void Vulkan::updateShaderStorageBuffer(SwapChain::InFlight &inFlight)
     device.waitIdle();
 }
 
-void Vulkan::draw(SwapChain::InFlight &inFlight) 
+void Vulkan::draw(SwapChain::InFlight &inFlight)
 {
     if(createInfo.windowEnabled())
     {
@@ -863,7 +863,7 @@ std::unique_ptr<Vulkan::Buffer> Vulkan::Memory::buffer(vk::BufferUsageFlags usag
     return buffer;
 }
 
-vk::ImageCreateInfo &Vulkan::CreateInfo::image(vk::Format imageFormat, Resolution resolution, bool storage=false)
+vk::ImageCreateInfo &Vulkan::CreateInfo::image(vk::Format imageFormat, Resolution resolution, bool storage = false)
 {
     queueFamilyIndices.clear();
     queueFamilyIndices.push_back(graphicsQueueID());
@@ -893,7 +893,7 @@ std::unique_ptr<Vulkan::OneTimeCommand> Vulkan::oneTimeCommand()
     vk::raii::CommandBuffers commandBuffers(device, createInfo.commandBuffer(commandPools.graphics, 1));
     command->buffer.emplace(std::move(commandBuffers[0]));
     command->queue = &queues.graphics;
-    
+
     vk::CommandBufferBeginInfo beginInfo{};
     beginInfo.flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit;
     command->buffer.value().begin(beginInfo);
@@ -902,16 +902,16 @@ std::unique_ptr<Vulkan::OneTimeCommand> Vulkan::oneTimeCommand()
 
 Vulkan::OneTimeCommand::~OneTimeCommand()
 {
-    buffer.value().end();                        
+    buffer.value().end();
     vk::SubmitInfo submitInfo;
     submitInfo
     .setCommandBuffers({*buffer.value()});
     queue->submit({submitInfo}, nullptr);
     queue->waitIdle();
-}  
+}
 
 void Vulkan::copyBuffer(vk::Buffer src, vk::Buffer dst, vk::DeviceSize size)
-{ 
+{
     auto buffer = oneTimeCommand();
     vk::BufferCopy copyRegion(0, 0, size);
     buffer->command().copyBuffer(src, dst, copyRegion);
@@ -1013,7 +1013,7 @@ std::unique_ptr<Vulkan::Texture> Vulkan::Memory::texture(std::shared_ptr<Loader:
     }
     else
         vmaCopyMemoryToAllocation(*stagingBuffer->allocator, image->data(), stagingBuffer->allocation, 0, image->size());
-   
+
     auto texture = std::make_unique<Texture>();
     VmaAllocationCreateInfo imageAllocInfo = {};
     imageAllocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
@@ -1022,17 +1022,17 @@ std::unique_ptr<Vulkan::Texture> Vulkan::Memory::texture(std::shared_ptr<Loader:
     vmaCreateImage(allocator, imageCreateInfo, &imageAllocInfo, &texture->image, &texture->allocation, nullptr);
     vulkan.transitionImageLayout(texture->image, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal);
     vulkan.copyBufferToImage(static_cast<vk::Buffer>(stagingBuffer->buffer), texture->image, image->width(), image->height());
-    if (storage)
+    if(storage)
         vulkan.transitionImageLayout(texture->image, vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eGeneral);
     else
         vulkan.transitionImageLayout(texture->image, vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal);
-    texture->view.emplace(vk::raii::ImageView{vulkan.device, vulkan.createInfo.imageView(format, texture->image)}); 
+    texture->view.emplace(vk::raii::ImageView{vulkan.device, vulkan.createInfo.imageView(format, texture->image)});
     texture->allocator = &allocator;
     return texture;
 }
 
 vk::SamplerCreateInfo &Vulkan::CreateInfo::sampler()
-{  
+{
     const auto properties = vulkan.physicalDevice.getProperties();
     samplerCreateInfo
     .setMagFilter(vk::Filter::eLinear)
@@ -1086,76 +1086,76 @@ void Vulkan::updateDescriptorSets(SwapChain::InFlight &inFlight)
     .setBuffer(inFlight.buffers.uniform->buffer)
     .setOffset(0)
     .setRange(VK_WHOLE_SIZE);
-    
+
     std::vector<vk::WriteDescriptorSet> writeDescriptorSets;
     writeDescriptorSets.emplace_back()
-        .setDstSet(*inFlight.descriptorSet.value())
-        .setDstBinding(Bindings::UNIFORM)
-        .setDstArrayElement(0)
-        .setDescriptorType(vk::DescriptorType::eUniformBuffer)
-        .setDescriptorCount(1)
-        .setBufferInfo(bufferInfo);
+                       .setDstSet(*inFlight.descriptorSet.value())
+                       .setDstBinding(Bindings::UNIFORM)
+                       .setDstArrayElement(0)
+                       .setDescriptorType(vk::DescriptorType::eUniformBuffer)
+                       .setDescriptorCount(1)
+                       .setBufferInfo(bufferInfo);
 
     std::vector<vk::DescriptorImageInfo> outImageInfos;
     std::vector<vk::DescriptorImageInfo> outImageInfosStorage;
     for(auto &texture : inFlight.outputTextures)
     {
         outImageInfos.emplace_back()
-            .setSampler(sampler)
-            .setImageView(texture->view.value())
-            .setImageLayout(vk::ImageLayout::eGeneral);
-        
+                     .setSampler(sampler)
+                     .setImageView(texture->view.value())
+                     .setImageLayout(vk::ImageLayout::eGeneral);
+
         outImageInfosStorage.emplace_back()
-            .setImageView(texture->view.value())
-            .setImageLayout(vk::ImageLayout::eGeneral);
+                            .setImageView(texture->view.value())
+                            .setImageLayout(vk::ImageLayout::eGeneral);
     }
 
     writeDescriptorSets.emplace_back()
-        .setDstSet(*inFlight.descriptorSet.value())
-        .setDstBinding(Bindings::OUTPUT_TEXTURE_SAMPLER)
-        .setDstArrayElement(0)
-        .setDescriptorType(vk::DescriptorType::eCombinedImageSampler)
-        .setDescriptorCount(outImageInfos.size())
-        .setPImageInfo(outImageInfos.data());
-    
+                       .setDstSet(*inFlight.descriptorSet.value())
+                       .setDstBinding(Bindings::OUTPUT_TEXTURE_SAMPLER)
+                       .setDstArrayElement(0)
+                       .setDescriptorType(vk::DescriptorType::eCombinedImageSampler)
+                       .setDescriptorCount(outImageInfos.size())
+                       .setPImageInfo(outImageInfos.data());
+
     writeDescriptorSets.emplace_back()
-        .setDstSet(*inFlight.descriptorSet.value())
-        .setDstBinding(Bindings::OUTPUT_TEXTURE_STORAGE)
-        .setDstArrayElement(0)
-        .setDescriptorType(vk::DescriptorType::eStorageImage)
-        .setDescriptorCount(outImageInfosStorage.size())
-        .setPImageInfo(outImageInfosStorage.data());
+                       .setDstSet(*inFlight.descriptorSet.value())
+                       .setDstBinding(Bindings::OUTPUT_TEXTURE_STORAGE)
+                       .setDstArrayElement(0)
+                       .setDescriptorType(vk::DescriptorType::eStorageImage)
+                       .setDescriptorCount(outImageInfosStorage.size())
+                       .setPImageInfo(outImageInfosStorage.data());
 
     std::vector<vk::DescriptorImageInfo> inImageInfos;
     std::vector<vk::DescriptorImageInfo> inImageInfosStorage;
     for(auto &texture : inputTextures)
     {
         inImageInfos.emplace_back()
-            .setSampler(sampler)
-            .setImageView(texture->view.value())
-            .setImageLayout(vk::ImageLayout::eShaderReadOnlyOptimal);
-        
+                    .setSampler(sampler)
+                    .setImageView(texture->view.value())
+                    .setImageLayout(vk::ImageLayout::eShaderReadOnlyOptimal);
+
         inImageInfosStorage.emplace_back()
-            .setImageView(texture->view.value())
-            .setImageLayout(vk::ImageLayout::eShaderReadOnlyOptimal);
+                           .setImageView(texture->view.value())
+                           .setImageLayout(vk::ImageLayout::eShaderReadOnlyOptimal);
     }
 
     writeDescriptorSets.emplace_back()
-        .setDstSet(*inFlight.descriptorSet.value())
-        .setDstBinding(Bindings::INPUT_TEXTURE_SAMPLER)
-        .setDstArrayElement(0)
-        .setDescriptorType(vk::DescriptorType::eCombinedImageSampler)
-        .setDescriptorCount(inImageInfos.size())
-        .setPImageInfo(inImageInfos.data());
-    
+                       .setDstSet(*inFlight.descriptorSet.value())
+                       .setDstBinding(Bindings::INPUT_TEXTURE_SAMPLER)
+                       .setDstArrayElement(0)
+                       .setDescriptorType(vk::DescriptorType::eCombinedImageSampler)
+                       .setDescriptorCount(inImageInfos.size())
+                       .setPImageInfo(inImageInfos.data());
+
     writeDescriptorSets.emplace_back()
-        .setDstSet(*inFlight.descriptorSet.value())
-        .setDstBinding(Bindings::INPUT_TEXTURE)
-        .setDstArrayElement(0)
-        .setDescriptorType(vk::DescriptorType::eSampledImage)
-        .setDescriptorCount(inImageInfosStorage.size())
-        .setPImageInfo(inImageInfosStorage.data());
-    
+                       .setDstSet(*inFlight.descriptorSet.value())
+                       .setDstBinding(Bindings::INPUT_TEXTURE)
+                       .setDstArrayElement(0)
+                       .setDescriptorType(vk::DescriptorType::eSampledImage)
+                       .setDescriptorCount(inImageInfosStorage.size())
+                       .setPImageInfo(inImageInfosStorage.data());
+
     vk::DescriptorBufferInfo storageBufferInfo;
     storageBufferInfo
     .setBuffer(inFlight.buffers.shaderStorage->buffer)
@@ -1163,12 +1163,12 @@ void Vulkan::updateDescriptorSets(SwapChain::InFlight &inFlight)
     .setRange(VK_WHOLE_SIZE);
 
     writeDescriptorSets.emplace_back()
-        .setDstSet(*inFlight.descriptorSet.value())
-        .setDstBinding(Bindings::SHADER_STORAGE)
-        .setDstArrayElement(0)
-        .setDescriptorType(vk::DescriptorType::eStorageBuffer)
-        .setDescriptorCount(1)
-        .setBufferInfo(storageBufferInfo);
+                       .setDstSet(*inFlight.descriptorSet.value())
+                       .setDstBinding(Bindings::SHADER_STORAGE)
+                       .setDstArrayElement(0)
+                       .setDescriptorType(vk::DescriptorType::eStorageBuffer)
+                       .setDescriptorCount(1)
+                       .setBufferInfo(storageBufferInfo);
 
     device.updateDescriptorSets(writeDescriptorSets, {});
 }
@@ -1205,7 +1205,7 @@ void Vulkan::createSwapChainFrames()
         swapChain.inFlight.back().descriptorSet.emplace(std::move(descriptorSets[i]));
         auto outputImages = createInfo.outputImages();
         for(auto const &outputImage : outputImages)
-           inFlight.outputTextures.emplace_back(memory.texture(outputImage, true)); 
+            inFlight.outputTextures.emplace_back(memory.texture(outputImage, true));
         inFlight.buffers.shaderStorage = memory.buffer(vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eTransferSrc, createInfo.shaderStorageBufferSize());
         updateShaderStorageBuffer(inFlight);
         updateDescriptorSets(inFlight);
@@ -1299,10 +1299,10 @@ void Vulkan::compute(SwapChain::InFlight &inFlight)
     vk::SubmitInfo submitInfo;
     submitInfo
     .setCommandBuffers({*inFlight.commandBuffers.compute.value()});
-    if (createInfo.windowEnabled())
+    if(createInfo.windowEnabled())
         submitInfo.setSignalSemaphores({*inFlight.semaphores.computeFinished.value()});
     queues.compute.submit({submitInfo}, *inFlight.fences.computeInFlight);
-    
+
     computedInFlight++;
     if(computedInFlight == swapChain.inFlightCount)
     {
@@ -1341,12 +1341,12 @@ std::vector<float> Vulkan::resultBuffer()
     size_t size = createInfo.shaderStorageBufferSize();
     auto stagingBuffer = memory.buffer(vk::BufferUsageFlagBits::eTransferDst, size);
     std::vector<float> result(size);
-    
+
     void *gpuData;
     copyBuffer(inFlight.buffers.shaderStorage->buffer, stagingBuffer->buffer, size);
     vmaMapMemory(*stagingBuffer->allocator, stagingBuffer->allocation, &gpuData);
     memcpy(result.data(), gpuData, size);
-    vmaUnmapMemory(*stagingBuffer->allocator, stagingBuffer->allocation);    
+    vmaUnmapMemory(*stagingBuffer->allocator, stagingBuffer->allocation);
     return result;
 }
 

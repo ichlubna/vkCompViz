@@ -19,10 +19,13 @@ int main(int argc, char *argv[])
 
         // Creating a vector of random floats
         std::vector<float> inputData(args["-s"]);
-        std::mt19937 rng(std::time(nullptr)); 
+        std::mt19937 rng(std::time(nullptr));
         std::uniform_real_distribution<float> dist(0.0f, 1.0f);
-        std::generate(inputData.begin(), inputData.end(), [&]() {return dist(rng);}); 
- 
+        std::generate(inputData.begin(), inputData.end(), [&]()
+        {
+            return dist(rng);
+        });
+
         // GPU version
         vkCompViz::App::Parameters params;
         // Using the reduction shader
@@ -31,7 +34,7 @@ int main(int argc, char *argv[])
         vkCompViz::App app;
         auto workGroupSize = app.getShaderWorkGroupSize("reduction.slang");
         params.shaders.workGroupCounts.push_back(app.calculateWorkGroupCount(workGroupSize, {inputData.size(), 1, 1}));
-        params.shaders.workGroupCounts.push_back({1,1,1});
+        params.shaders.workGroupCounts.push_back({1, 1, 1});
         params.shaders.storageBuffer.size = inputData.size() * sizeof(float);
         params.shaders.storageBuffer.initialData = inputData;
         // This app will not use a window, can be also run on headless machines
@@ -44,8 +47,8 @@ int main(int argc, char *argv[])
         // In case of multiple GPUs available, the best one is automatically selected
         // The devices are listed in the console and the user can override the selection by defining a concrete UUID
         if(args["-d"])
-           params.priorityUUID = static_cast<std::string>(args["-d"]);
-        app.run(params);       
+            params.priorityUUID = static_cast<std::string>(args["-d"]);
+        app.run(params);
         auto result = app.resultBuffer();
         // The benchmark reports are also available here
         auto benchmarks = app.benchmarkReports();
@@ -61,9 +64,9 @@ int main(int argc, char *argv[])
         float sum = std::accumulate(inputData.begin(), inputData.end(), 0.0);
         float cpuAverage = sum / inputData.size();
         auto end = std::chrono::steady_clock::now();
-        float cpuTime = std::chrono::duration<float, std::milli>(end - start).count();  
-       
-         // Report
+        float cpuTime = std::chrono::duration<float, std::milli>(end - start).count();
+
+        // Report
         std::cout << "GPU" << std::endl;
         std::cout << "Average: " << gpuAverage << std::endl;
         std::cout << "Time: " << gpuTime << " ms" << std::endl;
@@ -71,7 +74,7 @@ int main(int argc, char *argv[])
         std::cout << "CPU" << std::endl;
         std::cout << "Average: " << cpuAverage << std::endl;
         std::cout << "Time: " << cpuTime << " ms" << std::endl;
-        
+
     }
     catch(const std::exception &e)
     {
