@@ -1,14 +1,18 @@
 #include <cstdlib>
 import vkCompViz;
+import objLoader;
 import std;
 
-int main()
+int main(int argc, char *argv[])
 {
     try
     {
+        if(argc < 2)
+            throw std::invalid_argument("Missing input obj file (containing normals and triangulated faces)");
+        ObjLoader objLoader(argv[1]);
         vkCompViz::App::Parameters params;
         // This vector contains the 3D model data
-        // It consists of array of indices followed by vertices where each vertex is defined by 3D coordinates and 3D normal
+        // It consists of array of indices followed by and array of 3D coordinates of vertices and and another array of normals
         std::vector<float> inputData(10);
         // These data will be stored in storage buffer and used in vertex shader
         params.shaders.storageBuffer.size = inputData.size() * sizeof(float);

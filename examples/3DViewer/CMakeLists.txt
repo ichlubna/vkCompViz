@@ -2,8 +2,12 @@ cmake_minimum_required(VERSION 4.0)
 project(3DViewer)
 include(../copyResources.cmake)
 
-add_executable(${PROJECT_NAME} 3DViewer.cpp)
+add_executable(${PROJECT_NAME} 3DViewer.cpp objLoader.cpp)
 target_link_libraries(${PROJECT_NAME} PRIVATE vkCompViz)
+target_sources(${PROJECT_NAME}
+    PUBLIC FILE_SET CXX_MODULES FILES
+    objLoader.cppm
+)
 
 set(RESOURCE_FILES
     examples/${PROJECT_NAME}/shaders/3DViewerVertex.slang
