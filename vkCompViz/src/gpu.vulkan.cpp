@@ -106,13 +106,14 @@ vk::InstanceCreateInfo &Vulkan::CreateInfo::instance()
 class DeviceRating
 {
     public:
-        DeviceRating(const vk::raii::PhysicalDevice *testedDevice, const vk::SurfaceKHR *testedSurface, const std::vector<const char*> &requiredExtensions, bool windowEnabled);
+        DeviceRating(const vk::raii::PhysicalDevice *testedDevice, const vk::SurfaceKHR *testedSurface, const std::vector<const char*> &requiredExtensions, bool windowEnabled, std::string priorityUUID);
         DeviceRating() = default;
         void printInfo();
         const vk::raii::PhysicalDevice *device;
         std::string name;
         std::string id;
         std::set<std::string> uniqueCapabilities;
+        bool priority{false};
         class QueueIndices
         {
             public:
@@ -137,6 +138,8 @@ void DeviceRating::printInfo()
         std::cout << capability << " ";
     std::cout << std::endl;
     std::cout << "- ID: " << id << std::endl;
+    if(priority)
+        std::cout << "- Prioritized by the user" << std::endl;
 }
 
 bool DeviceRating::extensionPresent(const std::vector<const char*> &requiredExtensions, const std::vector<vk::ExtensionProperties> &extensionProperties)
@@ -167,7 +170,7 @@ bool DeviceRating::swapChainSupport(const vk::SurfaceKHR &testedSurface)
     return !surfaceFormats.empty() && !surfacePresentModes.empty();
 }
 
-DeviceRating::DeviceRating(const vk::raii::PhysicalDevice *testedDevice, const vk::SurfaceKHR *testedSurface, const std::vector<const char*> &requiredExtensions, bool windowEnabled) : device{testedDevice}
+DeviceRating::DeviceRating(const vk::raii::PhysicalDevice *testedDevice, const vk::SurfaceKHR *testedSurface, const std::vector<const char*> &requiredExtensions, bool windowEnabled, std::string priorityID) : device{testedDevice}
 {
     const auto properties = device->getProperties();
     name = std::string(properties.deviceName);
@@ -216,6 +219,11 @@ DeviceRating::DeviceRating(const vk::raii::PhysicalDevice *testedDevice, const v
 
     for(size_t i = 0; i < VK_UUID_SIZE; i++)
         id += std::to_string(properties.pipelineCacheUUID[i]);
+    if(id == priorityID)
+    {
+        score += 1000;
+        priority = true;
+    }
 }
 
 vk::raii::PhysicalDevice Vulkan::CreateInfo::bestPhysicalDevice()
@@ -229,6 +237,11 @@ vk::raii::PhysicalDevice Vulkan::CreateInfo::bestPhysicalDevice()
     if(physicalDevices.empty())
         throw std::runtime_error("No physical devices found");
 
+    if(!params.deviceUUID.empty())
+    {
+        std::cout << "Setting priority to device with UUID: " << params.deviceUUID << " if present" << std::endl;
+    }
+
     vk::PhysicalDevice bestPhysicalDevice;
     DeviceRating bestDeviceRating;
     std::cout << "The following devices are available:" << std::endl;
@@ -236,7 +249,7 @@ vk::raii::PhysicalDevice Vulkan::CreateInfo::bestPhysicalDevice()
     for(const auto& currentDevice : physicalDevices)
     {
         const vk::SurfaceKHR *testedSurface = (windowEnabled()) ? &(*vulkan.surface.value()) : nullptr;
-        DeviceRating deviceRating{&currentDevice, testedSurface, deviceExtensions, windowEnabled()};
+        DeviceRating deviceRating{&currentDevice, testedSurface, deviceExtensions, windowEnabled(), params.deviceUUID};
         auto [iterator, inserted] = uniqueIDs.insert(deviceRating.id);
         if(inserted)
         {

@@ -8,7 +8,8 @@ int main(int argc, char *argv[])
     try
     {
         std::string help =  "This program computes am average value of an input array of random floats.\n"
-                            "Usage: ./parallelReduction -s sizeOfTheArray\n";
+                            "Usage: ./parallelReduction -s sizeOfTheArray\n"
+                            "Optional parameters -d defines a string containing GPU UUID to be selected\n";
         Arguments args(argc, argv);
         if(args.printHelpIfPresent(help))
             return EXIT_SUCCESS;
@@ -40,6 +41,10 @@ int main(int argc, char *argv[])
         // Enables benchmarking - measuring of time and memory usage, it is the same as pressing F2 in windowed mode
         // Report is not saved to file but available as showed below
         params.benchmark.enable = true;
+        // In case of multiple GPUs available, the best one is automatically selected
+        // The devices are listed in the console and the user can override the selection by defining a concrete UUID
+        if(args["-d"])
+           params.priorityUUID = static_cast<std::string>(args["-d"]);
         app.run(params);       
         auto result = app.resultBuffer();
         // The benchmark reports are also available here

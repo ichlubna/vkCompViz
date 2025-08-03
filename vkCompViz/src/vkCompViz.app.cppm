@@ -73,6 +73,7 @@ class App
                     float step{1.0f};
                 };
                 std::vector<KeyBinding> keyBindings;
+                std::string priorityUUID{""};
         };
         
         App();

@@ -148,6 +148,7 @@ void App::run(App::Parameters const &inputParameters)
     vulkanInitParams.window = parameters.window.enable;
     if(parameters.window.enable)
         windowInit();
+    vulkanInitParams.deviceUUID = parameters.priorityUUID;
     initShaders();
     initTextures();
     initShaderStorageBuffer();

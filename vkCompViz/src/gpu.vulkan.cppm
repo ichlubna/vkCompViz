@@ -21,6 +21,7 @@ class Vulkan : public Gpu
                 std::function<Resolution()> currentResolution;
                 bool window {true};
                 Resolution resolution;
+                std::string deviceUUID{""};
                 class Shaders
                 {
                     public:
