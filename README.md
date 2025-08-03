@@ -1,7 +1,7 @@
 # Vulkan GPGPU Compute Framework
 Vulkan Compute Vizualization (vkCompViz) is a Vulkan library for GPU-accelerated data processing. The main purpose are computer-graphics-related GPU-accelerated operations on images.
 
-The library can load input images, run a sequence of compute shaders, display the result in window, and store the result. Uniform parameters can be interactively changed in console with the result updated in the display window.
+The library can load input images, run a sequence of compute shaders, display the result in window, and store the result. Uniform parameters can be interactively changed in console with the result updated in the display window. The application can run in headless mode or with window. The library can also generate memory and time performance reports.
 
 ## How to run
 Simple compilation of examples:
