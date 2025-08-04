@@ -45,6 +45,6 @@ Keys for window application:
 | F1 | Store the the result |
 | F2 | Store benchmark report | 
 
-### TODO
+### Possible future features
 - RTX pipeline that can render to texture.
 - Add a class reflecting the input buffers and textures which can be asynchronously updated in runtime. GPU would update its data when changes happen. This can allow for data changes during runtime (e.g. video player).

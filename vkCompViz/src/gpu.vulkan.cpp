@@ -22,7 +22,7 @@ Vulkan::Vulkan(VulkanInitParams params) :
     sampler{device, createInfo.sampler()},
     descriptorSetLayout{device, createInfo.descriptorSetLayout(params.textures.input.size(), params.textures.output.size())},
     swapChain{device, createInfo.swapChain(), createInfo.windowEnabled()},
-    currentUniformBufferData{static_cast<std::uint32_t>(params.shaders.uniformBufferUint32Count()), 0},
+    currentUniformBufferData{std::vector<uint32_t>(params.shaders.uniformBufferUint32Count(), 0)},
     uniformNames{params.shaders.uniformNames()},
     shaders{.vertex{device, createInfo.shaderModule(params.shaders.vertex.code)},
             .fragment{device, createInfo.shaderModule(params.shaders.fragment.code)},
@@ -289,6 +289,7 @@ std::vector<vk::DeviceQueueCreateInfo> &Vulkan::CreateInfo::queues()
 vk::DeviceCreateInfo &Vulkan::CreateInfo::device()
 {
     physicalDeviceFeatures.samplerAnisotropy = VK_TRUE;
+    physicalDeviceFeatures.vertexPipelineStoresAndAtomics = VK_TRUE;
     physicalDeviceVulkan12Features.runtimeDescriptorArray = VK_TRUE;
     physicalDeviceComputeShaderDerivativesFeatures.computeDerivativeGroupQuads = VK_TRUE;
     physicalDeviceVulkan12Features.setPNext(&physicalDeviceComputeShaderDerivativesFeatures);
@@ -420,7 +421,7 @@ vk::PipelineViewportStateCreateInfo &Vulkan::CreateInfo::viewport()
     .setWidth(vulkan.swapChain.extent.width)
     .setHeight(vulkan.swapChain.extent.height)
     .setMinDepth(0.0f)
-    .setMaxDepth(1.0f);
+    .setMaxDepth(100.0f);
 
     pipelineScissor
     .setOffset(vk::Offset2D{0, 0})
@@ -440,7 +441,7 @@ vk::PipelineRasterizationStateCreateInfo &Vulkan::CreateInfo::rasterization()
     .setPolygonMode(vk::PolygonMode::eFill)
     .setLineWidth(1.0f)
     .setCullMode(vk::CullModeFlagBits::eBack)
-    .setFrontFace(vk::FrontFace::eClockwise)
+    .setFrontFace(vk::FrontFace::eCounterClockwise)
     .setDepthBiasEnable(false)
     .setDepthBiasConstantFactor(0.0f)
     .setDepthBiasClamp(0.0f)
@@ -513,23 +514,39 @@ vk::RenderPassCreateInfo &Vulkan::CreateInfo::renderPass()
     colorAttachmentReference
     .setAttachment(0)
     .setLayout(vk::ImageLayout::eColorAttachmentOptimal);
+    
+    depthAttachment
+    .setFormat(vk::Format::eD32Sfloat)
+    .setSamples(vk::SampleCountFlagBits::e1)
+    .setLoadOp(vk::AttachmentLoadOp::eClear)
+    .setStoreOp(vk::AttachmentStoreOp::eDontCare)
+    .setStencilLoadOp(vk::AttachmentLoadOp::eDontCare)
+    .setStencilStoreOp(vk::AttachmentStoreOp::eDontCare)
+    .setInitialLayout(vk::ImageLayout::eUndefined)
+    .setFinalLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal);
+    
+    depthAttachmentReference
+    .setAttachment(1)
+    .setLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal);
 
     subpass
     .setPipelineBindPoint(vk::PipelineBindPoint::eGraphics)
     .setColorAttachmentCount(1)
-    .setPColorAttachments(&colorAttachmentReference);
+    .setPColorAttachments(&colorAttachmentReference)
+    .setPDepthStencilAttachment(&depthAttachmentReference);
 
     subpassDependency
     .setSrcSubpass(VK_SUBPASS_EXTERNAL)
     .setDstSubpass(0)
-    .setSrcStageMask(vk::PipelineStageFlagBits::eColorAttachmentOutput)
-    .setDstStageMask(vk::PipelineStageFlagBits::eColorAttachmentOutput)
-    .setSrcAccessMask(vk::AccessFlagBits::eNone)
-    .setDstAccessMask(vk::AccessFlagBits::eColorAttachmentWrite);
-
+    .setSrcStageMask(vk::PipelineStageFlagBits::eColorAttachmentOutput | vk::PipelineStageFlagBits::eLateFragmentTests)
+    .setDstStageMask(vk::PipelineStageFlagBits::eColorAttachmentOutput | vk::PipelineStageFlagBits::eEarlyFragmentTests)
+    .setSrcAccessMask(vk::AccessFlagBits::eDepthStencilAttachmentWrite)
+    .setDstAccessMask(vk::AccessFlagBits::eColorAttachmentWrite | vk::AccessFlagBits::eDepthStencilAttachmentWrite);
+    
+    attachments = {colorAttachment, depthAttachment};
     renderPassCreateInfo
-    .setAttachmentCount(1)
-    .setPAttachments(&colorAttachment)
+    .setAttachmentCount(attachments.size())
+    .setPAttachments(attachments.data())
     .setSubpassCount(1)
     .setPSubpasses(&subpass)
     .setDependencyCount(1)
@@ -543,6 +560,17 @@ vk::GraphicsPipelineCreateInfo &Vulkan::CreateInfo::graphicsPipeline()
     shaderStages.emplace_back(pipelineShaderStage(vulkan.shaders.vertex, vk::ShaderStageFlagBits::eVertex));
     shaderStages.emplace_back(pipelineShaderStage(vulkan.shaders.fragment, vk::ShaderStageFlagBits::eFragment));
 
+    depthStencilCreateInfo
+    .setDepthTestEnable(true)
+    .setDepthWriteEnable(true)
+    .setDepthCompareOp(vk::CompareOp::eLessOrEqual)
+    .setDepthBoundsTestEnable(false)
+    .setStencilTestEnable(false)
+    .setMinDepthBounds(0.0f)
+    .setMaxDepthBounds(1.0f)
+    .setFront({})
+    .setBack({});
+
     graphicsPipelineCreateInfo
     .setStages(shaderStages)
     .setPVertexInputState(&vertexInput())
@@ -551,7 +579,7 @@ vk::GraphicsPipelineCreateInfo &Vulkan::CreateInfo::graphicsPipeline()
     .setPRasterizationState(&rasterization())
     .setPMultisampleState(&multisample())
     .setPColorBlendState(&colorBlend())
-    .setPDepthStencilState(nullptr)
+    .setPDepthStencilState(&depthStencilCreateInfo)
     .setPDynamicState(&pipelineDynamic())
     .setLayout(vulkan.pipelines.graphics.layout.value())
     .setRenderPass(vulkan.pipelines.graphics.renderPass.value())
@@ -574,9 +602,11 @@ vk::ComputePipelineCreateInfo &Vulkan::CreateInfo::computePipeline(vk::raii::Sha
     return computePipelineCreateInfo;
 }
 
-vk::FramebufferCreateInfo &Vulkan::CreateInfo::frameBuffer(vk::raii::ImageView &attachment)
+vk::FramebufferCreateInfo &Vulkan::CreateInfo::frameBuffer(vk::raii::ImageView &color, vk::raii::ImageView &depth)
 {
-    frameBufferAttachments = {attachment};
+    frameBufferAttachments.clear();
+    frameBufferAttachments.push_back(color);
+    frameBufferAttachments.push_back(depth);
     frameBufferCreateInfo
     .setRenderPass(vulkan.pipelines.graphics.renderPass.value())
     .setAttachments(frameBufferAttachments)
@@ -605,12 +635,17 @@ vk::CommandBufferAllocateInfo &Vulkan::CreateInfo::commandBuffer(vk::raii::Comma
 
 vk::RenderPassBeginInfo &Vulkan::CreateInfo::renderPassBegin(vk::raii::Framebuffer &frameBuffer)
 {
+    clearColors.clear();
+    clearColors.emplace_back()
+    .setColor({0.02f, 0.01f, 0.01f, 1.0f});
+    clearColors.emplace_back()
+    .setDepthStencil({1.0f, 0});
     renderPassBeginInfo
     .setRenderPass(vulkan.pipelines.graphics.renderPass.value())
     .setFramebuffer(frameBuffer)
     .setRenderArea({{0, 0}, vulkan.swapChain.extent})
-    .setClearValueCount(1)
-    .setPClearValues(&clearColor);
+    .setClearValueCount(clearColors.size())
+    .setPClearValues(clearColors.data());
     return renderPassBeginInfo;
 }
 
@@ -816,8 +851,9 @@ void Vulkan::run()
     swapChain.nextInFlight();
 }
 
-vk::ImageViewCreateInfo &Vulkan::CreateInfo::imageView(vk::Format imageFormat, vk::Image image)
+vk::ImageViewCreateInfo &Vulkan::CreateInfo::imageView(vk::Format imageFormat, vk::Image image, bool depth)
 {
+    vk::ImageAspectFlagBits aspect = (depth) ? vk::ImageAspectFlagBits::eDepth : vk::ImageAspectFlagBits::eColor;
     imageViewCreateInfo
     .setViewType(vk::ImageViewType::e2D)
     .setFormat(imageFormat)
@@ -826,7 +862,7 @@ vk::ImageViewCreateInfo &Vulkan::CreateInfo::imageView(vk::Format imageFormat, v
                     vk::ComponentSwizzle::eIdentity,
                     vk::ComponentSwizzle::eIdentity,
                     vk::ComponentSwizzle::eIdentity})
-    .setSubresourceRange({vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1});
+    .setSubresourceRange({aspect, 0, 1, 0, 1});
     return imageViewCreateInfo;
 }
 
@@ -844,7 +880,7 @@ void Vulkan::CreateInfo::createFrameBuffer(Vulkan::SwapChain::Frame &frame, vk::
     frame.image = image;
     auto &imageViewCreateInfo = imageView(vulkan.swapChain.imageFormat, image);
     frame.imageView.emplace(vk::raii::ImageView{vulkan.device, imageViewCreateInfo});
-    frame.frameBuffer.emplace(vk::raii::Framebuffer{vulkan.device, frameBuffer(*frame.imageView)});
+    frame.frameBuffer.emplace(vk::raii::Framebuffer{vulkan.device, frameBuffer(*frame.imageView, *frame.depth->view)});
 }
 
 std::unique_ptr<Vulkan::Buffer> Vulkan::Memory::buffer(vk::BufferUsageFlags usage, size_t size)
@@ -863,14 +899,16 @@ std::unique_ptr<Vulkan::Buffer> Vulkan::Memory::buffer(vk::BufferUsageFlags usag
     return buffer;
 }
 
-vk::ImageCreateInfo &Vulkan::CreateInfo::image(vk::Format imageFormat, Resolution resolution, bool storage = false)
+vk::ImageCreateInfo &Vulkan::CreateInfo::image(vk::Format imageFormat, Resolution resolution, CreateInfo::ImageType imageType)
 {
     queueFamilyIndices.clear();
     queueFamilyIndices.push_back(graphicsQueueID());
     queueFamilyIndices.push_back(computeQueueID());
     auto usageFlags = vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled;
-    if(storage)
+    if(imageType == ImageType::Storage)
         usageFlags |= vk::ImageUsageFlagBits::eStorage | vk::ImageUsageFlagBits::eTransferSrc;
+    if(imageType == ImageType::Depth)
+        usageFlags = vk::ImageUsageFlagBits::eDepthStencilAttachment;    
 
     imageCreateInfo
     .setFormat(imageFormat)
@@ -1018,7 +1056,8 @@ std::unique_ptr<Vulkan::Texture> Vulkan::Memory::texture(std::shared_ptr<Loader:
     VmaAllocationCreateInfo imageAllocInfo = {};
     imageAllocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
     auto format = formatToVk(image->imageFormat());
-    auto &imageCreateInfo = vulkan.createInfo.image(format, {static_cast<uint32_t>(image->width()), static_cast<uint32_t>(image->height())}, storage);
+    auto type = (storage) ? CreateInfo::ImageType::Storage : CreateInfo::ImageType::Read;
+    auto &imageCreateInfo = vulkan.createInfo.image(format, {static_cast<uint32_t>(image->width()), static_cast<uint32_t>(image->height())}, type);
     vmaCreateImage(allocator, imageCreateInfo, &imageAllocInfo, &texture->image, &texture->allocation, nullptr);
     vulkan.transitionImageLayout(texture->image, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal);
     vulkan.copyBufferToImage(static_cast<vk::Buffer>(stagingBuffer->buffer), texture->image, image->width(), image->height());
@@ -1027,6 +1066,19 @@ std::unique_ptr<Vulkan::Texture> Vulkan::Memory::texture(std::shared_ptr<Loader:
     else
         vulkan.transitionImageLayout(texture->image, vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal);
     texture->view.emplace(vk::raii::ImageView{vulkan.device, vulkan.createInfo.imageView(format, texture->image)});
+    texture->allocator = &allocator;
+    return texture;
+}
+
+std::unique_ptr<Vulkan::Texture> Vulkan::Memory::depth(Resolution resolution)
+{
+    auto texture = std::make_unique<Texture>();
+    VmaAllocationCreateInfo imageAllocInfo = {};
+    imageAllocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+    auto &imageCreateInfo = vulkan.createInfo.image(vk::Format::eD32Sfloat, {static_cast<uint32_t>(resolution.width), static_cast<uint32_t>(resolution.height)}, CreateInfo::ImageType::Depth);
+    vmaCreateImage(allocator, imageCreateInfo, &imageAllocInfo, &texture->image, &texture->allocation, nullptr);
+    
+    texture->view.emplace(vk::raii::ImageView{vulkan.device, vulkan.createInfo.imageView(vk::Format::eD32Sfloat, texture->image, true)});
     texture->allocator = &allocator;
     return texture;
 }
@@ -1196,7 +1248,10 @@ void Vulkan::createSwapChainFrames()
     {
         swapChain.frames.emplace_back();
         if(createInfo.windowEnabled())
+        {
+            swapChain.frames.back().depth = memory.depth(createInfo.currentResolution());
             createInfo.createFrameBuffer(swapChain.frames.back(), images[i]);
+        }
         auto &inFlight = swapChain.inFlight.emplace_back();
         inFlight.commandBuffers.graphics.emplace(std::move(graphicsCommandBuffers[i]));
         inFlight.commandBuffers.compute.emplace(std::move(computeCommandBuffers[i]));

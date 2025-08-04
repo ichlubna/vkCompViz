@@ -1,6 +1,8 @@
 struct Parameters
 {
     float angle;
+    float verticesStart;
+    float normalsStart;
 }
 [[vk::binding(0, 0)]]
 uniform Parameters parameters;
@@ -9,6 +11,5 @@ RWStructuredBuffer<float> buffer;
 struct VertexOutput
 {
 	float4 position : SV_Position;
-    float2 uv : TEXCOORD0;
     float3 normal : NORMAL;
 };

@@ -31,7 +31,10 @@ class Vulkan : public Gpu
                         std::vector<Shader::Shader::Info> compute;
                         [[nodiscard]] size_t uniformBufferSize() const
                         {
-                            return std::max(vertex.uniformBufferSize, fragment.uniformBufferSize);
+                            std::size_t size = std::max(vertex.uniformBufferSize, fragment.uniformBufferSize);
+                            for(auto& computeShader : compute)
+                                size = std::max(size, computeShader.uniformBufferSize);
+                            return size;
                         };
                         [[nodiscard]] size_t uniformBufferUint32Count() const
                         {
@@ -97,6 +100,7 @@ class Vulkan : public Gpu
                         vk::Image image;
                         std::optional<vk::raii::ImageView> imageView;
                         std::optional<vk::raii::Framebuffer> frameBuffer;
+                        std::unique_ptr<Texture> depth;
                 };
                 class InFlight
                 {
@@ -157,8 +161,10 @@ class Vulkan : public Gpu
         class CreateInfo
         {
             public:
+                enum ImageType { Depth = 0, Storage = 1, Read = 2 };
                 CreateInfo(Vulkan &vulkan, VulkanInitParams params) : vulkan(vulkan), params(params) {};
                 void updateResolution();
+                [[nodiscard]] Resolution currentResolution() const { return params.resolution; }
                 [[nodiscard]] vk::ApplicationInfo &application();
                 [[nodiscard]] vk::InstanceCreateInfo &instance();
                 [[nodiscard]] vk::raii::PhysicalDevice bestPhysicalDevice();
@@ -191,14 +197,14 @@ class Vulkan : public Gpu
                 [[nodiscard]] vk::RenderPassCreateInfo &renderPass();
                 [[nodiscard]] vk::GraphicsPipelineCreateInfo &graphicsPipeline();
                 [[nodiscard]] vk::ComputePipelineCreateInfo &computePipeline(vk::raii::ShaderModule &shaderModule);
-                [[nodiscard]] vk::FramebufferCreateInfo &frameBuffer(vk::raii::ImageView &attachment);
+                [[nodiscard]] vk::FramebufferCreateInfo &frameBuffer(vk::raii::ImageView &color, vk::raii::ImageView &depth);
                 [[nodiscard]] vk::CommandPoolCreateInfo &commandPool(std::size_t queueFamilyID);
                 [[nodiscard]] vk::CommandBufferAllocateInfo &commandBuffer(vk::raii::CommandPool &commandPool, std::uint32_t count);
                 [[nodiscard]] vk::RenderPassBeginInfo &renderPassBegin(vk::raii::Framebuffer &frameBuffer);
                 [[nodiscard]] vk::SemaphoreCreateInfo &semaphore();
                 [[nodiscard]] vk::FenceCreateInfo &fence();
-                [[nodiscard]] vk::ImageViewCreateInfo &imageView(vk::Format imageFormat, vk::Image image);
-                [[nodiscard]] vk::ImageCreateInfo &image(vk::Format imageFormat, Resolution resolution, bool storage);
+                [[nodiscard]] vk::ImageViewCreateInfo &imageView(vk::Format imageFormat, vk::Image image, bool depth=false);
+                [[nodiscard]] vk::ImageCreateInfo &image(vk::Format imageFormat, Resolution resolution, ImageType imageType);
                 [[nodiscard]] vk::DescriptorSetLayoutCreateInfo &descriptorSetLayout(size_t inputTextureCount, size_t outputTextureCount);
                 [[nodiscard]] vk::DescriptorPoolCreateInfo &descriptorPool(size_t inputTextureCount, size_t outputTextureCount, size_t inFlightFramesCount);
                 [[nodiscard]] vk::DescriptorSetAllocateInfo &descriptorSet(vk::raii::DescriptorPool &descriptorPool, std::size_t count);
@@ -258,7 +264,9 @@ class Vulkan : public Gpu
                 vk::BufferCreateInfo bufferCreateInfo{};
                 vk::ImageCreateInfo imageCreateInfo{};
                 vk::AttachmentDescription colorAttachment{};
+                vk::AttachmentDescription depthAttachment{};
                 vk::AttachmentReference colorAttachmentReference{};
+                vk::AttachmentReference depthAttachmentReference{};
                 vk::SubpassDescription subpass{};
                 vk::SubpassDependency subpassDependency{};
                 vk::GraphicsPipelineCreateInfo graphicsPipelineCreateInfo{};
@@ -269,7 +277,9 @@ class Vulkan : public Gpu
                 vk::DescriptorPoolCreateInfo descriptorPoolCreateInfo{};
                 vk::DescriptorSetAllocateInfo descriptorSetAllocateInfo{};
                 vk::SamplerCreateInfo samplerCreateInfo{};
-                vk::ClearValue clearColor{{0.02f, 0.01f, 0.01f, 1.0f}};
+                vk::PipelineDepthStencilStateCreateInfo depthStencilCreateInfo{};
+                std::vector<vk::ClearValue> clearColors;
+                std::vector<vk::AttachmentDescription> attachments = {};
                 vk::PipelineShaderStageCreateInfo shaderStage{};
                 std::vector<vk::ShaderModuleCreateInfo> shaderModuleCreateInfos;
                 std::vector<vk::PipelineShaderStageCreateInfo> pipelineShaderStageCreateInfos;
@@ -308,6 +318,7 @@ class Vulkan : public Gpu
                 VmaAllocator allocator;
                 [[nodiscard]] std::unique_ptr<Buffer> buffer(vk::BufferUsageFlags usage, size_t size);
                 [[nodiscard]] std::unique_ptr<Texture> texture(std::shared_ptr<Loader::Image> image, bool storage = false);
+                [[nodiscard]] std::unique_ptr<Texture> depth(Resolution resolution);
                 ~Memory()
                 {
                     vmaDestroyAllocator(allocator);
