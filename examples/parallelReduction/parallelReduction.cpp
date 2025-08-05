@@ -3,6 +3,23 @@ import arguments;
 import vkCompViz;
 import std;
 
+class Timer
+{
+    private:
+        std::chrono::steady_clock::time_point start;
+        std::chrono::steady_clock::time_point end;
+    public:
+        Timer()
+        {
+            start = std::chrono::steady_clock::now();
+        }
+        float elapsed()
+        {
+            end = std::chrono::steady_clock::now();
+            return std::chrono::duration_cast<std::chrono::microseconds>(end - start).count()/1000.0f;
+        }
+};
+
 int main(int argc, char *argv[])
 {
     try
@@ -18,7 +35,11 @@ int main(int argc, char *argv[])
             throw std::invalid_argument("Missing parameters");
 
         // Creating a vector of random floats
+        Timer timerMemory;
         std::vector<float> inputData(args["-s"]);
+        // The allocation time on CPU is also measured into CPU time as GPU memory operations are also counted
+        float cpuTimeMemory = timerMemory.elapsed();
+
         std::mt19937 rng(std::time(nullptr));
         std::uniform_real_distribution<float> dist(0.0f, 1.0f);
         std::generate(inputData.begin(), inputData.end(), [&]()
@@ -55,30 +76,43 @@ int main(int argc, char *argv[])
         //benchmarks[0]....
 
         std::cerr << inputData[0] << " " << result[0] << std::endl;
-
-        float gpuAverage = 0;
-        float gpuTime = benchmarks[0].totalTime();
+        float gpuSum = 0;
 
         // CPU version
-        auto start = std::chrono::steady_clock::now();
-        float sum = std::accumulate(inputData.begin(), inputData.end(), 0.0);
-        float cpuAverage = sum / inputData.size();
-        auto end = std::chrono::steady_clock::now();
-        float cpuTime = std::chrono::duration<float, std::milli>(end - start).count();
+        Timer timer;
+        float cpuSum = std::accumulate(inputData.begin(), inputData.end(), 0.0);
+        float cpuTime = timer.elapsed();
+        float cpuTimeTotal = cpuTime+cpuTimeMemory;
 
         // Report
+        constexpr size_t precision = 5;
         std::cout << "GPU" << std::endl;
-        std::cout << "Average: " << gpuAverage << std::endl;
-        std::cout << "Time: " << gpuTime << " ms" << std::endl;
-
+        std::cout << "Sum: " << std::fixed << std::setprecision(precision) <<  gpuSum << std::endl;
+        std::cout << "Total time: " << benchmarks[0].totalTime() << " ms" << std::endl;
+        std::cout << "Only computation: " << benchmarks[0].computeTime() << " ms" << std::endl;
+        std::cout << "Only memory operations: " << benchmarks[0].memoryTime() << " ms" << std::endl;
+        std::cout << std::endl;
         std::cout << "CPU" << std::endl;
-        std::cout << "Average: " << cpuAverage << std::endl;
-        std::cout << "Time: " << cpuTime << " ms" << std::endl;
-
-        if(gpuTime < cpuTime)
-            std::cout << "GPU is " << cpuTime/gpuTime << "× faster" << std::endl;
+        std::cout << "Sum: " << std::fixed << std::setprecision(precision) << cpuSum << std::endl;
+        std::cout << "Total time: " << cpuTimeTotal << " ms" << std::endl;
+        std::cout << "Only computation: " << cpuTime << " ms" << std::endl;
+        std::cout << "Only memory operations: " << cpuTimeMemory << " ms" << std::endl;
+        std::cout << std::endl;
+        std::cout << "Total times: ";
+        if(benchmarks[0].totalTime() < cpuTimeTotal)
+            std::cout << "GPU is " << cpuTimeTotal/benchmarks[0].totalTime() << "× faster" << std::endl;
         else
-            std::cout << "CPU is " << gpuTime/cpuTime << "× faster" << std::endl;
+            std::cout << "CPU is " << benchmarks[0].totalTime()/cpuTimeTotal << "× faster" << std::endl;
+        std::cout << "Computation only:";
+        if(benchmarks[0].computeTime() < cpuTime)
+            std::cout << " GPU is " << cpuTime/benchmarks[0].computeTime() << "× faster" << std::endl;
+        else
+            std::cout << " CPU is " << benchmarks[0].computeTime()/cpuTime << "× faster" << std::endl;
+        std::cout << "Memory only:";
+        if(benchmarks[0].memoryTime() < cpuTimeMemory)
+            std::cout << " GPU is " << cpuTimeMemory/benchmarks[0].memoryTime() << "× faster" << std::endl;
+        else
+            std::cout << " CPU is " << benchmarks[0].memoryTime()/cpuTimeMemory << "× faster" << std::endl;
         
         // The benchmark data can also be printed 
         //benchmarks[0].print();
