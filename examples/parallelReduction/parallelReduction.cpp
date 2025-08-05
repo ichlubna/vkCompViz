@@ -57,7 +57,7 @@ int main(int argc, char *argv[])
         std::cerr << inputData[0] << " " << result[0] << std::endl;
 
         float gpuAverage = 0;
-        float gpuTime = 0;
+        float gpuTime = benchmarks[0].totalTime();
 
         // CPU version
         auto start = std::chrono::steady_clock::now();
@@ -74,6 +74,14 @@ int main(int argc, char *argv[])
         std::cout << "CPU" << std::endl;
         std::cout << "Average: " << cpuAverage << std::endl;
         std::cout << "Time: " << cpuTime << " ms" << std::endl;
+
+        if(gpuTime < cpuTime)
+            std::cout << "GPU is " << cpuTime/gpuTime << "× faster" << std::endl;
+        else
+            std::cout << "CPU is " << gpuTime/cpuTime << "× faster" << std::endl;
+        
+        // The benchmark data can also be printed 
+        //benchmarks[0].print();
 
     }
     catch(const std::exception &e)

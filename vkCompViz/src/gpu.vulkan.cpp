@@ -5,6 +5,7 @@ module;
 #include <vk_mem_alloc.h>
 module gpu;
 import vulkan_hpp;
+import timer;
 using namespace Gpu;
 
 Vulkan::Vulkan(VulkanInitParams params) :
@@ -748,12 +749,20 @@ void Vulkan::recordGraphicsCommandBuffer(SwapChain::Frame &frame, SwapChain::InF
 {
     auto &buffer = *inFlight.commandBuffers.graphics;
     buffer.begin({});
+    if(benchmark)
+    {
+        buffer.resetQueryPool(inFlight.queryPools.graphics.value(), 0, 2);
+    }
     buffer.beginRenderPass(createInfo.renderPassBegin(*frame.frameBuffer), vk::SubpassContents::eInline);
+    if(benchmark)
+        buffer.writeTimestamp(vk::PipelineStageFlagBits::eTopOfPipe, inFlight.queryPools.graphics.value(), 0);
     buffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipelines.graphics.pipeline.value());
     buffer.setViewport(0, {vk::Viewport(0, 0, swapChain.extent.width, swapChain.extent.height, 0, 1)});
     buffer.setScissor(0, {vk::Rect2D({0, 0}, swapChain.extent)});
     buffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipelines.graphics.layout.value(), 0, {inFlight.descriptorSet.value()}, {});
     buffer.draw(createInfo.vertexCount(), 1, 0, 0);
+    if(benchmark)
+        buffer.writeTimestamp(vk::PipelineStageFlagBits::eBottomOfPipe, inFlight.queryPools.graphics.value(), 1);
     buffer.endRenderPass();
     buffer.end();
 }
@@ -786,16 +795,16 @@ void Vulkan::updateShaderStorageBuffer(SwapChain::InFlight &inFlight)
 {
     if(createInfo.shaderStorageBufferData().empty())
         return;
+    Timer timer;
     vmaCopyMemoryToAllocation(*inFlight.buffers.shaderStorage->allocator, createInfo.shaderStorageBufferData().data(), inFlight.buffers.shaderStorage->allocation, 0, createInfo.shaderStorageBufferData().size()*sizeof(float));
-    device.waitIdle();
+    times.memory.upload.shaderStorage += timer.elapsed();
 }
 
 void Vulkan::draw(SwapChain::InFlight &inFlight)
 {
     if(createInfo.windowEnabled())
     {
-        while(device.waitForFences({inFlight.fences.inFlight.value()}, VK_TRUE, timeout) == vk::Result::eTimeout);
-
+        waitForGraphics(inFlight);
         uint32_t swapChainFrameID;
         vk::Result result;
         try
@@ -841,13 +850,62 @@ void Vulkan::draw(SwapChain::InFlight &inFlight)
     }
 }
 
+void Vulkan::newBenchmark(SwapChain::InFlight &inFlight)
+{
+    benchmarks.emplace_back();
+    benchmarks.back().inFlightFrames = swapChain.inFlightCount;
+
+    benchmarks.back().times.download.shaderStorage = times.memory.download.shaderStorage;
+    benchmarks.back().times.download.texture = times.memory.download.texture;
+    benchmarks.back().times.upload.shaderStorage = times.memory.upload.shaderStorage;
+    benchmarks.back().times.upload.texture = times.memory.upload.texture;
+
+    std::vector<uint64_t> timestamps(inFlight.queryPools.computeCount*2);
+    device.getDispatcher()->vkGetQueryPoolResults(*device, *inFlight.queryPools.compute.value(), 0, inFlight.queryPools.computeCount, sizeof(uint64_t)*timestamps.size(), timestamps.data(), sizeof(uint64_t), static_cast<VkQueryResultFlags>(vk::QueryResultFlagBits::e64 | vk::QueryResultFlagBits::eWait));
+
+    auto props = physicalDevice.getProperties();
+    for(size_t i = 0; i < inFlight.queryPools.computeCount; i+=2)
+        benchmarks.back().times.compute.push_back(((timestamps[i+1] - timestamps[i])*props.limits.timestampPeriod)/1000000.0f);
+
+    if(createInfo.windowEnabled())
+    {
+        std::vector<uint64_t> timestampsGraphics(2);
+        device.getDispatcher()->vkGetQueryPoolResults(*device, *inFlight.queryPools.graphics.value(), 0, 2, sizeof(uint64_t)*timestampsGraphics.size(), timestampsGraphics.data(), sizeof(uint64_t), static_cast<VkQueryResultFlags>(vk::QueryResultFlagBits::e64 | vk::QueryResultFlagBits::eWait));
+        benchmarks.back().times.draw = (((timestampsGraphics[1] - timestampsGraphics[0])*props.limits.timestampPeriod)/1000000.0f);
+    }
+
+    VmaTotalStatistics statistics;
+    vmaCalculateStatistics(memory.allocator, &statistics);
+    benchmarks.back().usedMemory = statistics.total.statistics.allocationBytes;
+    benchmark = false;
+}
+
+void Vulkan::waitForCompute(SwapChain::InFlight &inFlight)
+{
+    while(device.waitForFences({inFlight.fences.computeInFlight.value()}, VK_TRUE, timeout) == vk::Result::eTimeout);
+}
+
+void Vulkan::waitForGraphics(SwapChain::InFlight &inFlight)
+{
+    while(device.waitForFences({inFlight.fences.inFlight.value()}, VK_TRUE, timeout) == vk::Result::eTimeout);
+}
+
 void Vulkan::run()
 {
     auto &inFlight = swapChain.currentInFlight();
-    while(device.waitForFences({inFlight.fences.computeInFlight.value()}, VK_TRUE, timeout) == vk::Result::eTimeout);
+    if(benchmark)
+        createQueryPools(inFlight);
+    waitForCompute(inFlight);
     updateUniformBuffer(inFlight);
     compute(inFlight);
     draw(inFlight);
+    if(benchmark)
+    {
+        waitForCompute(inFlight);
+        if(createInfo.windowEnabled())
+            waitForGraphics(inFlight);
+        newBenchmark(inFlight);
+    }
     swapChain.nextInFlight();
 }
 
@@ -1050,7 +1108,11 @@ std::unique_ptr<Vulkan::Texture> Vulkan::Memory::texture(std::shared_ptr<Loader:
         vmaCopyMemoryToAllocation(*stagingBuffer->allocator, data.data(), stagingBuffer->allocation, 0, image->size());
     }
     else
+    {
+        Timer timer;
         vmaCopyMemoryToAllocation(*stagingBuffer->allocator, image->data(), stagingBuffer->allocation, 0, image->size());
+        vulkan.times.memory.upload.texture += timer.elapsed();
+    }
 
     auto texture = std::make_unique<Texture>();
     VmaAllocationCreateInfo imageAllocInfo = {};
@@ -1225,6 +1287,25 @@ void Vulkan::updateDescriptorSets(SwapChain::InFlight &inFlight)
     device.updateDescriptorSets(writeDescriptorSets, {});
 }
 
+void Vulkan::createQueryPools(SwapChain::InFlight &inFlight)
+{
+    inFlight.queryPools.computeCount = workGroupCounts.size()*2;
+    vk::QueryPoolCreateInfo queryPoolCreateInfo;
+    queryPoolCreateInfo
+    .setQueryType(vk::QueryType::eTimestamp)
+    .setQueryCount(inFlight.queryPools.computeCount);
+    inFlight.queryPools.compute.emplace(device, queryPoolCreateInfo);
+  
+    if(createInfo.windowEnabled()) 
+    {
+        vk::QueryPoolCreateInfo queryPoolCreateInfoGraphics;
+        queryPoolCreateInfoGraphics
+        .setQueryType(vk::QueryType::eTimestamp)
+        .setQueryCount(2);
+        inFlight.queryPools.graphics.emplace(device, queryPoolCreateInfoGraphics);
+    }
+}
+
 void Vulkan::createSwapChainFrames()
 {
     createInputTextures();
@@ -1329,11 +1410,17 @@ void Vulkan::recordComputeCommandBuffer(SwapChain::InFlight &inFlight)
 {
     auto &buffer = *inFlight.commandBuffers.compute;
     buffer.begin({});
+    if(benchmark)
+        buffer.resetQueryPool(inFlight.queryPools.compute.value(), 0, inFlight.queryPools.computeCount);    
     for(size_t i = 0; i < workGroupCounts.size(); i++)
     {
+        if(benchmark)
+            buffer.writeTimestamp(vk::PipelineStageFlagBits::eComputeShader, inFlight.queryPools.compute.value(), 2*i);
         buffer.bindPipeline(vk::PipelineBindPoint::eCompute, pipelines.compute.pipelines[i]);
         buffer.bindDescriptorSets(vk::PipelineBindPoint::eCompute, pipelines.compute.layout, 0, {inFlight.descriptorSet.value()}, {});
         buffer.dispatch(workGroupCounts[i].x, workGroupCounts[i].y, workGroupCounts[i].z);
+        if(benchmark)
+            buffer.writeTimestamp(vk::PipelineStageFlagBits::eComputeShader, inFlight.queryPools.compute.value(), 2*i+1);
         if(i < workGroupCounts.size() - 1)
         {
             vk::MemoryBarrier memoryBarrier;
@@ -1383,11 +1470,23 @@ std::shared_ptr<Loader::Image> Vulkan::resultTexture()
     copyImageToBuffer(output->image, static_cast<vk::Buffer>(stagingBuffer->buffer), initialOutputImage->width(), initialOutputImage->height());
 
     void *gpuData;
+    Timer timer;
     vmaMapMemory(*stagingBuffer->allocator, stagingBuffer->allocation, &gpuData);
     auto result = std::make_shared<Loader::ImageFfmpeg>(initialOutputImage->width(), initialOutputImage->height(), 1, initialOutputImage->imageFormat(), reinterpret_cast<uint8_t *>(gpuData));
     vmaUnmapMemory(*stagingBuffer->allocator, stagingBuffer->allocation);
+    times.memory.download.texture += timer.elapsed();
     transitionImageLayout(output->image, vk::ImageLayout::eTransferSrcOptimal, vk::ImageLayout::eGeneral);
+    updateBenchmarks();
     return result;
+}
+
+void Vulkan::updateBenchmarks()
+{
+    for(auto &benchmark : benchmarks)
+    {
+        benchmark.times.download.shaderStorage = times.memory.download.shaderStorage;
+        benchmark.times.download.texture = times.memory.download.texture;
+    }
 }
 
 std::vector<float> Vulkan::resultBuffer()
@@ -1398,10 +1497,13 @@ std::vector<float> Vulkan::resultBuffer()
     std::vector<float> result(size);
 
     void *gpuData;
+    Timer timer;
     copyBuffer(inFlight.buffers.shaderStorage->buffer, stagingBuffer->buffer, size);
     vmaMapMemory(*stagingBuffer->allocator, stagingBuffer->allocation, &gpuData);
     memcpy(result.data(), gpuData, size);
     vmaUnmapMemory(*stagingBuffer->allocator, stagingBuffer->allocation);
+    times.memory.download.shaderStorage += timer.elapsed();
+    updateBenchmarks();
     return result;
 }
 

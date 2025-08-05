@@ -80,6 +80,13 @@ void App::initUniforms() const
         gpu->updateUniform(uniform.first, uniform.second);
 }
 
+[[nodiscard]] std::string currentTimeFile(std::string path, std::string extension)
+{
+    const auto now = std::chrono::system_clock::now();
+    auto name = std::format("{:%d-%m-%Y %H:%M:%OS}", now);
+    return (std::filesystem::path(path) / std::filesystem::path(name)).string() + extension;
+}
+
 void App::mainLoop()
 {
     if(parameters.window.enable)
@@ -88,12 +95,17 @@ void App::mainLoop()
         ParameterParser inputParameters;
         bool end = false;
         bool screenshotTaken = false;
+        bool benchmark = false;
         while(!end)
         {
             Timer timer;
             window->run();
             end = window->key("Escape") || window->quit();
-            gpu->computeSettings(parameters.shaders.workGroupCounts, parameters.benchmark.enable);
+            
+            if(window->key("F2") && !benchmark)
+                benchmark = true;
+
+            gpu->computeSettings(parameters.shaders.workGroupCounts, benchmark);
             gpu->run();
             if(window->resized())
                 gpu->resize();
@@ -107,14 +119,19 @@ void App::mainLoop()
             if(window->key("F1") && !screenshotTaken)
             {
                 screenshotTaken = true;
-                const auto now = std::chrono::system_clock::now();
-                auto name = std::format("{:%d-%m-%Y %H:%M:%OS}", now);
-                auto path = (std::filesystem::path(parameters.screenshot.path) / std::filesystem::path(name)).string() + parameters.screenshot.extension;
+                auto path = currentTimeFile(parameters.screenshot.path, parameters.screenshot.extension);
                 saveResultImage(path);
                 std::cout << "Screenshot saved to " << path << std::endl;
             }
             else if(!window->key("F1"))
                 screenshotTaken = false;
+            
+            if(!window->key("F2") && benchmark)
+            {
+                benchmark = false;
+                auto path = currentTimeFile(parameters.benchmark.path, ".txt");
+                gpu->benchmarkReports().back().store(path);
+            }
 
             for(auto const& binding : parameters.keyBindings)
             {

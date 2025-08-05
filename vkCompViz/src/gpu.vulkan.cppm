@@ -132,6 +132,13 @@ class Vulkan : public Gpu
                                 std::optional<vk::raii::Fence> inFlight;
                                 std::optional<vk::raii::Fence> computeInFlight;
                         } fences;
+                        class QueryPools
+                        {
+                            public:
+                            std::optional<vk::raii::QueryPool> compute;
+                            size_t computeCount{0};
+                            std::optional<vk::raii::QueryPool> graphics;
+                        } queryPools;
                 };
                 void nextInFlight()
                 {
@@ -232,6 +239,10 @@ class Vulkan : public Gpu
                 [[nodiscard]] std::size_t vertexCount() const
                 {
                     return params.shaders.vertexCount;
+                }
+                [[nodiscard]] std::size_t computeShaderCount() const 
+                {
+                    return params.shaders.compute.size(); 
                 }
 
             private:
@@ -392,9 +403,28 @@ class Vulkan : public Gpu
                 static constexpr size_t INPUT_TEXTURE{4};
                 static constexpr size_t SHADER_STORAGE{5};
         };
+        class Times
+        {
+            public:
+            class Memory
+            {
+                public:
+                class Download
+                {
+                    public:
+                        float texture{0};
+                        float shaderStorage{0};
+                } download;
+                class Upload
+                {
+                    public:
+                        float texture{0};
+                        float shaderStorage{0};
+                } upload;
+             } memory;
+        } times;
         std::vector<std::unique_ptr<Texture >> inputTextures;
         std::vector<WorkGroupCount> workGroupCounts;
-        bool benchmark;
         const size_t timeout = std::numeric_limits<uint64_t>::max();
         size_t computedInFlight{0};
         bool resizeRequired{false};
@@ -414,6 +444,11 @@ class Vulkan : public Gpu
         void copyImageToBuffer(vk::Image image, vk::Buffer outputBuffer, size_t width, size_t height);
         void updateDescriptorSets(SwapChain::InFlight &inFlight);
         void createInputTextures();
+        void newBenchmark(SwapChain::InFlight &inFlight);
+        void updateBenchmarks();
+        void createQueryPools(SwapChain::InFlight &inFlight);
+        void waitForGraphics(SwapChain::InFlight &inFlight);
+        void waitForCompute(SwapChain::InFlight &inFlight);
         [[nodiscard]] int uniformIndex(std::string name) const;
         std::unique_ptr<OneTimeCommand> oneTimeCommand();
         [[nodiscard]] std::vector<vk::raii::ShaderModule> createComputeShaders(std::vector<Shader::Shader::Info> &computeShaders);

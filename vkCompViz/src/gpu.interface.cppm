@@ -22,11 +22,26 @@ class Gpu
                 {
                     public:
                         std::vector<float> compute;
-                        float textureUpload {0};
-                        float shaderStorageUpload {0};
+                        float draw{0};
+                        class Download
+                        {
+                            public:
+                            float texture{0};
+                            float shaderStorage{0};
+                        } download;
+                        class Upload
+                        {
+                            public:
+                            float texture{0};
+                            float shaderStorage{0};
+                        } upload;
                 } times;
                 float usedMemory {0};
                 [[nodiscard]] float computeTime() const;
+                [[nodiscard]] float memoryTime() const;
+                [[nodiscard]] float totalTime(bool includeDraw = false) const;
+                [[nodiscard]] std::string toString() const;
+                void print() const;
                 void store(std::string path) const;
         };
         Gpu() = default;
@@ -46,6 +61,8 @@ class Gpu
 
     private:
         virtual void init() = 0;
+    protected:
+        bool benchmark = false;
         std::vector<BenchmarkReport> benchmarks;
 };
 }
