@@ -35,11 +35,7 @@ int main(int argc, char *argv[])
             throw std::invalid_argument("Missing parameters");
 
         // Creating a vector of random floats
-        Timer timerMemory;
         std::vector<float> inputData(args["-s"]);
-        // The allocation time on CPU is also measured into CPU time as GPU memory operations are also counted
-        float cpuTimeMemory = timerMemory.elapsed();
-
         std::mt19937 rng(std::time(nullptr));
         std::uniform_real_distribution<float> dist(0.0f, 1.0f);
         std::generate(inputData.begin(), inputData.end(), [&]()
@@ -70,7 +66,8 @@ int main(int argc, char *argv[])
         if(args["-d"])
             params.priorityUUID = static_cast<std::string>(args["-d"]);
         app.run(params);
-        auto result = app.resultBuffer();
+        // Downloads one float from the shader storage buffer (passing no or 0 parameter stores the whole buffer)
+        auto result = app.resultBuffer(sizeof(float));
         // The benchmark reports are also available here
         auto benchmarks = app.benchmarkReports();
         //benchmarks[0]....
@@ -82,37 +79,29 @@ int main(int argc, char *argv[])
         Timer timer;
         float cpuSum = std::accumulate(inputData.begin(), inputData.end(), 0.0);
         float cpuTime = timer.elapsed();
-        float cpuTimeTotal = cpuTime+cpuTimeMemory;
 
         // Report
         constexpr size_t precision = 5;
         std::cout << "GPU" << std::endl;
         std::cout << "Sum: " << std::fixed << std::setprecision(precision) <<  gpuSum << std::endl;
-        std::cout << "Total time: " << benchmarks[0].totalTime() << " ms" << std::endl;
+        std::cout << "Time: " << benchmarks[0].totalTime() << " ms" << std::endl;
         std::cout << "Only computation: " << benchmarks[0].computeTime() << " ms" << std::endl;
-        std::cout << "Only memory operations: " << benchmarks[0].memoryTime() << " ms" << std::endl;
+        std::cout << "Only memory: " << benchmarks[0].memoryTime() << " ms" << std::endl;
         std::cout << std::endl;
         std::cout << "CPU" << std::endl;
         std::cout << "Sum: " << std::fixed << std::setprecision(precision) << cpuSum << std::endl;
-        std::cout << "Total time: " << cpuTimeTotal << " ms" << std::endl;
-        std::cout << "Only computation: " << cpuTime << " ms" << std::endl;
-        std::cout << "Only memory operations: " << cpuTimeMemory << " ms" << std::endl;
+        std::cout << "Time: " << cpuTime << " ms" << std::endl;
         std::cout << std::endl;
         std::cout << "Total times: ";
-        if(benchmarks[0].totalTime() < cpuTimeTotal)
-            std::cout << "GPU is " << cpuTimeTotal/benchmarks[0].totalTime() << "× faster" << std::endl;
+        if(benchmarks[0].totalTime() < cpuTime)
+            std::cout << "GPU is " << cpuTime/benchmarks[0].totalTime() << "× faster" << std::endl;
         else
-            std::cout << "CPU is " << benchmarks[0].totalTime()/cpuTimeTotal << "× faster" << std::endl;
+            std::cout << "CPU is " << benchmarks[0].totalTime()/cpuTime << "× faster" << std::endl;
         std::cout << "Computation only:";
         if(benchmarks[0].computeTime() < cpuTime)
             std::cout << " GPU is " << cpuTime/benchmarks[0].computeTime() << "× faster" << std::endl;
         else
             std::cout << " CPU is " << benchmarks[0].computeTime()/cpuTime << "× faster" << std::endl;
-        std::cout << "Memory only:";
-        if(benchmarks[0].memoryTime() < cpuTimeMemory)
-            std::cout << " GPU is " << cpuTimeMemory/benchmarks[0].memoryTime() << "× faster" << std::endl;
-        else
-            std::cout << " CPU is " << benchmarks[0].memoryTime()/cpuTimeMemory << "× faster" << std::endl;
         
         // The benchmark data can also be printed 
         //benchmarks[0].print();

@@ -315,7 +315,7 @@ Vulkan::Pipelines::Graphics::Graphics(vk::raii::Device &device, Vulkan::CreateIn
 vk::SurfaceFormatKHR swapChainSurfaceFormat(const std::vector<vk::SurfaceFormatKHR> &availableFormats)
 {
     for(const auto& availableFormat : availableFormats)
-        if(availableFormat.format == vk::Format::eB8G8R8A8Srgb && availableFormat.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear)
+        if(availableFormat.format == vk::Format::eB8G8R8A8Unorm && availableFormat.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear)
             return availableFormat;
     return availableFormats.front();
 }
@@ -1489,20 +1489,22 @@ void Vulkan::updateBenchmarks()
     }
 }
 
-std::vector<float> Vulkan::resultBuffer()
+std::vector<float> Vulkan::resultBuffer(size_t size)
 {
     const auto &inFlight = swapChain.lastComputedInFlight();
-    size_t size = createInfo.shaderStorageBufferSize();
-    auto stagingBuffer = memory.buffer(vk::BufferUsageFlagBits::eTransferDst, size);
-    std::vector<float> result(size);
+    size_t downloadSize = size;
+    if(downloadSize == 0)
+       downloadSize = createInfo.shaderStorageBufferSize();
+    auto stagingBuffer = memory.buffer(vk::BufferUsageFlagBits::eTransferDst, downloadSize);
+    std::vector<float> result(std::ceil(static_cast<float>(downloadSize) / sizeof(float)));
 
     void *gpuData;
-    Timer timer;
-    copyBuffer(inFlight.buffers.shaderStorage->buffer, stagingBuffer->buffer, size);
+    copyBuffer(inFlight.buffers.shaderStorage->buffer, stagingBuffer->buffer, downloadSize);
     vmaMapMemory(*stagingBuffer->allocator, stagingBuffer->allocation, &gpuData);
-    memcpy(result.data(), gpuData, size);
-    vmaUnmapMemory(*stagingBuffer->allocator, stagingBuffer->allocation);
+    Timer timer;
+    memcpy(result.data(), gpuData, downloadSize);
     times.memory.download.shaderStorage += timer.elapsed();
+    vmaUnmapMemory(*stagingBuffer->allocator, stagingBuffer->allocation);
     updateBenchmarks();
     return result;
 }

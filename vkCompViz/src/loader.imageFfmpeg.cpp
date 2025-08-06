@@ -53,6 +53,95 @@ AVFrame *frameFromFile(std::string path)
 
 void convertFrame(AVFrame *input, AVFrame *output)
 {
+    if (!input || !output)
+        throw std::invalid_argument("Input and output frames must not be null");
+
+    const AVFilter *buffersrc  = avfilter_get_by_name("buffer");
+    const AVFilter *buffersink = avfilter_get_by_name("buffersink");
+    AVFilterContext *buffersrc_ctx = nullptr;
+    AVFilterContext *buffersink_ctx = nullptr;
+    AVFilterGraph *filter_graph = avfilter_graph_alloc();
+    if (!filter_graph)
+        throw std::runtime_error("Unable to create filter graph");
+    
+    std::string inFormatName = av_get_pix_fmt_name(static_cast<AVPixelFormat>(input->format));
+    std::string outFormatName = av_get_pix_fmt_name(static_cast<AVPixelFormat>(output->format));
+ 
+    std::string args = "video_size=" + std::to_string(input->width) + "x" + std::to_string(input->height) + ":pix_fmt=" + inFormatName + ":time_base=1/25:pixel_aspect=1/1";
+
+    int ret = avfilter_graph_create_filter(&buffersrc_ctx, buffersrc, "in", args.data(), nullptr, filter_graph);
+    if (ret < 0)
+    {
+        avfilter_graph_free(&filter_graph);
+        throw std::runtime_error("Cannot create buffer source");
+    }
+
+    ret = avfilter_graph_create_filter(&buffersink_ctx, buffersink, "out", nullptr, nullptr, filter_graph);
+    if (ret < 0) 
+    {
+        avfilter_graph_free(&filter_graph);
+        throw std::runtime_error("Cannot create buffer sink");
+    }
+
+    if (ret < 0)
+    {
+        avfilter_graph_free(&filter_graph);
+        throw std::runtime_error("Cannot set output pixel format");
+    }
+
+    std::string filter_desc = "format=" + outFormatName;
+    AVFilterInOut *outputs = avfilter_inout_alloc();
+    AVFilterInOut *inputs  = avfilter_inout_alloc();
+
+    outputs->name = av_strdup("in");
+    outputs->filter_ctx = buffersrc_ctx;
+    outputs->pad_idx = 0;
+    outputs->next = nullptr;
+
+    inputs->name = av_strdup("out");
+    inputs->filter_ctx = buffersink_ctx;
+    inputs->pad_idx = 0;
+    inputs->next = nullptr;
+
+    ret = avfilter_graph_parse_ptr(filter_graph, filter_desc.data(), &inputs, &outputs, nullptr);
+    if (ret < 0)
+    {
+        avfilter_inout_free(&outputs);
+        avfilter_inout_free(&inputs);
+        avfilter_graph_free(&filter_graph);
+        throw std::runtime_error("Error parsing filter graph");
+    }
+
+    ret = avfilter_graph_config(filter_graph, nullptr);
+    avfilter_inout_free(&outputs);
+    avfilter_inout_free(&inputs);
+    if (ret < 0)
+    {
+        avfilter_graph_free(&filter_graph);
+        throw std::runtime_error("Error configuring filter graph");
+    }
+
+    ret = av_buffersrc_add_frame_flags(buffersrc_ctx, input, AV_BUFFERSRC_FLAG_KEEP_REF);
+    if (ret < 0)
+    {
+        avfilter_graph_free(&filter_graph);
+        throw std::runtime_error("Error feeding frame into filtergraph");
+    }
+
+    ret = av_buffersink_get_frame(buffersink_ctx, output);
+    if (ret < 0)
+    {
+        avfilter_graph_free(&filter_graph);
+        throw std::runtime_error("Error getting frame from filtergraph");
+    }
+
+    avfilter_graph_free(&filter_graph);
+}
+
+
+/*
+void convertFrame(AVFrame *input, AVFrame *output)
+{
     struct SwsContext *cRGB = nullptr;
 
     if(input->format == AV_PIX_FMT_YUVJ420P)
@@ -62,8 +151,39 @@ void convertFrame(AVFrame *input, AVFrame *output)
     else if(input->format == AV_PIX_FMT_YUVJ444P)
         input->format = AV_PIX_FMT_YUV444P;
 
+    std::cerr << "Input " << input->width << "x" << input->height << " " << input->linesize[0] << " " << av_get_pix_fmt_name(static_cast<AVPixelFormat>(input->format)) << " " << std::endl;
+    std::cerr << "Output " << output->width << "x" << output->height << " " << output->linesize[0] << " " << av_get_pix_fmt_name(static_cast<AVPixelFormat>(output->format)) << " " << std::endl;
+
     cRGB = sws_getCachedContext(cRGB, input->width, input->height, static_cast<enum AVPixelFormat>(input->format), output->width, output->height, static_cast<AVPixelFormat>(output->format), SWS_BICUBIC, nullptr, nullptr, nullptr);
     sws_scale(cRGB, (const uint8_t *const *)input->data, input->linesize, 0, input->height, output->data, output->linesize);
+}
+*/
+void ImageFfmpeg::interlaceData()
+{
+    size_t pixelCount = frame->width * frame->height;
+    interlacedData.reserve(pixelCount * 4);
+    for(size_t i = 0; i < pixelCount; i++)
+    {
+        interlacedData.push_back(reinterpret_cast<float *>(frame->data[2])[i]);
+        interlacedData.push_back(reinterpret_cast<float *>(frame->data[0])[i]);
+        interlacedData.push_back(reinterpret_cast<float *>(frame->data[1])[i]);
+        interlacedData.push_back(reinterpret_cast<float *>(frame->data[3])[i]);
+    }
+    interlacedData.back() = 0.0f;
+}
+
+const unsigned char *ImageFfmpeg::data()
+{
+    if(frame->data[0] == nullptr)
+        return nullptr;
+    if (format == Image::Format::RGBA_8_INT)
+        return frame->data[0];
+    else
+    {
+        if(interlacedData.empty())
+            interlaceData();
+        return reinterpret_cast<const unsigned char *>(interlacedData.data());
+    }
 }
 
 ImageFfmpeg::ImageFfmpeg(std::string inputPath) : Image()
@@ -84,7 +204,7 @@ ImageFfmpeg::ImageFfmpeg(std::string inputPath) : Image()
     }
     else
     {
-        frame->format = AV_PIX_FMT_RGBAF32;
+        frame->format = AV_PIX_FMT_GBRAPF32LE;
         format = Image::Format::RGBA_32_FLOAT;
     }
 
@@ -93,6 +213,17 @@ ImageFfmpeg::ImageFfmpeg(std::string inputPath) : Image()
 
     av_frame_unref(decodedFrame);
     av_frame_free(&decodedFrame);
+}
+
+void ImageFfmpeg::deinterlaceData()
+{
+    for(size_t i = 0; i < interlacedData.size()/4; i++)
+    {
+        reinterpret_cast<float *>(frame->data[2])[i] = interlacedData[4*i];
+        reinterpret_cast<float *>(frame->data[0])[i] = interlacedData[4*i+1];
+        reinterpret_cast<float *>(frame->data[1])[i] = interlacedData[4*i+2];
+        reinterpret_cast<float *>(frame->data[3])[i] = interlacedData[4*i+3];
+    }
 }
 
 ImageFfmpeg::ImageFfmpeg(size_t width, size_t height, [[maybe_unused]] size_t stride, Format imageFormat, uint8_t *data) : Image()
@@ -109,14 +240,35 @@ ImageFfmpeg::ImageFfmpeg(size_t width, size_t height, [[maybe_unused]] size_t st
     }
     else
     {
-        frame->format = AV_PIX_FMT_RGBAF32;
+        frame->format = AV_PIX_FMT_GBRAPF32LE;
         pixelSize = 4 * sizeof(float);
+        for(int i = 0; i < 4; i++)
+            frame->linesize[i] = width*sizeof(float);
     }
     if(data)
     {
         av_frame_get_buffer(frame, 0);
-        memcpy(frame->data[0], data, width * height * pixelSize);
+        if(format == Image::Format::RGBA_8_INT)
+            memcpy(frame->data[0], data, width * height * pixelSize);
+        else
+        {
+            interlacedData.resize(width * height * 4);
+            memcpy(interlacedData.data(), data, width * height * pixelSize);
+            deinterlaceData();
+        }
     }
+}
+
+const AVCodec *guessCodecByExtension(std::string &path, const AVOutputFormat *outputFormat)
+{
+    const AVCodec *fallbackCodec = avcodec_find_encoder(outputFormat->video_codec);
+    std::filesystem::path outputPath = path;
+    auto extension = outputPath.extension().string();
+    extension.erase(0, 1);
+    const AVCodec *codec = avcodec_find_encoder_by_name(extension.c_str());
+    if(!codec)
+        return fallbackCodec; 
+    return codec;
 }
 
 void ImageFfmpeg::save(std::string outputPath) const
@@ -133,7 +285,8 @@ void ImageFfmpeg::save(std::string outputPath) const
     const AVOutputFormat *outputFormat = av_guess_format(nullptr, outputFilePath.c_str(), nullptr);
     if(!outputFormat)
         throw std::runtime_error("Could not deduce output format");
-    const AVCodec *codec = avcodec_find_encoder(outputFormat->video_codec);
+    
+    const AVCodec *codec = guessCodecByExtension(outputPath, outputFormat);
     if(!codec)
         throw std::runtime_error("Could not find encoder");
     AVStream *stream;
@@ -161,7 +314,13 @@ void ImageFfmpeg::save(std::string outputPath) const
         }
         else if(format == Image::Format::RGBA_32_FLOAT)
         {
-            if(pixFmts[fmtID] == AV_PIX_FMT_RGBAF32)
+            if(std::string(codec->name) == "png" && pixFmts[fmtID] == AV_PIX_FMT_RGBA64BE)
+            {
+                outputFrame->format = pixFmts[fmtID];
+                break;
+            }
+
+            if(pixFmts[fmtID] == AV_PIX_FMT_GBRAPF32LE)
             {
                 outputFrame->format = pixFmts[fmtID];
                 break;

@@ -4,6 +4,7 @@ module;
 #include "ffmpeg.h"
 export module loader: imageFfmpeg;
 export import : interface;
+import std;
 
 // TODO use this one instead of the include above
 //import std;
@@ -15,10 +16,7 @@ class ImageFfmpeg : public Image
     public:
         ImageFfmpeg(std::string path);
         ImageFfmpeg(size_t width, size_t height, [[maybe_unused]] size_t stride, Format imageFormat, uint8_t *data = nullptr);
-        [[nodiscard]] const unsigned char *data() const override
-        {
-            return frame->data[0];
-        }
+        [[nodiscard]] const unsigned char *data() override;
         [[nodiscard]] virtual size_t width() const override
         {
             return frame->width;
@@ -44,5 +42,8 @@ class ImageFfmpeg : public Image
         AVFrame *frame;
         Image::Format format;
         std::string path;
+        void interlaceData();
+        void deinterlaceData();
+        std::vector<float> interlacedData;
 };
 }

@@ -82,9 +82,9 @@ class App
         [[nodiscard]] const Shader::Shader::Info::WorkGroupSize getShaderWorkGroupSize(std::string path) const;
         [[nodiscard]] const Gpu::Gpu::WorkGroupCount calculateWorkGroupCount(Shader::Shader::Info::WorkGroupSize workGroupSize, Shader::Shader::Info::ThreadCount threadCount) const;
         void saveResultImage(std::string path) const;
-        std::vector<float> resultBuffer() const
+        std::vector<float> resultBuffer(std::size_t size=0) const
         {
-            return gpu->resultBuffer();
+            return gpu->resultBuffer(size);
         };
         [[nodiscard]] const std::vector<Gpu::Gpu::BenchmarkReport> benchmarkReports() const
         {

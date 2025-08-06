@@ -52,7 +52,7 @@ class Gpu
         virtual void updateUniform(std::string name, float value) = 0;
         virtual void addToUniform(std::string name, float value) = 0;
         [[nodiscard]] virtual std::shared_ptr<Loader::Image> resultTexture() = 0;
-        [[nodiscard]] virtual std::vector<float> resultBuffer() = 0;
+        [[nodiscard]] virtual std::vector<float> resultBuffer(std::size_t size=0) = 0;
         virtual ~Gpu() = default;
         [[nodiscard]] const std::vector<BenchmarkReport> benchmarkReports() const
         {

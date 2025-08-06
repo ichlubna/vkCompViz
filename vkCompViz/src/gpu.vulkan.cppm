@@ -63,7 +63,7 @@ class Vulkan : public Gpu
         void updateUniform(std::string name, float value) override;
         void addToUniform(std::string name, float value) override;
         [[nodiscard]] std::shared_ptr<Loader::Image> resultTexture() override;
-        [[nodiscard]] std::vector<float> resultBuffer() override;
+        [[nodiscard]] std::vector<float> resultBuffer(size_t size=0) override;
         ~Vulkan();
 
     private:
