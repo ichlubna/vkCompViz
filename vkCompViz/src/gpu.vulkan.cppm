@@ -155,8 +155,8 @@ class Vulkan : public Gpu
                         throw std::runtime_error("No frames were computed yet");
                     return inFlight[previousInFlightID];
                 }
-                SwapChain(vk::raii::Device &device, const vk::SwapchainCreateInfoKHR &swapChainCreateInfo, bool windowEnabled);
                 std::optional<vk::raii::SwapchainKHR> swapChain;
+                std::optional<vk::raii::SwapchainKHR> oldSwapChain;
                 vk::Format imageFormat;
                 vk::Extent2D extent;
                 std::vector<Frame> frames;
@@ -203,7 +203,7 @@ class Vulkan : public Gpu
                 [[nodiscard]] vk::PipelineLayoutCreateInfo &pipelineLayout();
                 [[nodiscard]] vk::RenderPassCreateInfo &renderPass();
                 [[nodiscard]] vk::GraphicsPipelineCreateInfo &graphicsPipeline();
-                [[nodiscard]] vk::ComputePipelineCreateInfo &computePipeline(vk::raii::ShaderModule &shaderModule);
+                [[nodiscard]] vk::ComputePipelineCreateInfo &computePipeline(vk::raii::ShaderModule &shaderModule, vk::raii::PipelineLayout &pipelineLayout);
                 [[nodiscard]] vk::FramebufferCreateInfo &frameBuffer(vk::raii::ImageView &color, vk::raii::ImageView &depth);
                 [[nodiscard]] vk::CommandPoolCreateInfo &commandPool(std::size_t queueFamilyID);
                 [[nodiscard]] vk::CommandBufferAllocateInfo &commandBuffer(vk::raii::CommandPool &commandPool, std::uint32_t count);
@@ -353,7 +353,6 @@ class Vulkan : public Gpu
         vk::raii::Sampler sampler;
         vk::raii::DescriptorSetLayout descriptorSetLayout;
         SwapChain swapChain;
-        std::optional<vk::raii::SwapchainKHR> oldSwapchain;
         std::vector<std::uint32_t> currentUniformBufferData;
         std::vector<std::string> uniformNames;
         class Shaders
@@ -369,7 +368,7 @@ class Vulkan : public Gpu
                 class Graphics
                 {
                     public:
-                        Graphics(vk::raii::Device &device, CreateInfo &createInfo);
+                        Graphics() = default;
                         std::optional<vk::raii::PipelineLayout> layout;
                         std::optional<vk::raii::RenderPass> renderPass;
                         std::optional<vk::raii::Pipeline> pipeline;
@@ -377,8 +376,9 @@ class Vulkan : public Gpu
                 class Compute
                 {
                     public:
+                        Compute() = default;
                         Compute(std::vector<vk::raii::ShaderModule> &shaders, vk::raii::Device &device, CreateInfo &createInfo);
-                        vk::raii::PipelineLayout layout;
+                        std::optional<vk::raii::PipelineLayout> layout;
                         std::vector<vk::raii::Pipeline> pipelines;
                 } compute;
         } pipelines;
@@ -428,6 +428,8 @@ class Vulkan : public Gpu
         const size_t timeout = std::numeric_limits<uint64_t>::max();
         size_t computedInFlight{0};
         bool resizeRequired{false};
+        void initSwapChain();
+        void createComputePipeline(); 
         void recordGraphicsCommandBuffer(SwapChain::Frame &frame, SwapChain::InFlight &inFlight);
         void recordComputeCommandBuffer(SwapChain::InFlight &inFlight);
         void recreateSwapChain();

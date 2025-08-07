@@ -22,14 +22,11 @@ Vulkan::Vulkan(VulkanInitParams params) :
                     .compute{device, createInfo.commandPool(createInfo.computeQueueID())}},
     sampler{device, createInfo.sampler()},
     descriptorSetLayout{device, createInfo.descriptorSetLayout(params.textures.input.size(), params.textures.output.size())},
-    swapChain{device, createInfo.swapChain(), createInfo.windowEnabled()},
     currentUniformBufferData{std::vector<uint32_t>(params.shaders.uniformBufferUint32Count(), 0)},
     uniformNames{params.shaders.uniformNames()},
     shaders{.vertex{device, createInfo.shaderModule(params.shaders.vertex.code)},
             .fragment{device, createInfo.shaderModule(params.shaders.fragment.code)},
-            .compute{createComputeShaders(params.shaders.compute)}},
-    pipelines{  .graphics{device, createInfo},
-                .compute{shaders.compute, device, createInfo}}
+            .compute{createComputeShaders(params.shaders.compute)}}
 {
     init();
 }
@@ -302,16 +299,6 @@ vk::DeviceCreateInfo &Vulkan::CreateInfo::device()
     return deviceCreateInfo;
 }
 
-Vulkan::Pipelines::Graphics::Graphics(vk::raii::Device &device, Vulkan::CreateInfo &createInfo)
-{
-    if(createInfo.windowEnabled())
-    {
-        layout.emplace(device, createInfo.pipelineLayout());
-        renderPass.emplace(device, createInfo.renderPass());
-        pipeline.emplace(device, nullptr, createInfo.graphicsPipeline());
-    }
-};
-
 vk::SurfaceFormatKHR swapChainSurfaceFormat(const std::vector<vk::SurfaceFormatKHR> &availableFormats)
 {
     for(const auto& availableFormat : availableFormats)
@@ -367,20 +354,17 @@ vk::SwapchainCreateInfoKHR &Vulkan::CreateInfo::swapChain()
     return swapChainCreateInfo;
 }
 
-Vulkan::SwapChain::SwapChain(vk::raii::Device &device, const vk::SwapchainCreateInfoKHR &swapChainCreateInfo, bool windowEnabled)
-{
-    if(windowEnabled)
-        swapChain.emplace(device, swapChainCreateInfo);
-    extent = swapChainCreateInfo.imageExtent;
-    imageFormat = swapChainCreateInfo.imageFormat;
-}
-
 vk::ShaderModuleCreateInfo &Vulkan::CreateInfo::shaderModule(std::vector<uint32_t> &code)
 {
     shaderModuleCreateInfos.emplace_back()
                            .setCodeSize(code.size() * sizeof(uint32_t))
                            .setPCode(code.data());
     return shaderModuleCreateInfos.back();
+}
+
+void Vulkan::createComputePipeline()
+{
+    pipelines.compute = Pipelines::Compute(shaders.compute, device, createInfo);
 }
 
 vk::PipelineShaderStageCreateInfo &Vulkan::CreateInfo::pipelineShaderStage(vk::raii::ShaderModule &shaderModule, vk::ShaderStageFlagBits stage)
@@ -590,7 +574,7 @@ vk::GraphicsPipelineCreateInfo &Vulkan::CreateInfo::graphicsPipeline()
     return graphicsPipelineCreateInfo;
 }
 
-vk::ComputePipelineCreateInfo &Vulkan::CreateInfo::computePipeline(vk::raii::ShaderModule &shaderModule)
+vk::ComputePipelineCreateInfo &Vulkan::CreateInfo::computePipeline(vk::raii::ShaderModule &shaderModule, vk::raii::PipelineLayout &layout)
 {
     shaderStage
     .setModule(shaderModule)
@@ -599,7 +583,7 @@ vk::ComputePipelineCreateInfo &Vulkan::CreateInfo::computePipeline(vk::raii::Sha
 
     computePipelineCreateInfo
     .setStage(shaderStage)
-    .setLayout(vulkan.pipelines.compute.layout);
+    .setLayout(layout);
     return computePipelineCreateInfo;
 }
 
@@ -727,10 +711,11 @@ std::vector<vk::raii::ShaderModule> Vulkan::createComputeShaders(std::vector<Sha
     return shaders;
 }
 
-Vulkan::Pipelines::Compute::Compute(std::vector<vk::raii::ShaderModule> &shaders, vk::raii::Device &device, CreateInfo &createInfo) : layout{device, createInfo.pipelineLayout()}
+Vulkan::Pipelines::Compute::Compute(std::vector<vk::raii::ShaderModule> &shaders, vk::raii::Device &device, CreateInfo &createInfo)
 {
+    layout.emplace(device, createInfo.pipelineLayout()); 
     for(auto &shader : shaders)
-        pipelines.push_back({device, nullptr, createInfo.computePipeline(shader)});
+        pipelines.push_back({device, nullptr, createInfo.computePipeline(shader, layout.value())});
 }
 
 void Vulkan::createInputTextures()
@@ -742,7 +727,16 @@ void Vulkan::createInputTextures()
 
 void Vulkan::init()
 {
+    if(createInfo.windowEnabled())
+    {
+        initSwapChain();
+        pipelines.graphics.layout.emplace(device, createInfo.pipelineLayout());
+        pipelines.graphics.pipeline.emplace(device, nullptr, createInfo.graphicsPipeline());
+    }
+    else
+        swapChain.inFlightCount = 1;
     createSwapChainFrames();
+    createComputePipeline();
 }
 
 void Vulkan::recordGraphicsCommandBuffer(SwapChain::Frame &frame, SwapChain::InFlight &inFlight)
@@ -802,51 +796,48 @@ void Vulkan::updateShaderStorageBuffer(SwapChain::InFlight &inFlight)
 
 void Vulkan::draw(SwapChain::InFlight &inFlight)
 {
-    if(createInfo.windowEnabled())
+    waitForGraphics(inFlight);
+    uint32_t swapChainFrameID;
+    vk::Result result;
+    try
     {
-        waitForGraphics(inFlight);
-        uint32_t swapChainFrameID;
-        vk::Result result;
-        try
+        std::tie(result, swapChainFrameID) = swapChain.swapChain.value().acquireNextImage(timeout, *inFlight.semaphores.imageAvailable);
+    }
+    catch(const vk::SystemError& err)
+    {
+        if(err.code() == vk::Result::eErrorOutOfDateKHR)
         {
-            std::tie(result, swapChainFrameID) = swapChain.swapChain.value().acquireNextImage(timeout, *inFlight.semaphores.imageAvailable);
+            recreateSwapChain();
+            return;
         }
-        catch(const vk::SystemError& err)
-        {
-            if(err.code() == vk::Result::eErrorOutOfDateKHR)
-            {
-                recreateSwapChain();
-                return;
-            }
-            else
-                throw;
-        }
-        graphicsSubmit(swapChainFrameID);
+        else
+            throw;
+    }
+    graphicsSubmit(swapChainFrameID);
 
-        vk::PresentInfoKHR presentInfo;
-        presentInfo
-        .setWaitSemaphores({*inFlight.semaphores.renderFinished.value()})
-        .setSwapchains({*swapChain.swapChain.value()})
-        .setPImageIndices(&swapChainFrameID);
-        try
-        {
-            result = queues.present.presentKHR(presentInfo);
-        }
-        catch(const vk::SystemError& err)
-        {
-            if(err.code() == vk::Result::eErrorOutOfDateKHR || err.code() == vk::Result::eSuboptimalKHR)
-            {
-                recreateSwapChain();
-                resizeRequired = false;
-            }
-            else
-                throw;
-        }
-        if(resizeRequired)
+    vk::PresentInfoKHR presentInfo;
+    presentInfo
+    .setWaitSemaphores({*inFlight.semaphores.renderFinished.value()})
+    .setSwapchains({*swapChain.swapChain.value()})
+    .setPImageIndices(&swapChainFrameID);
+    try
+    {
+        result = queues.present.presentKHR(presentInfo);
+    }
+    catch(const vk::SystemError& err)
+    {
+        if(err.code() == vk::Result::eErrorOutOfDateKHR || err.code() == vk::Result::eSuboptimalKHR)
         {
             recreateSwapChain();
             resizeRequired = false;
         }
+        else
+            throw;
+    }
+    if(resizeRequired)
+    {
+        recreateSwapChain();
+        resizeRequired = false;
     }
 }
 
@@ -898,7 +889,11 @@ void Vulkan::run()
     waitForCompute(inFlight);
     updateUniformBuffer(inFlight);
     compute(inFlight);
-    draw(inFlight);
+    if(createInfo.windowEnabled())
+    {   
+        waitForGraphics(inFlight);
+        draw(inFlight);
+    }
     if(benchmark)
     {
         waitForCompute(inFlight);
@@ -1306,25 +1301,28 @@ void Vulkan::createQueryPools(SwapChain::InFlight &inFlight)
     }
 }
 
-void Vulkan::createSwapChainFrames()
+void Vulkan::initSwapChain()
 {
-    createInputTextures();
-    std::vector<vk::Image> images;
-    if(createInfo.windowEnabled())
+    auto swapChainCreateInfo = createInfo.swapChain();
+    if(swapChain.swapChain)
     {
-        images = swapChain.swapChain.value().getImages();
-        if(swapChain.inFlightCount > images.size())
-            throw std::runtime_error("Requested inflight count (N-buffering) is greater than number of swapchain images");
-        if(swapChain.inFlightCount == 0)
-            swapChain.inFlightCount = images.size();
+        swapChain.oldSwapChain.emplace(std::move(swapChain.swapChain.value()));
+        swapChainCreateInfo.setOldSwapchain(swapChain.oldSwapChain.value());
     }
-    else
-        swapChain.inFlightCount = 1;
-    vk::raii::CommandBuffers graphicsCommandBuffers(device, createInfo.commandBuffer(commandPools.graphics, swapChain.inFlightCount));
-    vk::raii::CommandBuffers computeCommandBuffers(device, createInfo.commandBuffer(commandPools.compute, swapChain.inFlightCount));
-    swapChain.descriptorPool.emplace(device, createInfo.descriptorPool(createInfo.inputImages().size(), createInfo.outputImages().size(), swapChain.inFlightCount));
-    vk::raii::DescriptorSets descriptorSets(device, createInfo.descriptorSet(swapChain.descriptorPool.value(), swapChain.inFlightCount));
-    swapChain.frames.clear();
+
+    swapChain.swapChain.emplace(device, swapChainCreateInfo);
+    swapChain.extent = swapChainCreateInfo.imageExtent;
+    swapChain.imageFormat = swapChainCreateInfo.imageFormat;
+    
+    std::vector<vk::Image> images;
+    images = swapChain.swapChain.value().getImages();
+    if(swapChain.inFlightCount > images.size())
+        throw std::runtime_error("Requested inflight count (N-buffering) is greater than number of swapchain images");
+    if(swapChain.inFlightCount == 0)
+        swapChain.inFlightCount = images.size();
+
+    swapChain.frames.clear(); 
+    pipelines.graphics.renderPass.emplace(device, createInfo.renderPass());
     for(size_t i = 0; i < swapChain.inFlightCount; i++)
     {
         swapChain.frames.emplace_back();
@@ -1333,6 +1331,18 @@ void Vulkan::createSwapChainFrames()
             swapChain.frames.back().depth = memory.depth(createInfo.currentResolution());
             createInfo.createFrameBuffer(swapChain.frames.back(), images[i]);
         }
+    } 
+}
+
+void Vulkan::createSwapChainFrames()
+{
+    createInputTextures();
+    vk::raii::CommandBuffers graphicsCommandBuffers(device, createInfo.commandBuffer(commandPools.graphics, swapChain.inFlightCount));
+    vk::raii::CommandBuffers computeCommandBuffers(device, createInfo.commandBuffer(commandPools.compute, swapChain.inFlightCount));
+    swapChain.descriptorPool.emplace(device, createInfo.descriptorPool(createInfo.inputImages().size(), createInfo.outputImages().size(), swapChain.inFlightCount));
+    vk::raii::DescriptorSets descriptorSets(device, createInfo.descriptorSet(swapChain.descriptorPool.value(), swapChain.inFlightCount));
+    for(size_t i = 0; i < swapChain.inFlightCount; i++)
+    {
         auto &inFlight = swapChain.inFlight.emplace_back();
         inFlight.commandBuffers.graphics.emplace(std::move(graphicsCommandBuffers[i]));
         inFlight.commandBuffers.compute.emplace(std::move(computeCommandBuffers[i]));
@@ -1351,12 +1361,14 @@ void Vulkan::createSwapChainFrames()
 void Vulkan::recreateSwapChain()
 {
     device.waitIdle();
+    for(auto &inFlight : swapChain.inFlight)
+    {
+        waitForCompute(inFlight);
+        waitForGraphics(inFlight);
+        createInfo.createFrameSync(inFlight);
+    }
     createInfo.updateResolution();
-    oldSwapchain.emplace(std::move(swapChain.swapChain.value()));
-    auto &swapChainCreateInfo = createInfo.swapChain();
-    swapChainCreateInfo.setOldSwapchain(oldSwapchain.value());
-    swapChain = Vulkan::SwapChain{device, swapChainCreateInfo, createInfo.windowEnabled()};
-    createSwapChainFrames();
+    initSwapChain(); 
 }
 
 void Vulkan::CreateInfo::updateResolution()
@@ -1417,7 +1429,7 @@ void Vulkan::recordComputeCommandBuffer(SwapChain::InFlight &inFlight)
         if(benchmark)
             buffer.writeTimestamp(vk::PipelineStageFlagBits::eComputeShader, inFlight.queryPools.compute.value(), 2*i);
         buffer.bindPipeline(vk::PipelineBindPoint::eCompute, pipelines.compute.pipelines[i]);
-        buffer.bindDescriptorSets(vk::PipelineBindPoint::eCompute, pipelines.compute.layout, 0, {inFlight.descriptorSet.value()}, {});
+        buffer.bindDescriptorSets(vk::PipelineBindPoint::eCompute, pipelines.compute.layout.value(), 0, {inFlight.descriptorSet.value()}, {});
         buffer.dispatch(workGroupCounts[i].x, workGroupCounts[i].y, workGroupCounts[i].z);
         if(benchmark)
             buffer.writeTimestamp(vk::PipelineStageFlagBits::eComputeShader, inFlight.queryPools.compute.value(), 2*i+1);
