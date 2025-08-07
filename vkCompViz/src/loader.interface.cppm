@@ -19,7 +19,7 @@ class Image
         [[nodiscard]] virtual Format imageFormat() const = 0;
         [[nodiscard]] size_t size()
         {
-            if (imageFormat() == Format::RGBA_8_INT)
+            if(imageFormat() == Format::RGBA_8_INT)
                 return height() * (stride() != 0 ? stride() : width()) * channels() * channelSize();
             else
                 return height() * width() * channels() * channelSize();

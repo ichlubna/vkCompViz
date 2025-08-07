@@ -14,7 +14,7 @@ export class ObjLoader
         class BoundingBox
         {
             public:
-                BoundingBox(std::size_t dimension=3);
+                BoundingBox(std::size_t dimension = 3);
                 void update(std::vector<float> coords);
                 std::size_t dimension;
                 std::vector<float> min;

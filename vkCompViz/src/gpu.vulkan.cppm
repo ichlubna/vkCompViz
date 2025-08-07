@@ -63,7 +63,7 @@ class Vulkan : public Gpu
         void updateUniform(std::string name, float value) override;
         void addToUniform(std::string name, float value) override;
         [[nodiscard]] std::shared_ptr<Loader::Image> resultTexture() override;
-        [[nodiscard]] std::vector<float> resultBuffer(size_t size=0) override;
+        [[nodiscard]] std::vector<float> resultBuffer(size_t size = 0) override;
         ~Vulkan();
 
     private:
@@ -135,9 +135,9 @@ class Vulkan : public Gpu
                         class QueryPools
                         {
                             public:
-                            std::optional<vk::raii::QueryPool> compute;
-                            size_t computeCount{0};
-                            std::optional<vk::raii::QueryPool> graphics;
+                                std::optional<vk::raii::QueryPool> compute;
+                                size_t computeCount{0};
+                                std::optional<vk::raii::QueryPool> graphics;
                         } queryPools;
                 };
                 void nextInFlight()
@@ -171,7 +171,10 @@ class Vulkan : public Gpu
                 enum ImageType { Depth = 0, Storage = 1, Read = 2 };
                 CreateInfo(Vulkan &vulkan, VulkanInitParams params) : vulkan(vulkan), params(params) {};
                 void updateResolution();
-                [[nodiscard]] Resolution currentResolution() const { return params.resolution; }
+                [[nodiscard]] Resolution currentResolution() const
+                {
+                    return params.resolution;
+                }
                 [[nodiscard]] vk::ApplicationInfo &application();
                 [[nodiscard]] vk::InstanceCreateInfo &instance();
                 [[nodiscard]] vk::raii::PhysicalDevice bestPhysicalDevice();
@@ -210,7 +213,7 @@ class Vulkan : public Gpu
                 [[nodiscard]] vk::RenderPassBeginInfo &renderPassBegin(vk::raii::Framebuffer &frameBuffer);
                 [[nodiscard]] vk::SemaphoreCreateInfo &semaphore();
                 [[nodiscard]] vk::FenceCreateInfo &fence();
-                [[nodiscard]] vk::ImageViewCreateInfo &imageView(vk::Format imageFormat, vk::Image image, bool depth=false);
+                [[nodiscard]] vk::ImageViewCreateInfo &imageView(vk::Format imageFormat, vk::Image image, bool depth = false);
                 [[nodiscard]] vk::ImageCreateInfo &image(vk::Format imageFormat, Resolution resolution, ImageType imageType);
                 [[nodiscard]] vk::DescriptorSetLayoutCreateInfo &descriptorSetLayout(size_t inputTextureCount, size_t outputTextureCount);
                 [[nodiscard]] vk::DescriptorPoolCreateInfo &descriptorPool(size_t inputTextureCount, size_t outputTextureCount, size_t inFlightFramesCount);
@@ -240,9 +243,9 @@ class Vulkan : public Gpu
                 {
                     return params.shaders.vertexCount;
                 }
-                [[nodiscard]] std::size_t computeShaderCount() const 
+                [[nodiscard]] std::size_t computeShaderCount() const
                 {
-                    return params.shaders.compute.size(); 
+                    return params.shaders.compute.size();
                 }
 
             private:
@@ -406,22 +409,22 @@ class Vulkan : public Gpu
         class Times
         {
             public:
-            class Memory
-            {
-                public:
-                class Download
+                class Memory
                 {
                     public:
-                        float texture{0};
-                        float shaderStorage{0};
-                } download;
-                class Upload
-                {
-                    public:
-                        float texture{0};
-                        float shaderStorage{0};
-                } upload;
-             } memory;
+                        class Download
+                        {
+                            public:
+                                float texture{0};
+                                float shaderStorage{0};
+                        } download;
+                        class Upload
+                        {
+                            public:
+                                float texture{0};
+                                float shaderStorage{0};
+                        } upload;
+                } memory;
         } times;
         std::vector<std::unique_ptr<Texture >> inputTextures;
         std::vector<WorkGroupCount> workGroupCounts;
@@ -429,7 +432,7 @@ class Vulkan : public Gpu
         size_t computedInFlight{0};
         bool resizeRequired{false};
         void initSwapChain();
-        void createComputePipeline(); 
+        void createComputePipeline();
         void recordGraphicsCommandBuffer(SwapChain::Frame &frame, SwapChain::InFlight &inFlight);
         void recordComputeCommandBuffer(SwapChain::InFlight &inFlight);
         void recreateSwapChain();

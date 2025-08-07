@@ -101,7 +101,7 @@ void App::mainLoop()
             Timer timer;
             window->run();
             end = window->key("Escape") || window->quit();
-            
+
             if(window->key("F2") && !benchmark)
                 benchmark = true;
 
@@ -125,7 +125,7 @@ void App::mainLoop()
             }
             else if(!window->key("F1"))
                 screenshotTaken = false;
-            
+
             if(!window->key("F2") && benchmark)
             {
                 benchmark = false;

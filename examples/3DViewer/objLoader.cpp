@@ -15,8 +15,8 @@ void ObjLoader::BoundingBox::update(std::vector<float> coords)
     for(std::size_t i = 0; i < dimension; ++i)
     {
         min[i] = std::min(min[i], coords[i]);
-        max[i] = std::max(max[i], coords[i]);       
-    } 
+        max[i] = std::max(max[i], coords[i]);
+    }
 }
 
 void ObjLoader::normalizeVertices()
@@ -40,7 +40,7 @@ void ObjLoader::dump() const
     for(auto const& vertex : vertices)
         std::cout << vertex << " ";
     std::cout << std::endl;
-    std::cout << "Normals starting at: " << indices.size()+vertices.size() << std::endl;
+    std::cout << "Normals starting at: " << indices.size() + vertices.size() << std::endl;
     std::cout << "Normals:" << std::endl;
     for(auto const& normal : normals)
         std::cout << normal << " ";
@@ -68,7 +68,7 @@ ObjLoader::ObjLoader(std::string path) : boundingBox()
             vertices.push_back(x);
             vertices.push_back(y);
             vertices.push_back(z);
-            
+
         }
         else if(prefix == "vn")
         {
@@ -86,8 +86,8 @@ ObjLoader::ObjLoader(std::string path) : boundingBox()
                 std::replace(point.begin(), point.end(), '/', ' ');
                 std::istringstream pointStream(point);
                 pointStream >> x >> y >> z;
-                indices.push_back(x-1);
-                indices.push_back(z-1);
+                indices.push_back(x - 1);
+                indices.push_back(z - 1);
             }
         }
     }

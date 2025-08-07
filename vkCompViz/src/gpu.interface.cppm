@@ -26,14 +26,14 @@ class Gpu
                         class Download
                         {
                             public:
-                            float texture{0};
-                            float shaderStorage{0};
+                                float texture{0};
+                                float shaderStorage{0};
                         } download;
                         class Upload
                         {
                             public:
-                            float texture{0};
-                            float shaderStorage{0};
+                                float texture{0};
+                                float shaderStorage{0};
                         } upload;
                 } times;
                 float usedMemory {0};
@@ -52,7 +52,7 @@ class Gpu
         virtual void updateUniform(std::string name, float value) = 0;
         virtual void addToUniform(std::string name, float value) = 0;
         [[nodiscard]] virtual std::shared_ptr<Loader::Image> resultTexture() = 0;
-        [[nodiscard]] virtual std::vector<float> resultBuffer(std::size_t size=0) = 0;
+        [[nodiscard]] virtual std::vector<float> resultBuffer(std::size_t size = 0) = 0;
         virtual ~Gpu() = default;
         [[nodiscard]] const std::vector<BenchmarkReport> benchmarkReports() const
         {

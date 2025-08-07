@@ -25,7 +25,7 @@ int main(int argc, char *argv[])
         params.shaders.vertex = "3DViewerVertex.slang";
         params.shaders.fragment = "3DViewerFragment.slang";
         // This overrides the default vertex count of 3 for fullscreen triangle
-        params.shaders.vertexCount = objLoader.indices.size()/2;
+        params.shaders.vertexCount = objLoader.indices.size() / 2;
         // An empty compute shader is used, the library is mainly designed to work with compute shaders so at leats one is needed
         // The compute shader could, for example, edit or generate the geometry here
         params.shaders.compute.push_back("3DViewerCompute.slang");
@@ -34,7 +34,7 @@ int main(int argc, char *argv[])
         params.shaders.uniforms.push_back({"angle", 180.0f});
         // The following uniforms are indices to the buffer
         params.shaders.uniforms.push_back({"verticesStart", objLoader.indices.size()});
-        params.shaders.uniforms.push_back({"normalsStart", objLoader.indices.size()+objLoader.vertices.size()});
+        params.shaders.uniforms.push_back({"normalsStart", objLoader.indices.size() + objLoader.vertices.size()});
         // The angle can be adjusted either by pressing space and defining the new value
         // Or by pressing buttons to oncrease and decrease the angle by a step
         params.keyBindings.push_back({.uniform = "angle", .keyIncrease = "left", .keyDecrease = "right", .step = 0.01f});

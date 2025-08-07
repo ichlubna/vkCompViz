@@ -499,7 +499,7 @@ vk::RenderPassCreateInfo &Vulkan::CreateInfo::renderPass()
     colorAttachmentReference
     .setAttachment(0)
     .setLayout(vk::ImageLayout::eColorAttachmentOptimal);
-    
+
     depthAttachment
     .setFormat(vk::Format::eD32Sfloat)
     .setSamples(vk::SampleCountFlagBits::e1)
@@ -509,7 +509,7 @@ vk::RenderPassCreateInfo &Vulkan::CreateInfo::renderPass()
     .setStencilStoreOp(vk::AttachmentStoreOp::eDontCare)
     .setInitialLayout(vk::ImageLayout::eUndefined)
     .setFinalLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal);
-    
+
     depthAttachmentReference
     .setAttachment(1)
     .setLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal);
@@ -527,7 +527,7 @@ vk::RenderPassCreateInfo &Vulkan::CreateInfo::renderPass()
     .setDstStageMask(vk::PipelineStageFlagBits::eColorAttachmentOutput | vk::PipelineStageFlagBits::eEarlyFragmentTests)
     .setSrcAccessMask(vk::AccessFlagBits::eDepthStencilAttachmentWrite)
     .setDstAccessMask(vk::AccessFlagBits::eColorAttachmentWrite | vk::AccessFlagBits::eDepthStencilAttachmentWrite);
-    
+
     attachments = {colorAttachment, depthAttachment};
     renderPassCreateInfo
     .setAttachmentCount(attachments.size())
@@ -622,9 +622,9 @@ vk::RenderPassBeginInfo &Vulkan::CreateInfo::renderPassBegin(vk::raii::Framebuff
 {
     clearColors.clear();
     clearColors.emplace_back()
-    .setColor({0.02f, 0.01f, 0.01f, 1.0f});
+               .setColor({0.02f, 0.01f, 0.01f, 1.0f});
     clearColors.emplace_back()
-    .setDepthStencil({1.0f, 0});
+               .setDepthStencil({1.0f, 0});
     renderPassBeginInfo
     .setRenderPass(vulkan.pipelines.graphics.renderPass.value())
     .setFramebuffer(frameBuffer)
@@ -713,7 +713,7 @@ std::vector<vk::raii::ShaderModule> Vulkan::createComputeShaders(std::vector<Sha
 
 Vulkan::Pipelines::Compute::Compute(std::vector<vk::raii::ShaderModule> &shaders, vk::raii::Device &device, CreateInfo &createInfo)
 {
-    layout.emplace(device, createInfo.pipelineLayout()); 
+    layout.emplace(device, createInfo.pipelineLayout());
     for(auto &shader : shaders)
         pipelines.push_back({device, nullptr, createInfo.computePipeline(shader, layout.value())});
 }
@@ -851,18 +851,18 @@ void Vulkan::newBenchmark(SwapChain::InFlight &inFlight)
     benchmarks.back().times.upload.shaderStorage = times.memory.upload.shaderStorage;
     benchmarks.back().times.upload.texture = times.memory.upload.texture;
 
-    std::vector<uint64_t> timestamps(inFlight.queryPools.computeCount*2);
+    std::vector<uint64_t> timestamps(inFlight.queryPools.computeCount * 2);
     device.getDispatcher()->vkGetQueryPoolResults(*device, *inFlight.queryPools.compute.value(), 0, inFlight.queryPools.computeCount, sizeof(uint64_t)*timestamps.size(), timestamps.data(), sizeof(uint64_t), static_cast<VkQueryResultFlags>(vk::QueryResultFlagBits::e64 | vk::QueryResultFlagBits::eWait));
 
     auto props = physicalDevice.getProperties();
-    for(size_t i = 0; i < inFlight.queryPools.computeCount; i+=2)
-        benchmarks.back().times.compute.push_back(((timestamps[i+1] - timestamps[i])*props.limits.timestampPeriod)/1000000.0f);
+    for(size_t i = 0; i < inFlight.queryPools.computeCount; i += 2)
+        benchmarks.back().times.compute.push_back(((timestamps[i + 1] - timestamps[i]) * props.limits.timestampPeriod) / 1000000.0f);
 
     if(createInfo.windowEnabled())
     {
         std::vector<uint64_t> timestampsGraphics(2);
         device.getDispatcher()->vkGetQueryPoolResults(*device, *inFlight.queryPools.graphics.value(), 0, 2, sizeof(uint64_t)*timestampsGraphics.size(), timestampsGraphics.data(), sizeof(uint64_t), static_cast<VkQueryResultFlags>(vk::QueryResultFlagBits::e64 | vk::QueryResultFlagBits::eWait));
-        benchmarks.back().times.draw = (((timestampsGraphics[1] - timestampsGraphics[0])*props.limits.timestampPeriod)/1000000.0f);
+        benchmarks.back().times.draw = (((timestampsGraphics[1] - timestampsGraphics[0]) * props.limits.timestampPeriod) / 1000000.0f);
     }
 
     VmaTotalStatistics statistics;
@@ -890,7 +890,7 @@ void Vulkan::run()
     updateUniformBuffer(inFlight);
     compute(inFlight);
     if(createInfo.windowEnabled())
-    {   
+    {
         waitForGraphics(inFlight);
         draw(inFlight);
     }
@@ -961,7 +961,7 @@ vk::ImageCreateInfo &Vulkan::CreateInfo::image(vk::Format imageFormat, Resolutio
     if(imageType == ImageType::Storage)
         usageFlags |= vk::ImageUsageFlagBits::eStorage | vk::ImageUsageFlagBits::eTransferSrc;
     if(imageType == ImageType::Depth)
-        usageFlags = vk::ImageUsageFlagBits::eDepthStencilAttachment;    
+        usageFlags = vk::ImageUsageFlagBits::eDepthStencilAttachment;
 
     imageCreateInfo
     .setFormat(imageFormat)
@@ -1134,7 +1134,7 @@ std::unique_ptr<Vulkan::Texture> Vulkan::Memory::depth(Resolution resolution)
     imageAllocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
     auto &imageCreateInfo = vulkan.createInfo.image(vk::Format::eD32Sfloat, {static_cast<uint32_t>(resolution.width), static_cast<uint32_t>(resolution.height)}, CreateInfo::ImageType::Depth);
     vmaCreateImage(allocator, imageCreateInfo, &imageAllocInfo, &texture->image, &texture->allocation, nullptr);
-    
+
     texture->view.emplace(vk::raii::ImageView{vulkan.device, vulkan.createInfo.imageView(vk::Format::eD32Sfloat, texture->image, true)});
     texture->allocator = &allocator;
     return texture;
@@ -1284,14 +1284,14 @@ void Vulkan::updateDescriptorSets(SwapChain::InFlight &inFlight)
 
 void Vulkan::createQueryPools(SwapChain::InFlight &inFlight)
 {
-    inFlight.queryPools.computeCount = workGroupCounts.size()*2;
+    inFlight.queryPools.computeCount = workGroupCounts.size() * 2;
     vk::QueryPoolCreateInfo queryPoolCreateInfo;
     queryPoolCreateInfo
     .setQueryType(vk::QueryType::eTimestamp)
     .setQueryCount(inFlight.queryPools.computeCount);
     inFlight.queryPools.compute.emplace(device, queryPoolCreateInfo);
-  
-    if(createInfo.windowEnabled()) 
+
+    if(createInfo.windowEnabled())
     {
         vk::QueryPoolCreateInfo queryPoolCreateInfoGraphics;
         queryPoolCreateInfoGraphics
@@ -1313,7 +1313,7 @@ void Vulkan::initSwapChain()
     swapChain.swapChain.emplace(device, swapChainCreateInfo);
     swapChain.extent = swapChainCreateInfo.imageExtent;
     swapChain.imageFormat = swapChainCreateInfo.imageFormat;
-    
+
     std::vector<vk::Image> images;
     images = swapChain.swapChain.value().getImages();
     if(swapChain.inFlightCount > images.size())
@@ -1321,7 +1321,7 @@ void Vulkan::initSwapChain()
     if(swapChain.inFlightCount == 0)
         swapChain.inFlightCount = images.size();
 
-    swapChain.frames.clear(); 
+    swapChain.frames.clear();
     pipelines.graphics.renderPass.emplace(device, createInfo.renderPass());
     for(size_t i = 0; i < swapChain.inFlightCount; i++)
     {
@@ -1331,7 +1331,7 @@ void Vulkan::initSwapChain()
             swapChain.frames.back().depth = memory.depth(createInfo.currentResolution());
             createInfo.createFrameBuffer(swapChain.frames.back(), images[i]);
         }
-    } 
+    }
 }
 
 void Vulkan::createSwapChainFrames()
@@ -1368,7 +1368,7 @@ void Vulkan::recreateSwapChain()
         createInfo.createFrameSync(inFlight);
     }
     createInfo.updateResolution();
-    initSwapChain(); 
+    initSwapChain();
 }
 
 void Vulkan::CreateInfo::updateResolution()
@@ -1423,16 +1423,16 @@ void Vulkan::recordComputeCommandBuffer(SwapChain::InFlight &inFlight)
     auto &buffer = *inFlight.commandBuffers.compute;
     buffer.begin({});
     if(benchmark)
-        buffer.resetQueryPool(inFlight.queryPools.compute.value(), 0, inFlight.queryPools.computeCount);    
+        buffer.resetQueryPool(inFlight.queryPools.compute.value(), 0, inFlight.queryPools.computeCount);
     for(size_t i = 0; i < workGroupCounts.size(); i++)
     {
         if(benchmark)
-            buffer.writeTimestamp(vk::PipelineStageFlagBits::eComputeShader, inFlight.queryPools.compute.value(), 2*i);
+            buffer.writeTimestamp(vk::PipelineStageFlagBits::eComputeShader, inFlight.queryPools.compute.value(), 2 * i);
         buffer.bindPipeline(vk::PipelineBindPoint::eCompute, pipelines.compute.pipelines[i]);
         buffer.bindDescriptorSets(vk::PipelineBindPoint::eCompute, pipelines.compute.layout.value(), 0, {inFlight.descriptorSet.value()}, {});
         buffer.dispatch(workGroupCounts[i].x, workGroupCounts[i].y, workGroupCounts[i].z);
         if(benchmark)
-            buffer.writeTimestamp(vk::PipelineStageFlagBits::eComputeShader, inFlight.queryPools.compute.value(), 2*i+1);
+            buffer.writeTimestamp(vk::PipelineStageFlagBits::eComputeShader, inFlight.queryPools.compute.value(), 2 * i + 1);
         if(i < workGroupCounts.size() - 1)
         {
             vk::MemoryBarrier memoryBarrier;
@@ -1506,7 +1506,7 @@ std::vector<float> Vulkan::resultBuffer(size_t size)
     const auto &inFlight = swapChain.lastComputedInFlight();
     size_t downloadSize = size;
     if(downloadSize == 0)
-       downloadSize = createInfo.shaderStorageBufferSize();
+        downloadSize = createInfo.shaderStorageBufferSize();
     auto stagingBuffer = memory.buffer(vk::BufferUsageFlagBits::eTransferDst, downloadSize);
     std::vector<float> result(std::ceil(static_cast<float>(downloadSize) / sizeof(float)));
 

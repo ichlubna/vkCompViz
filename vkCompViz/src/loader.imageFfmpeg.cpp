@@ -53,7 +53,7 @@ AVFrame *frameFromFile(std::string path)
 
 void convertFrame(AVFrame *input, AVFrame *output)
 {
-    if (!input || !output)
+    if(!input || !output)
         throw std::invalid_argument("Input and output frames must not be null");
 
     const AVFilter *buffersrc  = avfilter_get_by_name("buffer");
@@ -61,29 +61,29 @@ void convertFrame(AVFrame *input, AVFrame *output)
     AVFilterContext *buffersrc_ctx = nullptr;
     AVFilterContext *buffersink_ctx = nullptr;
     AVFilterGraph *filter_graph = avfilter_graph_alloc();
-    if (!filter_graph)
+    if(!filter_graph)
         throw std::runtime_error("Unable to create filter graph");
-    
+
     std::string inFormatName = av_get_pix_fmt_name(static_cast<AVPixelFormat>(input->format));
     std::string outFormatName = av_get_pix_fmt_name(static_cast<AVPixelFormat>(output->format));
- 
+
     std::string args = "video_size=" + std::to_string(input->width) + "x" + std::to_string(input->height) + ":pix_fmt=" + inFormatName + ":time_base=1/25:pixel_aspect=1/1";
 
     int ret = avfilter_graph_create_filter(&buffersrc_ctx, buffersrc, "in", args.data(), nullptr, filter_graph);
-    if (ret < 0)
+    if(ret < 0)
     {
         avfilter_graph_free(&filter_graph);
         throw std::runtime_error("Cannot create buffer source");
     }
 
     ret = avfilter_graph_create_filter(&buffersink_ctx, buffersink, "out", nullptr, nullptr, filter_graph);
-    if (ret < 0) 
+    if(ret < 0)
     {
         avfilter_graph_free(&filter_graph);
         throw std::runtime_error("Cannot create buffer sink");
     }
 
-    if (ret < 0)
+    if(ret < 0)
     {
         avfilter_graph_free(&filter_graph);
         throw std::runtime_error("Cannot set output pixel format");
@@ -104,7 +104,7 @@ void convertFrame(AVFrame *input, AVFrame *output)
     inputs->next = nullptr;
 
     ret = avfilter_graph_parse_ptr(filter_graph, filter_desc.data(), &inputs, &outputs, nullptr);
-    if (ret < 0)
+    if(ret < 0)
     {
         avfilter_inout_free(&outputs);
         avfilter_inout_free(&inputs);
@@ -115,21 +115,21 @@ void convertFrame(AVFrame *input, AVFrame *output)
     ret = avfilter_graph_config(filter_graph, nullptr);
     avfilter_inout_free(&outputs);
     avfilter_inout_free(&inputs);
-    if (ret < 0)
+    if(ret < 0)
     {
         avfilter_graph_free(&filter_graph);
         throw std::runtime_error("Error configuring filter graph");
     }
 
     ret = av_buffersrc_add_frame_flags(buffersrc_ctx, input, AV_BUFFERSRC_FLAG_KEEP_REF);
-    if (ret < 0)
+    if(ret < 0)
     {
         avfilter_graph_free(&filter_graph);
         throw std::runtime_error("Error feeding frame into filtergraph");
     }
 
     ret = av_buffersink_get_frame(buffersink_ctx, output);
-    if (ret < 0)
+    if(ret < 0)
     {
         avfilter_graph_free(&filter_graph);
         throw std::runtime_error("Error getting frame from filtergraph");
@@ -156,7 +156,7 @@ const unsigned char *ImageFfmpeg::data()
 {
     if(frame->data[0] == nullptr)
         return nullptr;
-    if (format == Image::Format::RGBA_8_INT)
+    if(format == Image::Format::RGBA_8_INT)
         return frame->data[0];
     else
     {
@@ -197,12 +197,12 @@ ImageFfmpeg::ImageFfmpeg(std::string inputPath) : Image()
 
 void ImageFfmpeg::unpackData()
 {
-    for(size_t i = 0; i < packedData.size()/4; i++)
+    for(size_t i = 0; i < packedData.size() / 4; i++)
     {
-        reinterpret_cast<float *>(frame->data[2])[i] = packedData[4*i];
-        reinterpret_cast<float *>(frame->data[0])[i] = packedData[4*i+1];
-        reinterpret_cast<float *>(frame->data[1])[i] = packedData[4*i+2];
-        reinterpret_cast<float *>(frame->data[3])[i] = packedData[4*i+3];
+        reinterpret_cast<float *>(frame->data[2])[i] = packedData[4 * i];
+        reinterpret_cast<float *>(frame->data[0])[i] = packedData[4 * i + 1];
+        reinterpret_cast<float *>(frame->data[1])[i] = packedData[4 * i + 2];
+        reinterpret_cast<float *>(frame->data[3])[i] = packedData[4 * i + 3];
     }
 }
 
@@ -223,7 +223,7 @@ ImageFfmpeg::ImageFfmpeg(size_t width, size_t height, [[maybe_unused]] size_t st
         frame->format = AV_PIX_FMT_GBRAPF32LE;
         pixelSize = 4 * sizeof(float);
         for(int i = 0; i < 4; i++)
-            frame->linesize[i] = width*sizeof(float);
+            frame->linesize[i] = width * sizeof(float);
     }
     if(data)
     {
@@ -247,7 +247,7 @@ const AVCodec *guessCodecByExtension(std::string &path, const AVOutputFormat *ou
     extension.erase(0, 1);
     const AVCodec *codec = avcodec_find_encoder_by_name(extension.c_str());
     if(!codec)
-        return fallbackCodec; 
+        return fallbackCodec;
     return codec;
 }
 
@@ -256,7 +256,7 @@ size_t pixelFormatScore(AVPixelFormat pixelFormat, Image::Format format)
 {
     size_t score = 0;
     const AVPixFmtDescriptor *desc = av_pix_fmt_desc_get(pixelFormat);
-    
+
     if(desc->nb_components == 4)
         score++;
     if(desc->flags & AV_PIX_FMT_FLAG_ALPHA)
@@ -272,20 +272,20 @@ size_t pixelFormatScore(AVPixelFormat pixelFormat, Image::Format format)
             score = MAX_PIXEL_FORMAT_SCORE;
         if(desc->comp[0].depth == 8)
             score++;
-        
+
     }
     else if(format == Image::Format::RGBA_32_FLOAT)
     {
         if(pixelFormat == AV_PIX_FMT_GBRAPF32LE)
             score = MAX_PIXEL_FORMAT_SCORE;
-        
+
         if(desc->comp[0].depth == 32)
             score += 2;
         if(desc->comp[0].depth == 16)
             score++;
     }
 
-    return score;    
+    return score;
 }
 
 
@@ -303,7 +303,7 @@ void ImageFfmpeg::save(std::string outputPath) const
     const AVOutputFormat *outputFormat = av_guess_format(nullptr, outputFilePath.c_str(), nullptr);
     if(!outputFormat)
         throw std::runtime_error("Could not deduce output format");
-    
+
     const AVCodec *codec = guessCodecByExtension(outputPath, outputFormat);
     if(!codec)
         throw std::runtime_error("Could not find encoder");
@@ -329,7 +329,7 @@ void ImageFfmpeg::save(std::string outputPath) const
         {
             outputFrame->format = pixFmts[fmtID];
             break;
-        }    
+        }
         if(currentScore > score)
         {
             score = currentScore;

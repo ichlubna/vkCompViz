@@ -16,7 +16,7 @@ class Timer
         float elapsed()
         {
             end = std::chrono::steady_clock::now();
-            return std::chrono::duration_cast<std::chrono::microseconds>(end - start).count()/1000.0f;
+            return std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() / 1000.0f;
         }
 };
 
@@ -51,14 +51,14 @@ int main(int argc, char *argv[])
         vkCompViz::App app;
         auto workGroupSize = app.getShaderWorkGroupSize("reduction.slang");
         // Each thread loads two elements
-        params.shaders.workGroupCounts.push_back(app.calculateWorkGroupCount(workGroupSize, {static_cast<std::size_t>(std::ceil(inputData.size()/2)), 1, 1}));
+        params.shaders.workGroupCounts.push_back(app.calculateWorkGroupCount(workGroupSize, {static_cast<std::size_t>(std::ceil(inputData.size() / 2)), 1, 1}));
         params.shaders.workGroupCounts.push_back({1, 1, 1});
         // The number of elements after first reduction
         float reducedSize = inputData.size() / 2 / workGroupSize.x;
         params.shaders.uniforms.push_back({"count", inputData.size()});
         params.shaders.uniforms.push_back({"reducedCount", params.shaders.workGroupCounts[0].x});
         // After the input data there will be stored the results after first reduction
-        params.shaders.storageBuffer.size = static_cast<std::size_t>((inputData.size()+reducedSize) * sizeof(float));
+        params.shaders.storageBuffer.size = static_cast<std::size_t>((inputData.size() + reducedSize) * sizeof(float));
         params.shaders.storageBuffer.initialData = inputData;
         // This app will not use a window, can be also run on headless machines
         params.window.enable = false;
@@ -97,16 +97,16 @@ int main(int argc, char *argv[])
         std::cout << std::endl;
         std::cout << "Total times: ";
         if(benchmarks[0].totalTime() < cpuTime)
-            std::cout << "GPU is " << cpuTime/benchmarks[0].totalTime() << "× faster" << std::endl;
+            std::cout << "GPU is " << cpuTime / benchmarks[0].totalTime() << "× faster" << std::endl;
         else
-            std::cout << "CPU is " << benchmarks[0].totalTime()/cpuTime << "× faster" << std::endl;
+            std::cout << "CPU is " << benchmarks[0].totalTime() / cpuTime << "× faster" << std::endl;
         std::cout << "Computation only:";
         if(benchmarks[0].computeTime() < cpuTime)
-            std::cout << " GPU is " << cpuTime/benchmarks[0].computeTime() << "× faster" << std::endl;
+            std::cout << " GPU is " << cpuTime / benchmarks[0].computeTime() << "× faster" << std::endl;
         else
-            std::cout << " CPU is " << benchmarks[0].computeTime()/cpuTime << "× faster" << std::endl;
-        
-        // The benchmark data can also be printed 
+            std::cout << " CPU is " << benchmarks[0].computeTime() / cpuTime << "× faster" << std::endl;
+
+        // The benchmark data can also be printed
         //benchmarks[0].print();
 
     }

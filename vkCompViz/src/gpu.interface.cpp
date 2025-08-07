@@ -38,8 +38,8 @@ std::string Gpu::Gpu::BenchmarkReport::toString() const
     file << "Total time: " << totalTime() << " ms" << std::endl;
     file << "Used memory" << std::endl;
     file << "\t" << usedMemory << " B" << std::endl;
-    file << "\t" << usedMemory/1024 << " kB" << std::endl;
-    file << "\t" << usedMemory/(1024*1024) << " MB" << std::endl;
+    file << "\t" << usedMemory / 1024 << " kB" << std::endl;
+    file << "\t" << usedMemory / (1024 * 1024) << " MB" << std::endl;
     return file.str();
 }
 
