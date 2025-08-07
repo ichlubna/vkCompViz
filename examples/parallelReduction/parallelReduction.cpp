@@ -16,7 +16,7 @@ class Timer
         float elapsed()
         {
             end = std::chrono::steady_clock::now();
-            return std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() / 1000.0f;
+            return std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count() / 1000000.0f;
         }
 };
 
