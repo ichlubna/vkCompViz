@@ -10,6 +10,7 @@ target_sources(${PROJECT_NAME}
 )
 set(RESOURCE_FILES
     examples/${PROJECT_NAME}/shaders/reduction.slang
+    examples/${PROJECT_NAME}/shaders/reductionFinal.slang
     examples/${PROJECT_NAME}/shaders/inputs.slang
 )
 copyResources()

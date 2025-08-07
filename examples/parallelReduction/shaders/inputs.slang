@@ -1,6 +1,7 @@
 struct Parameters
 {
-    float amount;
+    float count;
+    float reducedCount;
 }
 [[vk::binding(0, 0)]]
 uniform Parameters parameters;
@@ -14,4 +15,4 @@ SamplerState inputSampler[1];
 Texture2D<float4> inputTexture[1];
 [[vk::binding(5, 0)]]
 RWStructuredBuffer<float> buffer;
-groupshared float sharedBuffer[256];
+groupshared float sharedBuffer[1024];

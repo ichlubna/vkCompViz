@@ -47,12 +47,18 @@ int main(int argc, char *argv[])
         vkCompViz::App::Parameters params;
         // Using the reduction shader
         params.shaders.compute.push_back("reduction.slang");
-        params.shaders.compute.push_back("reduction.slang");
+        params.shaders.compute.push_back("reductionFinal.slang");
         vkCompViz::App app;
         auto workGroupSize = app.getShaderWorkGroupSize("reduction.slang");
-        params.shaders.workGroupCounts.push_back(app.calculateWorkGroupCount(workGroupSize, {inputData.size(), 1, 1}));
+        // Each thread loads two elements
+        params.shaders.workGroupCounts.push_back(app.calculateWorkGroupCount(workGroupSize, {static_cast<std::size_t>(std::ceil(inputData.size()/2)), 1, 1}));
         params.shaders.workGroupCounts.push_back({1, 1, 1});
-        params.shaders.storageBuffer.size = inputData.size() * sizeof(float);
+        // The number of elements after first reduction
+        float reducedSize = inputData.size() / 2 / workGroupSize.x;
+        params.shaders.uniforms.push_back({"count", inputData.size()});
+        params.shaders.uniforms.push_back({"reducedCount", params.shaders.workGroupCounts[0].x});
+        // After the input data there will be stored the results after first reduction
+        params.shaders.storageBuffer.size = static_cast<std::size_t>((inputData.size()+reducedSize) * sizeof(float));
         params.shaders.storageBuffer.initialData = inputData;
         // This app will not use a window, can be also run on headless machines
         params.window.enable = false;
@@ -72,9 +78,6 @@ int main(int argc, char *argv[])
         auto benchmarks = app.benchmarkReports();
         //benchmarks[0]....
 
-        std::cerr << inputData[0] << " " << result[0] << std::endl;
-        float gpuSum = 0;
-
         // CPU version
         Timer timer;
         float cpuSum = std::accumulate(inputData.begin(), inputData.end(), 0.0);
@@ -83,7 +86,7 @@ int main(int argc, char *argv[])
         // Report
         constexpr size_t precision = 5;
         std::cout << "GPU" << std::endl;
-        std::cout << "Sum: " << std::fixed << std::setprecision(precision) <<  gpuSum << std::endl;
+        std::cout << "Sum: " << std::fixed << std::setprecision(precision) <<  result[0] << std::endl;
         std::cout << "Time: " << benchmarks[0].totalTime() << " ms" << std::endl;
         std::cout << "Only computation: " << benchmarks[0].computeTime() << " ms" << std::endl;
         std::cout << "Only memory: " << benchmarks[0].memoryTime() << " ms" << std::endl;
