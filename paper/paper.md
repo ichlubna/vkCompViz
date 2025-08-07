@@ -76,8 +76,8 @@ The 3D Viewer also shows how the rendering pipeline can be customized to render 
 The Parallel Reduction example shows how the library can be used to accelerate a summation of a big array of numbers.
 This example demonstrates a simple use case of an experimental evaluation of the GPU accelerated algorithm [@jradi2020], compared to its CPU variant.
 The experiment was carried out on a machine equipped with a NVIDIA GeForce RTX 3060 Ti and Intel(R) Core(TM) i5-8500 CPU @ 3.00GHz CPU, running Arch Linux.
-The output of several runs of this example is shown in Fig. \autoref{fig:reduction}.
-Fig. \autoref{fig:reductionZoom} shows the detailed runs where the GPU started to be faster than CPU.
+The output of several runs of this example is shown in \autoref{fig:reduction}.
+\autoref{fig:reductionZoom} shows the detailed runs where the GPU started to be faster than CPU.
 The results show that computational time is shorter with massively parallel GPU architecture.
 However, the data transfer delay increases the total time and shows that using GPU for this use case is viable only when the data is already generated on GPU or later used there or when the data size reaches certain amount.
 This fact is in alignment with previously published findings [@dinkelbach2012].
