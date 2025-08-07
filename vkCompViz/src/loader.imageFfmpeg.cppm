@@ -42,8 +42,8 @@ class ImageFfmpeg : public Image
         AVFrame *frame;
         Image::Format format;
         std::string path;
-        void interlaceData();
-        void deinterlaceData();
-        std::vector<float> interlacedData;
+        void packData();
+        void unpackData();
+        std::vector<float> packedData;
 };
 }

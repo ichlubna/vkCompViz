@@ -138,38 +138,18 @@ void convertFrame(AVFrame *input, AVFrame *output)
     avfilter_graph_free(&filter_graph);
 }
 
-
-/*
-void convertFrame(AVFrame *input, AVFrame *output)
-{
-    struct SwsContext *cRGB = nullptr;
-
-    if(input->format == AV_PIX_FMT_YUVJ420P)
-        input->format = AV_PIX_FMT_YUV420P;
-    else if(input->format == AV_PIX_FMT_YUVJ422P)
-        input->format = AV_PIX_FMT_YUV422P;
-    else if(input->format == AV_PIX_FMT_YUVJ444P)
-        input->format = AV_PIX_FMT_YUV444P;
-
-    std::cerr << "Input " << input->width << "x" << input->height << " " << input->linesize[0] << " " << av_get_pix_fmt_name(static_cast<AVPixelFormat>(input->format)) << " " << std::endl;
-    std::cerr << "Output " << output->width << "x" << output->height << " " << output->linesize[0] << " " << av_get_pix_fmt_name(static_cast<AVPixelFormat>(output->format)) << " " << std::endl;
-
-    cRGB = sws_getCachedContext(cRGB, input->width, input->height, static_cast<enum AVPixelFormat>(input->format), output->width, output->height, static_cast<AVPixelFormat>(output->format), SWS_BICUBIC, nullptr, nullptr, nullptr);
-    sws_scale(cRGB, (const uint8_t *const *)input->data, input->linesize, 0, input->height, output->data, output->linesize);
-}
-*/
-void ImageFfmpeg::interlaceData()
+void ImageFfmpeg::packData()
 {
     size_t pixelCount = frame->width * frame->height;
-    interlacedData.reserve(pixelCount * 4);
+    packedData.reserve(pixelCount * 4);
     for(size_t i = 0; i < pixelCount; i++)
     {
-        interlacedData.push_back(reinterpret_cast<float *>(frame->data[2])[i]);
-        interlacedData.push_back(reinterpret_cast<float *>(frame->data[0])[i]);
-        interlacedData.push_back(reinterpret_cast<float *>(frame->data[1])[i]);
-        interlacedData.push_back(reinterpret_cast<float *>(frame->data[3])[i]);
+        packedData.push_back(reinterpret_cast<float *>(frame->data[2])[i]);
+        packedData.push_back(reinterpret_cast<float *>(frame->data[0])[i]);
+        packedData.push_back(reinterpret_cast<float *>(frame->data[1])[i]);
+        packedData.push_back(reinterpret_cast<float *>(frame->data[3])[i]);
     }
-    interlacedData.back() = 0.0f;
+    packedData.back() = 0.0f;
 }
 
 const unsigned char *ImageFfmpeg::data()
@@ -180,9 +160,9 @@ const unsigned char *ImageFfmpeg::data()
         return frame->data[0];
     else
     {
-        if(interlacedData.empty())
-            interlaceData();
-        return reinterpret_cast<const unsigned char *>(interlacedData.data());
+        if(packedData.empty())
+            packData();
+        return reinterpret_cast<const unsigned char *>(packedData.data());
     }
 }
 
@@ -215,14 +195,14 @@ ImageFfmpeg::ImageFfmpeg(std::string inputPath) : Image()
     av_frame_free(&decodedFrame);
 }
 
-void ImageFfmpeg::deinterlaceData()
+void ImageFfmpeg::unpackData()
 {
-    for(size_t i = 0; i < interlacedData.size()/4; i++)
+    for(size_t i = 0; i < packedData.size()/4; i++)
     {
-        reinterpret_cast<float *>(frame->data[2])[i] = interlacedData[4*i];
-        reinterpret_cast<float *>(frame->data[0])[i] = interlacedData[4*i+1];
-        reinterpret_cast<float *>(frame->data[1])[i] = interlacedData[4*i+2];
-        reinterpret_cast<float *>(frame->data[3])[i] = interlacedData[4*i+3];
+        reinterpret_cast<float *>(frame->data[2])[i] = packedData[4*i];
+        reinterpret_cast<float *>(frame->data[0])[i] = packedData[4*i+1];
+        reinterpret_cast<float *>(frame->data[1])[i] = packedData[4*i+2];
+        reinterpret_cast<float *>(frame->data[3])[i] = packedData[4*i+3];
     }
 }
 
@@ -252,9 +232,9 @@ ImageFfmpeg::ImageFfmpeg(size_t width, size_t height, [[maybe_unused]] size_t st
             memcpy(frame->data[0], data, width * height * pixelSize);
         else
         {
-            interlacedData.resize(width * height * 4);
-            memcpy(interlacedData.data(), data, width * height * pixelSize);
-            deinterlaceData();
+            packedData.resize(width * height * 4);
+            memcpy(packedData.data(), data, width * height * pixelSize);
+            unpackData();
         }
     }
 }
@@ -270,6 +250,44 @@ const AVCodec *guessCodecByExtension(std::string &path, const AVOutputFormat *ou
         return fallbackCodec; 
     return codec;
 }
+
+constexpr size_t MAX_PIXEL_FORMAT_SCORE = 100;
+size_t pixelFormatScore(AVPixelFormat pixelFormat, Image::Format format)
+{
+    size_t score = 0;
+    const AVPixFmtDescriptor *desc = av_pix_fmt_desc_get(pixelFormat);
+    
+    if(desc->nb_components == 4)
+        score++;
+    if(desc->flags & AV_PIX_FMT_FLAG_ALPHA)
+        score++;
+    if(desc->log2_chroma_w == 0)
+        score++;
+    if(desc->log2_chroma_h == 0)
+        score++;
+
+    if(format == Image::Format::RGBA_8_INT)
+    {
+        if(pixelFormat == AV_PIX_FMT_RGBA)
+            score = MAX_PIXEL_FORMAT_SCORE;
+        if(desc->comp[0].depth == 8)
+            score++;
+        
+    }
+    else if(format == Image::Format::RGBA_32_FLOAT)
+    {
+        if(pixelFormat == AV_PIX_FMT_GBRAPF32LE)
+            score = MAX_PIXEL_FORMAT_SCORE;
+        
+        if(desc->comp[0].depth == 32)
+            score += 2;
+        if(desc->comp[0].depth == 16)
+            score++;
+    }
+
+    return score;    
+}
+
 
 void ImageFfmpeg::save(std::string outputPath) const
 {
@@ -303,33 +321,24 @@ void ImageFfmpeg::save(std::string outputPath) const
     const enum AVPixelFormat *pixFmts;
     int fmtCount = 0;
     avcodec_get_supported_config(codecContext, codec, AV_CODEC_CONFIG_PIX_FORMAT, 0, reinterpret_cast<const void **>(&pixFmts), &fmtCount);
+    size_t score = 0;
     for(int fmtID = 0; fmtID < fmtCount; fmtID++)
-        if(format == Image::Format::RGBA_8_INT)
+    {
+        size_t currentScore = pixelFormatScore(pixFmts[fmtID], format);
+        if(currentScore == MAX_PIXEL_FORMAT_SCORE)
         {
-            if(pixFmts[fmtID] == AV_PIX_FMT_RGBA || pixFmts[fmtID] == AV_PIX_FMT_YUVJ444P)
-            {
-                outputFrame->format = pixFmts[fmtID];
-                break;
-            }
-        }
-        else if(format == Image::Format::RGBA_32_FLOAT)
+            outputFrame->format = pixFmts[fmtID];
+            break;
+        }    
+        if(currentScore > score)
         {
-            if(std::string(codec->name) == "png" && pixFmts[fmtID] == AV_PIX_FMT_RGBA64BE)
-            {
-                outputFrame->format = pixFmts[fmtID];
-                break;
-            }
-
-            if(pixFmts[fmtID] == AV_PIX_FMT_GBRAPF32LE)
-            {
-                outputFrame->format = pixFmts[fmtID];
-                break;
-            }
+            score = currentScore;
+            outputFrame->format = pixFmts[fmtID];
         }
-        else
-            throw std::runtime_error("Unsupported image format");
+    }
     if(outputFrame->format == AV_PIX_FMT_NONE)
         outputFrame->format = pixFmts[0];
+
     av_frame_get_buffer(outputFrame, 0);
     convertFrame(frame, outputFrame);
 

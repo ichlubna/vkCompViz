@@ -30,10 +30,11 @@ int main(int argc, char *argv[])
         // The default uniform values can be set here
         params.shaders.uniforms.push_back({"factor", args["-f"]});
         // The output screenshots taken by F1 can be stored to a given directory with a given extension, the name is created from date and time
-        params.screenshot.path = std::filesystem::path(args["-o"]).remove_filename().string();
-        params.screenshot.extension = ".png";
+        auto outputPath = std::filesystem::path(args["-o"]).remove_filename().string();
+        params.screenshot.path = outputPath;
+        params.screenshot.extension = std::filesystem::path(args["-o"]).extension().string();
         // The benchmark report file taken by F2 will be stored to a given directory
-        params.benchmark.path = std::filesystem::path(args["-o"]).remove_filename().string();
+        params.benchmark.path = outputPath;
         // Additionally, a number of compute iterations can be set for benchmark, the app would run draw given number of frames and end
         // If the number is non-zero, the app stores the report for each frame
         //params.benchmark.iterations = 5;
