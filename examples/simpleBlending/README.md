@@ -8,7 +8,7 @@ This program can load two input images and blend them together with a given fact
 
 or
 
-   cd examples/simpleBlending/; ./simpleBlending -i1 ../../../examples/simpleBlending/data/A.png -i2 ../../../examples/simpleBlending/data/B.png -f 0.5 -o ../../result.png; cd -
+    cd examples/simpleBlending/; ./simpleBlending -i1 ../../../examples/simpleBlending/data/A.png -i2 ../../../examples/simpleBlending/data/B.png -f 0.5 -o ../../result.png; cd -
 
 or
 
