@@ -166,32 +166,32 @@ The class **App** has the following functions:
 
 ---
 
-**const Resolution getImageResolution(std::string path)**
+**const Resolution getImageResolution(std::string path)**  
 **Description:** Returns a resolution of an image.
 
 ---
 
-**const Shader::Shader::Info::WorkGroupSize getShaderWorkGroupSize(std::string path)**
+**const Shader::Shader::Info::WorkGroupSize getShaderWorkGroupSize(std::string path)**  
 **Description:** Returns a work group size defines in a shader file.
 
 ---
 
-**const Gpu::Gpu::WorkGroupCount calculateWorkGroupCount(Shader::Shader::Info::WorkGroupSize workGroupSize, Shader::Shader::Info::ThreadCount threadCount)**
+**const Gpu::Gpu::WorkGroupCount calculateWorkGroupCount(Shader::Shader::Info::WorkGroupSize workGroupSize, Shader::Shader::Info::ThreadCount threadCount)**  
 **Description:** Calculates how many workgroups are necessary for a given workgroup size and number of threads.
 
 ---
 
-**void saveResultImage(std::string path)**
+**void saveResultImage(std::string path)**  
 **Description:** Stores the first output texture to a file.
 
 ---
 
-**std::vector&lt;float&gt; resultBuffer(std::size_t size = 0)**
+**std::vector&lt;float&gt; resultBuffer(std::size_t size = 0)**  
 **Description:** Returns the shader storage buffer. If `size` is zero then whole buffer is returned.
 
 ---
 
-**const std::vector&lt;Gpu::Gpu::BenchmarkReport&gt; benchmarkReports()**
+**const std::vector&lt;Gpu::Gpu::BenchmarkReport&gt; benchmarkReports()**  
 **Description:** Returns the reports about performance.
 
 ---
