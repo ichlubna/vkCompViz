@@ -53,7 +53,7 @@ The class **Parameters** contains all necessary settings for the computation or 
 
 **parameters.screenshot.extension**  
 **Type:** std::string  
-**Description:** File extension for screenshots.
+**Description:** File extension for screenshots.  
 **Default:** ".png"
 
 ## class App::Parameters::Shaders
@@ -92,7 +92,7 @@ The class **Parameters** contains all necessary settings for the computation or 
 
 **parameters.shaders.iterations**  
 **Type:** std::size_t  
-**Description:** Number of the compute shaders iterations to run when no window is used.
+**Description:** Number of the compute shaders iterations to run when no window is used.  
 **Default:** 1
 
 ---
