@@ -34,5 +34,6 @@ jobs:
         run: |
           git add docs/html
           git diff --cached --quiet || git commit -m "Update Doxygen docs"
+          git fetch origin main
+          git rebase origin/main
           git push https://x-access-token:${{ secrets.DOCS }}@github.com/${{ github.repository }} HEAD:main
-
