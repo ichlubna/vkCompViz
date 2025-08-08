@@ -1,10 +1,11 @@
-name: Generate Doxygen docs
+name: Generate Doxygen and commit html folder
 
 on:
   push:
     branches:
       - main
-      - joss
+    paths-ignore:
+      - 'docs/html/**'
   pull_request:
 
 jobs:
@@ -14,6 +15,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
+        with:
+          persist-credentials: false 
 
       - name: Install Doxygen
         run: sudo apt-get update && sudo apt-get install -y doxygen
@@ -22,8 +25,16 @@ jobs:
         working-directory: docs
         run: doxygen Doxyfile
 
-      - name: Upload docs artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: doxygen-docs
-          path: docs/html
+      - name: Configure git user
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Commit and push generated docs
+        run: |
+          git add docs/html
+          git diff --cached --quiet || git commit -m "Update Doxygen docs"
+          git push origin HEAD:${{ github.ref_name }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
