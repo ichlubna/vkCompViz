@@ -1,6 +1,5 @@
 module gpu;
 import std;
-using namespace Gpu;
 
 float Gpu::Gpu::BenchmarkReport::computeTime() const
 {

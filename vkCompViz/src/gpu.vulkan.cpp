@@ -6,6 +6,9 @@ module;
 module gpu;
 import vulkan_hpp;
 import timer;
+import std;
+import common;
+import shader;
 using namespace Gpu;
 
 Vulkan::Vulkan(VulkanInitParams params) :
@@ -63,11 +66,11 @@ std::vector<std::string> Vulkan::VulkanInitParams::Shaders::uniformNames() const
 
 size_t Vulkan::VulkanInitParams::Shaders::uniformBufferSize() const
 {
-    size_t size = 0;
+    std::size_t size = std::max(vertex.uniformBufferSize, fragment.uniformBufferSize);
     for(auto& computeShader : compute)
-        size = std::max(computeShader.uniformBufferSize, size);
+        size = std::max(size, computeShader.uniformBufferSize);
     return size;
-}
+};
 
 vk::ApplicationInfo &Vulkan::CreateInfo::application()
 {
@@ -192,8 +195,9 @@ DeviceRating::DeviceRating(const vk::raii::PhysicalDevice *testedDevice, const v
     }
 
     const auto queueFamilyProperties = device->getQueueFamilyProperties();
-    for(auto [queueFamilyID, queueFamily] : queueFamilyProperties | std::ranges::views::enumerate)
+    for (size_t queueFamilyID = 0; queueFamilyID < queueFamilyProperties.size(); ++queueFamilyID)
     {
+        const auto& queueFamily = queueFamilyProperties[queueFamilyID];
         if(queueFamily.queueFlags & vk::QueueFlagBits::eGraphics)
         {
             score++;

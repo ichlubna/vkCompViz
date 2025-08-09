@@ -29,13 +29,7 @@ class Vulkan : public Gpu
                         Shader::Shader::Info fragment;
                         std::size_t vertexCount{3};
                         std::vector<Shader::Shader::Info> compute;
-                        [[nodiscard]] size_t uniformBufferSize() const
-                        {
-                            std::size_t size = std::max(vertex.uniformBufferSize, fragment.uniformBufferSize);
-                            for(auto& computeShader : compute)
-                                size = std::max(size, computeShader.uniformBufferSize);
-                            return size;
-                        };
+                        [[nodiscard]] size_t uniformBufferSize() const;
                         [[nodiscard]] size_t uniformBufferUint32Count() const
                         {
                             return std::ceil(uniformBufferSize() / sizeof(uint32_t));

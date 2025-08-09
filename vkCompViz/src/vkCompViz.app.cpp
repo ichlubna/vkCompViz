@@ -2,6 +2,10 @@ module vkCompViz;
 import parameterParser;
 import timer;
 import std;
+import shader;
+import gpu;
+import window;
+import common;
 using namespace vkCompViz;
 
 App::App() : shader{std::make_unique<Shader::SlangFactory>()}
