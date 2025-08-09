@@ -27,6 +27,21 @@ ninja format
 ## Usage
 See the existing examples for reference. Especially, [Simple Blending](examples/simpleBlending), [Parallel Reduction](examples/parallelReduction), and [3D Viewer](examples/3DViewer) are simple and contain explanatory comments. It is recommended to use them as templates for new examples. The API of the library is described in the [documentation](https://ichlubna.github.io/vkCompViz/html/classvkCompViz_1_1App.html).
 
+A simple basic code using this library, with no window output, that loads an image, processes it with a compute shader and one workgroup, and stores the result is:
+
+    import vkCompViz;
+    void main()
+    {
+		vkCompViz::App::Parameters params;
+		params.shaders.compute.push_back("shader.slang");
+		params.shaders.workGroupCounts.push_back({1, 1, 1});
+		params.textures.input.push_back("input.jpg");
+		params.textures.output.push_back({.sameResolutionAsInputID = 0, .sameFormatAsInputID = 0});
+		vkCompViz::App app;
+		app.run(params);
+		app.saveResultImage("output.jpg");
+    }
+
 The bindings in shaders are:  
 
 | Binding | Resource |
