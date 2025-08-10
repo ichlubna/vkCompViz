@@ -28,6 +28,7 @@ sudo apt update; sudo apt install -y clang-20 libc++-20-dev libc++abi-20-dev
 # Cloning the project in Docker
 #git clone --recursive https://github.com/ichlubna/vkCompViz.git
 #cd vkCompViz/; 
+git submodule update --init --recursive
 mkdir build; cd build
 
 # Here are some external libs
