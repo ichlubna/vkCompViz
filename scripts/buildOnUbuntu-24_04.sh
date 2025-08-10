@@ -11,7 +11,7 @@ fi
 # Installing basic dev tools
 sudo apt update
 sudo apt install software-properties-common -y
-sudo add-apt-repository ppa:ubuntuhandbook1/ffmpeg7 -y; apt update
+sudo add-apt-repository ppa:ubuntuhandbook1/ffmpeg7 -y; sudo apt update
 sudo apt install sudo ninja-build git wget tzdata libglfw3-dev ffmpeg libavfilter-dev libavformat-dev libavcodec-dev libavutil-dev libswscale-dev libavdevice-dev build-essential -y
 
 # Installing Clang 20
