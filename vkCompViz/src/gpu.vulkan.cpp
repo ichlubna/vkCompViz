@@ -1,5 +1,4 @@
 module;
-#include <vulkan/vulkan.hpp>
 #define VMA_VULKAN_VERSION 1004000
 #define VMA_IMPLEMENTATION
 #include <vk_mem_alloc.h>
@@ -1518,7 +1517,7 @@ std::vector<float> Vulkan::resultBuffer(size_t size)
     copyBuffer(inFlight.buffers.shaderStorage->buffer, stagingBuffer->buffer, downloadSize);
     vmaMapMemory(*stagingBuffer->allocator, stagingBuffer->allocation, &gpuData);
     Timer timer;
-    memcpy(result.data(), gpuData, downloadSize);
+    std::memcpy(result.data(), gpuData, downloadSize);
     times.memory.download.shaderStorage += timer.elapsed();
     vmaUnmapMemory(*stagingBuffer->allocator, stagingBuffer->allocation);
     updateBenchmarks();

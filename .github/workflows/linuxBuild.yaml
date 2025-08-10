@@ -1,0 +1,7 @@
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v3
+      - name: Run build script
+        run: ./scripts/buildOnUbuntu-24_04.sh

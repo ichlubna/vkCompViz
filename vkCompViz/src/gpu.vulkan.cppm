@@ -1,5 +1,4 @@
 module;
-#include <memory>
 #include <vk_mem_alloc.h>
 export module gpu: vulkan;
 export import : interface;
