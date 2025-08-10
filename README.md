@@ -18,7 +18,7 @@ ninja
 cd ./examples/exampleName/
 ./exampleName
 ```
-The examples can be disabled and enabled using  `ccmake`. New examples can be added similarly to the existing ones. When created new example in the examples directory, the example can be added to the main `CMakeLists.txt` as the rest.
+The examples can be disabled and enabled using  `ccmake`. New examples can be added similarly to the existing ones. When created new example in the examples directory, the example can be added to the main `CMakeLists.txt` as the rest. A testing compilation script for Ubuntu is [available](scripts/buildOnUbuntu-24_04.sh).
 
 A path to Artistic Style (astyle) program can be defined with `ccmake` and the project can be formatted using:
 ```
