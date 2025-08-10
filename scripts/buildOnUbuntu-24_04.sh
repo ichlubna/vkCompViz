@@ -25,9 +25,10 @@ echo "deb [signed-by=/usr/share/keyrings/llvm-archive-keyring.gpg] http://apt.ll
 echo "deb [signed-by=/usr/share/keyrings/llvm-archive-keyring.gpg] http://apt.llvm.org/noble/ llvm-toolchain-noble-20 main" | sudo tee -a /etc/apt/sources.list.d/llvm.list
 sudo apt update; sudo apt install -y clang-20 libc++-20-dev libc++abi-20-dev
 
-# Cloning the project
-git clone --recursive https://github.com/ichlubna/vkCompViz.git
-cd vkCompViz/; mkdir build; cd build
+# Cloning the project in Docker
+#git clone --recursive https://github.com/ichlubna/vkCompViz.git
+#cd vkCompViz/; 
+mkdir build; cd build
 
 # Here are some external libs
 mkdir buildTools; cd buildTools
