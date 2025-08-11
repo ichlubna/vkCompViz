@@ -63,6 +63,7 @@ Keys for window application:
 | Space | Edit uniforms in runtime | 
 | F1 | Store the the result |
 | F2 | Store benchmark report | 
+| F3 | Print uniforms | 
 
 ### Possible future features
 - RTX pipeline that can render to texture.

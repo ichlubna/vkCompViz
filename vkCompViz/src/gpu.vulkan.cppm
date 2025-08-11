@@ -55,6 +55,7 @@ class Vulkan : public Gpu
         void updateUniformBuffer(std::vector<uint32_t> buffer) override;
         void updateUniform(std::string name, float value) override;
         void addToUniform(std::string name, float value) override;
+        void printUniforms() const override;
         [[nodiscard]] std::shared_ptr<Loader::Image> resultTexture() override;
         [[nodiscard]] std::vector<float> resultBuffer(size_t size = 0) override;
         ~Vulkan();

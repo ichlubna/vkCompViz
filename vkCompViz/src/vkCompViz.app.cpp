@@ -99,6 +99,7 @@ void App::mainLoop()
         ParameterParser inputParameters;
         bool end = false;
         bool screenshotTaken = false;
+        bool uniformsPrinted = false;
         bool benchmark = false;
         while(!end)
         {
@@ -136,6 +137,14 @@ void App::mainLoop()
                 auto path = currentTimeFile(parameters.benchmark.path, ".txt");
                 gpu->benchmarkReports().back().store(path);
             }
+
+            if(window->key("F3") && !uniformsPrinted)
+            {
+                uniformsPrinted = true;
+                gpu->printUniforms();
+            }
+            else if(!window->key("F3"))
+                uniformsPrinted = false;
 
             for(auto const& binding : parameters.keyBindings)
             {

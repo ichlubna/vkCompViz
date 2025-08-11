@@ -5,15 +5,14 @@ module;
 module loader;
 import common;
 import std;
-using namespace Loader;
 
-size_t ImageFfmpeg::channels() const
+size_t Loader::ImageFfmpeg::channels() const
 {
     const AVPixFmtDescriptor *desc = av_pix_fmt_desc_get(static_cast<enum AVPixelFormat>(frame->format));
     return desc->nb_components;
 }
 
-size_t ImageFfmpeg::channelSize() const
+size_t Loader::ImageFfmpeg::channelSize() const
 {
     const AVPixFmtDescriptor *desc = av_pix_fmt_desc_get(static_cast<enum AVPixelFormat>(frame->format));
     return desc->comp[0].depth / 8;
@@ -138,7 +137,7 @@ void convertFrame(AVFrame *input, AVFrame *output)
     avfilter_graph_free(&filter_graph);
 }
 
-void ImageFfmpeg::packData()
+void Loader::ImageFfmpeg::packData()
 {
     size_t pixelCount = frame->width * frame->height;
     packedData.reserve(pixelCount * 4);
@@ -152,11 +151,11 @@ void ImageFfmpeg::packData()
     packedData.back() = 0.0f;
 }
 
-const unsigned char *ImageFfmpeg::data()
+const unsigned char *Loader::ImageFfmpeg::data()
 {
     if(frame->data[0] == nullptr)
         return nullptr;
-    if(format == Image::Format::RGBA_8_INT)
+    if(format == Loader::Image::Format::RGBA_8_INT)
         return frame->data[0];
     else
     {
@@ -166,7 +165,7 @@ const unsigned char *ImageFfmpeg::data()
     }
 }
 
-ImageFfmpeg::ImageFfmpeg(std::string inputPath) : Image()
+Loader::ImageFfmpeg::ImageFfmpeg(std::string inputPath) : Image()
 {
     path = inputPath;
     auto decodedFrame = frameFromFile(inputPath);
@@ -180,12 +179,12 @@ ImageFfmpeg::ImageFfmpeg(std::string inputPath) : Image()
     if(bitDepth == 8)
     {
         frame->format = AV_PIX_FMT_RGBA;
-        format = Image::Format::RGBA_8_INT;
+        format = Loader::Image::Format::RGBA_8_INT;
     }
     else
     {
         frame->format = AV_PIX_FMT_GBRAPF32LE;
-        format = Image::Format::RGBA_32_FLOAT;
+        format = Loader::Image::Format::RGBA_32_FLOAT;
     }
 
     av_frame_get_buffer(frame, 0);
@@ -195,7 +194,7 @@ ImageFfmpeg::ImageFfmpeg(std::string inputPath) : Image()
     av_frame_free(&decodedFrame);
 }
 
-void ImageFfmpeg::unpackData()
+void Loader::ImageFfmpeg::unpackData()
 {
     for(size_t i = 0; i < packedData.size() / 4; i++)
     {
@@ -206,14 +205,14 @@ void ImageFfmpeg::unpackData()
     }
 }
 
-ImageFfmpeg::ImageFfmpeg(size_t width, size_t height, [[maybe_unused]] size_t stride, Format imageFormat, uint8_t *data) : Image()
+Loader::ImageFfmpeg::ImageFfmpeg(size_t width, size_t height, [[maybe_unused]] size_t stride, Format imageFormat, uint8_t *data) : Image()
 {
     frame = av_frame_alloc();
     frame->width = width;
     frame->height = height;
     format = imageFormat;
     size_t pixelSize = 0;
-    if(format == Image::Format::RGBA_8_INT)
+    if(format == Loader::Image::Format::RGBA_8_INT)
     {
         frame->format = AV_PIX_FMT_RGBA;
         pixelSize = 4;
@@ -228,7 +227,7 @@ ImageFfmpeg::ImageFfmpeg(size_t width, size_t height, [[maybe_unused]] size_t st
     if(data)
     {
         av_frame_get_buffer(frame, 0);
-        if(format == Image::Format::RGBA_8_INT)
+        if(format == Loader::Image::Format::RGBA_8_INT)
             memcpy(frame->data[0], data, width * height * pixelSize);
         else
         {
@@ -252,7 +251,7 @@ const AVCodec *guessCodecByExtension(std::string &path, const AVOutputFormat *ou
 }
 
 constexpr size_t MAX_PIXEL_FORMAT_SCORE = 100;
-size_t pixelFormatScore(AVPixelFormat pixelFormat, Image::Format format)
+size_t pixelFormatScore(AVPixelFormat pixelFormat, Loader::Image::Format format)
 {
     size_t score = 0;
     const AVPixFmtDescriptor *desc = av_pix_fmt_desc_get(pixelFormat);
@@ -266,7 +265,7 @@ size_t pixelFormatScore(AVPixelFormat pixelFormat, Image::Format format)
     if(desc->log2_chroma_h == 0)
         score++;
 
-    if(format == Image::Format::RGBA_8_INT)
+    if(format == Loader::Image::Format::RGBA_8_INT)
     {
         if(pixelFormat == AV_PIX_FMT_RGBA)
             score = MAX_PIXEL_FORMAT_SCORE;
@@ -274,7 +273,7 @@ size_t pixelFormatScore(AVPixelFormat pixelFormat, Image::Format format)
             score++;
 
     }
-    else if(format == Image::Format::RGBA_32_FLOAT)
+    else if(format == Loader::Image::Format::RGBA_32_FLOAT)
     {
         if(pixelFormat == AV_PIX_FMT_GBRAPF32LE)
             score = MAX_PIXEL_FORMAT_SCORE;
@@ -289,7 +288,7 @@ size_t pixelFormatScore(AVPixelFormat pixelFormat, Image::Format format)
 }
 
 
-void ImageFfmpeg::save(std::string outputPath) const
+void Loader::ImageFfmpeg::save(std::string outputPath) const
 {
     if(!DEBUG)
         av_log_set_level(AV_LOG_ERROR);
@@ -372,7 +371,7 @@ void ImageFfmpeg::save(std::string outputPath) const
     av_packet_free(&outputPacket);
 }
 
-ImageFfmpeg::~ImageFfmpeg()
+Loader::ImageFfmpeg::~ImageFfmpeg()
 {
     av_frame_unref(frame);
     av_frame_free(&frame);

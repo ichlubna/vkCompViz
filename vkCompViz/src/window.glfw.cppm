@@ -15,7 +15,7 @@ class Glfw : public Window
         void run() override;
         [[nodiscard]] std::vector<const char *> requiredExtensions() const override;
         [[nodiscard]] std::uintptr_t getSurface(std::uintptr_t instance) override;
-        [[nodiscard]] bool key(std::string name) const
+        [[nodiscard]] bool key(std::string name) const override
         {
             return keys.pressed(name);
         }

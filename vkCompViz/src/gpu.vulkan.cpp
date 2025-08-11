@@ -194,7 +194,7 @@ DeviceRating::DeviceRating(const vk::raii::PhysicalDevice *testedDevice, const v
     }
 
     const auto queueFamilyProperties = device->getQueueFamilyProperties();
-    for (size_t queueFamilyID = 0; queueFamilyID < queueFamilyProperties.size(); ++queueFamilyID)
+    for(size_t queueFamilyID = 0; queueFamilyID < queueFamilyProperties.size(); ++queueFamilyID)
     {
         const auto& queueFamily = queueFamilyProperties[queueFamilyID];
         if(queueFamily.queueFlags & vk::QueueFlagBits::eGraphics)
@@ -924,11 +924,11 @@ vk::ImageViewCreateInfo &Vulkan::CreateInfo::imageView(vk::Format imageFormat, v
 
 void Vulkan::CreateInfo::createFrameSync(SwapChain::InFlight &frame)
 {
-    frame.semaphores.imageAvailable = std::move(vk::raii::Semaphore(vulkan.device, semaphore()));
-    frame.semaphores.renderFinished = std::move(vk::raii::Semaphore(vulkan.device, semaphore()));
-    frame.semaphores.computeFinished = std::move(vk::raii::Semaphore(vulkan.device, semaphore()));
-    frame.fences.inFlight = std::move(vk::raii::Fence(vulkan.device, fence()));
-    frame.fences.computeInFlight = std::move(vk::raii::Fence(vulkan.device, fence()));
+    frame.semaphores.imageAvailable = vk::raii::Semaphore(vulkan.device, semaphore());
+    frame.semaphores.renderFinished = vk::raii::Semaphore(vulkan.device, semaphore());
+    frame.semaphores.computeFinished = vk::raii::Semaphore(vulkan.device, semaphore());
+    frame.fences.inFlight = vk::raii::Fence(vulkan.device, fence());
+    frame.fences.computeInFlight = vk::raii::Fence(vulkan.device, fence());
 }
 
 void Vulkan::CreateInfo::createFrameBuffer(Vulkan::SwapChain::Frame &frame, vk::Image image)
@@ -1310,7 +1310,7 @@ void Vulkan::initSwapChain()
     if(swapChain.swapChain)
     {
         swapChain.oldSwapChain.emplace(std::move(swapChain.swapChain.value()));
-        swapChainCreateInfo.setOldSwapchain(swapChain.oldSwapChain.value());
+        swapChainCreateInfo.setOldSwapchain(std::move(swapChain.oldSwapChain.value()));
     }
 
     swapChain.swapChain.emplace(device, swapChainCreateInfo);
@@ -1408,6 +1408,13 @@ void Vulkan::updateUniform(std::string name, float value)
     int index = uniformIndex(name);
     if(index > -1)
         currentUniformBufferData[index] = *reinterpret_cast<uint32_t * >(&value);
+}
+
+void Vulkan::printUniforms() const
+{
+    std::cout << "Uniforms:" << std::endl;
+    for(size_t i = 0; i < uniformNames.size(); i++)
+        std::cout << uniformNames[i] << " = " << *reinterpret_cast<const float *>(&currentUniformBufferData[i]) << std::endl;
 }
 
 void Vulkan::addToUniform(std::string name, float value)
