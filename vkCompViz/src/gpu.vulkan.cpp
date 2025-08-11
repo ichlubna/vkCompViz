@@ -957,9 +957,14 @@ std::unique_ptr<Vulkan::Buffer> Vulkan::Memory::buffer(vk::BufferUsageFlags usag
 
 vk::ImageCreateInfo &Vulkan::CreateInfo::image(vk::Format imageFormat, Resolution resolution, CreateInfo::ImageType imageType)
 {
+    auto sharingMode = vk::SharingMode::eConcurrent;
     queueFamilyIndices.clear();
     queueFamilyIndices.push_back(graphicsQueueID());
-    queueFamilyIndices.push_back(computeQueueID());
+    if (computeQueueID() != graphicsQueueID())
+        queueFamilyIndices.push_back(computeQueueID());
+    else
+        sharingMode = vk::SharingMode::eExclusive;
+
     auto usageFlags = vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled;
     if(imageType == ImageType::Storage)
         usageFlags |= vk::ImageUsageFlagBits::eStorage | vk::ImageUsageFlagBits::eTransferSrc;
@@ -967,17 +972,17 @@ vk::ImageCreateInfo &Vulkan::CreateInfo::image(vk::Format imageFormat, Resolutio
         usageFlags = vk::ImageUsageFlagBits::eDepthStencilAttachment;
 
     imageCreateInfo
-    .setFormat(imageFormat)
-    .setImageType(vk::ImageType::e2D)
-    .setExtent({resolution.width, resolution.height, 1})
-    .setMipLevels(1)
-    .setArrayLayers(1)
-    .setTiling(vk::ImageTiling::eOptimal)
-    .setInitialLayout(vk::ImageLayout::eUndefined)
-    .setUsage(usageFlags)
-    .setSharingMode(vk::SharingMode::eConcurrent)
-    .setQueueFamilyIndices(queueFamilyIndices)
-    .setSamples(vk::SampleCountFlagBits::e1);
+        .setFormat(imageFormat)
+        .setImageType(vk::ImageType::e2D)
+        .setExtent({resolution.width, resolution.height, 1})
+        .setMipLevels(1)
+        .setArrayLayers(1)
+        .setTiling(vk::ImageTiling::eOptimal)
+        .setInitialLayout(vk::ImageLayout::eUndefined)
+        .setUsage(usageFlags)
+        .setSharingMode(sharingMode)
+        .setQueueFamilyIndices(queueFamilyIndices)
+        .setSamples(vk::SampleCountFlagBits::e1);
     return imageCreateInfo;
 }
 
