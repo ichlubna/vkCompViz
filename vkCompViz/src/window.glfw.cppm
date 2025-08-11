@@ -1,5 +1,6 @@
 module;
-#include <set>
+#define GLFW_INCLUDE_VULKAN
+#include <GLFW/glfw3.h>
 export module window: glfw;
 export import : interface;
 import common;
@@ -10,12 +11,11 @@ export namespace Window
 class Glfw : public Window
 {
     public:
-        typedef struct GLFWwindow GLFWwindow;
         Glfw(const Parameters &parameters);
         void run() override;
         [[nodiscard]] std::vector<const char *> requiredExtensions() const override;
         [[nodiscard]] std::uintptr_t getSurface(std::uintptr_t instance) override;
-        [[nodiscard]] bool key(std::string name) const
+        [[nodiscard]] bool key(std::string name) const override
         {
             return keys.pressed(name);
         }

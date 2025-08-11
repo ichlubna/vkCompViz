@@ -128,25 +128,16 @@ class Gpu
         };
 
         Gpu() = default;
-
         virtual void run() = 0;
-
         virtual void computeSettings(std::vector<WorkGroupCount> shaderWorkGroupCounts, bool runBenchmark) = 0;
-
         virtual void resize() = 0;
-
         virtual void updateUniformBuffer(std::vector<std::uint32_t> buffer) = 0;
-
         virtual void updateUniform(std::string name, float value) = 0;
-
+        virtual void printUniforms() const = 0;
         virtual void addToUniform(std::string name, float value) = 0;
-
         [[nodiscard]] virtual std::shared_ptr<Loader::Image> resultTexture() = 0;
-
         [[nodiscard]] virtual std::vector<float> resultBuffer(std::size_t size = 0) = 0;
-
         virtual ~Gpu() = default;
-
         /**
          * @brief Returns the benchmark reports collected during execution.
          * @return Vector of benchmark reports.

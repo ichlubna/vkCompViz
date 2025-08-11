@@ -1,11 +1,13 @@
 module;
-#include <vulkan/vulkan.hpp>
 #define VMA_VULKAN_VERSION 1004000
 #define VMA_IMPLEMENTATION
 #include <vk_mem_alloc.h>
 module gpu;
 import vulkan_hpp;
 import timer;
+import std;
+import common;
+import shader;
 using namespace Gpu;
 
 Vulkan::Vulkan(VulkanInitParams params) :
@@ -63,11 +65,11 @@ std::vector<std::string> Vulkan::VulkanInitParams::Shaders::uniformNames() const
 
 size_t Vulkan::VulkanInitParams::Shaders::uniformBufferSize() const
 {
-    size_t size = 0;
+    std::size_t size = std::max(vertex.uniformBufferSize, fragment.uniformBufferSize);
     for(auto& computeShader : compute)
-        size = std::max(computeShader.uniformBufferSize, size);
+        size = std::max(size, computeShader.uniformBufferSize);
     return size;
-}
+};
 
 vk::ApplicationInfo &Vulkan::CreateInfo::application()
 {
@@ -192,8 +194,9 @@ DeviceRating::DeviceRating(const vk::raii::PhysicalDevice *testedDevice, const v
     }
 
     const auto queueFamilyProperties = device->getQueueFamilyProperties();
-    for(auto [queueFamilyID, queueFamily] : queueFamilyProperties | std::ranges::views::enumerate)
+    for(size_t queueFamilyID = 0; queueFamilyID < queueFamilyProperties.size(); ++queueFamilyID)
     {
+        const auto& queueFamily = queueFamilyProperties[queueFamilyID];
         if(queueFamily.queueFlags & vk::QueueFlagBits::eGraphics)
         {
             score++;
@@ -921,11 +924,11 @@ vk::ImageViewCreateInfo &Vulkan::CreateInfo::imageView(vk::Format imageFormat, v
 
 void Vulkan::CreateInfo::createFrameSync(SwapChain::InFlight &frame)
 {
-    frame.semaphores.imageAvailable = std::move(vk::raii::Semaphore(vulkan.device, semaphore()));
-    frame.semaphores.renderFinished = std::move(vk::raii::Semaphore(vulkan.device, semaphore()));
-    frame.semaphores.computeFinished = std::move(vk::raii::Semaphore(vulkan.device, semaphore()));
-    frame.fences.inFlight = std::move(vk::raii::Fence(vulkan.device, fence()));
-    frame.fences.computeInFlight = std::move(vk::raii::Fence(vulkan.device, fence()));
+    frame.semaphores.imageAvailable = vk::raii::Semaphore(vulkan.device, semaphore());
+    frame.semaphores.renderFinished = vk::raii::Semaphore(vulkan.device, semaphore());
+    frame.semaphores.computeFinished = vk::raii::Semaphore(vulkan.device, semaphore());
+    frame.fences.inFlight = vk::raii::Fence(vulkan.device, fence());
+    frame.fences.computeInFlight = vk::raii::Fence(vulkan.device, fence());
 }
 
 void Vulkan::CreateInfo::createFrameBuffer(Vulkan::SwapChain::Frame &frame, vk::Image image)
@@ -1307,7 +1310,7 @@ void Vulkan::initSwapChain()
     if(swapChain.swapChain)
     {
         swapChain.oldSwapChain.emplace(std::move(swapChain.swapChain.value()));
-        swapChainCreateInfo.setOldSwapchain(swapChain.oldSwapChain.value());
+        swapChainCreateInfo.setOldSwapchain(std::move(swapChain.oldSwapChain.value()));
     }
 
     swapChain.swapChain.emplace(device, swapChainCreateInfo);
@@ -1405,6 +1408,13 @@ void Vulkan::updateUniform(std::string name, float value)
     int index = uniformIndex(name);
     if(index > -1)
         currentUniformBufferData[index] = *reinterpret_cast<uint32_t * >(&value);
+}
+
+void Vulkan::printUniforms() const
+{
+    std::cout << "Uniforms:" << std::endl;
+    for(size_t i = 0; i < uniformNames.size(); i++)
+        std::cout << uniformNames[i] << " = " << *reinterpret_cast<const float *>(&currentUniformBufferData[i]) << std::endl;
 }
 
 void Vulkan::addToUniform(std::string name, float value)
@@ -1514,7 +1524,7 @@ std::vector<float> Vulkan::resultBuffer(size_t size)
     copyBuffer(inFlight.buffers.shaderStorage->buffer, stagingBuffer->buffer, downloadSize);
     vmaMapMemory(*stagingBuffer->allocator, stagingBuffer->allocation, &gpuData);
     Timer timer;
-    memcpy(result.data(), gpuData, downloadSize);
+    std::memcpy(result.data(), gpuData, downloadSize);
     times.memory.download.shaderStorage += timer.elapsed();
     vmaUnmapMemory(*stagingBuffer->allocator, stagingBuffer->allocation);
     updateBenchmarks();

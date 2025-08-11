@@ -1,6 +1,6 @@
 # Temporary notes
 
-The current version of the project needs to use CMake 4.0.1. This will be fixed in the future when CMake support for import of std module is no longer an experimental feature. See the CMakeLists.txt file for more details.
+The current version of the project needs to use CMake 4.1.0. This will be fixed in the future when CMake support for import of std module is no longer an experimental feature. See the CMakeLists.txt file for more details.
 
 # Vulkan GPGPU Compute Framework
 Vulkan Compute Vizualization (vkCompViz) is a Vulkan library for GPU-accelerated data processing. The main purpose are computer-graphics-related GPU-accelerated operations on images.
@@ -18,7 +18,7 @@ ninja
 cd ./examples/exampleName/
 ./exampleName
 ```
-The examples can be disabled and enabled using  `ccmake`. New examples can be added similarly to the existing ones. When created new example in the examples directory, the example can be added to the main `CMakeLists.txt` as the rest.
+The examples can be disabled and enabled using  `ccmake`. New examples can be added similarly to the existing ones. When created new example in the examples directory, the example can be added to the main `CMakeLists.txt` as the rest. A testing compilation script for Ubuntu is [available](scripts/buildOnUbuntu-24_04.sh).
 
 A path to Artistic Style (astyle) program can be defined with `ccmake` and the project can be formatted using:
 ```
@@ -26,6 +26,21 @@ ninja format
 ```
 ## Usage
 See the existing examples for reference. Especially, [Simple Blending](examples/simpleBlending), [Parallel Reduction](examples/parallelReduction), and [3D Viewer](examples/3DViewer) are simple and contain explanatory comments. It is recommended to use them as templates for new examples. The API of the library is described in the [documentation](https://ichlubna.github.io/vkCompViz/html/classvkCompViz_1_1App.html).
+
+A simple basic code using this library, with no window output, that loads an image, processes it with a compute shader and one workgroup, and stores the result is:
+
+    import vkCompViz;
+    void main()
+    {
+		vkCompViz::App::Parameters params;
+		params.shaders.compute.push_back("shader.slang");
+		params.shaders.workGroupCounts.push_back({1, 1, 1});
+		params.textures.input.push_back("input.jpg");
+		params.textures.output.push_back({.sameResolutionAsInputID = 0, .sameFormatAsInputID = 0});
+		vkCompViz::App app;
+		app.run(params);
+		app.saveResultImage("output.jpg");
+    }
 
 The bindings in shaders are:  
 
@@ -48,6 +63,7 @@ Keys for window application:
 | Space | Edit uniforms in runtime | 
 | F1 | Store the the result |
 | F2 | Store benchmark report | 
+| F3 | Print uniforms | 
 
 ### Possible future features
 - RTX pipeline that can render to texture.

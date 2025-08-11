@@ -4,9 +4,9 @@ module;
 #include <slang-com-ptr.h>
 #include <slang-gfx.h>
 module shader;
-using namespace Shader;
+import std;
 
-SlangFactory::SlangFactory()
+Shader::SlangFactory::SlangFactory()
 {
     SlangGlobalSessionDesc desc = {};
     slang::createGlobalSession(&desc, globalSession.writeRef());
@@ -15,12 +15,12 @@ SlangFactory::SlangFactory()
     addShaderSourcePath("shaders/");
 }
 
-void SlangFactory::addShaderSourcePath(std::string path)
+void Shader::SlangFactory::addShaderSourcePath(std::string path)
 {
     searchPaths.push_back(path);
 }
 
-Slang::ComPtr<slang::ISession> SlangFactory::createSession() const
+Slang::ComPtr<slang::ISession> Shader::SlangFactory::createSession() const
 {
     slang::SessionDesc sessionDesc;
     slang::TargetDesc targetDesc;
@@ -40,7 +40,7 @@ Slang::ComPtr<slang::ISession> SlangFactory::createSession() const
     return session;
 }
 
-Shader::Shader::Info SlangFactory::loadFromFile(std::string shaderName) const
+Shader::Shader::Info Shader::SlangFactory::loadFromFile(std::string shaderName) const
 {
     Shader::Shader::Info info;
     auto session = createSession();
@@ -54,7 +54,7 @@ Shader::Shader::Info SlangFactory::loadFromFile(std::string shaderName) const
     return compile(shaderModule, session);
 }
 
-Shader::Shader::Info SlangFactory::loadFromString(std::string code) const
+Shader::Shader::Info Shader::SlangFactory::loadFromString(std::string code) const
 {
     auto session = createSession();
     Slang::ComPtr<slang::IBlob> diagnostics;
@@ -67,7 +67,7 @@ Shader::Shader::Info SlangFactory::loadFromString(std::string code) const
     return compile(shaderModule, session);
 }
 
-Shader::Shader::Info SlangFactory::compile(slang::IModule *shaderModule, Slang::ComPtr<slang::ISession> session) const
+Shader::Shader::Info Shader::SlangFactory::compile(slang::IModule *shaderModule, Slang::ComPtr<slang::ISession> session) const
 {
     Shader::Shader::Info info;
     Slang::ComPtr<slang::IEntryPoint> entryPoint;
@@ -117,6 +117,6 @@ Shader::Shader::Info SlangFactory::compile(slang::IModule *shaderModule, Slang::
     return info;
 }
 
-SlangFactory::~SlangFactory()
+Shader::SlangFactory::~SlangFactory()
 {
 }

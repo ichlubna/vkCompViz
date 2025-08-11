@@ -1,5 +1,4 @@
 module;
-#include <memory>
 #include <vk_mem_alloc.h>
 export module gpu: vulkan;
 export import : interface;
@@ -29,13 +28,7 @@ class Vulkan : public Gpu
                         Shader::Shader::Info fragment;
                         std::size_t vertexCount{3};
                         std::vector<Shader::Shader::Info> compute;
-                        [[nodiscard]] size_t uniformBufferSize() const
-                        {
-                            std::size_t size = std::max(vertex.uniformBufferSize, fragment.uniformBufferSize);
-                            for(auto& computeShader : compute)
-                                size = std::max(size, computeShader.uniformBufferSize);
-                            return size;
-                        };
+                        [[nodiscard]] size_t uniformBufferSize() const;
                         [[nodiscard]] size_t uniformBufferUint32Count() const
                         {
                             return std::ceil(uniformBufferSize() / sizeof(uint32_t));
@@ -62,6 +55,7 @@ class Vulkan : public Gpu
         void updateUniformBuffer(std::vector<uint32_t> buffer) override;
         void updateUniform(std::string name, float value) override;
         void addToUniform(std::string name, float value) override;
+        void printUniforms() const override;
         [[nodiscard]] std::shared_ptr<Loader::Image> resultTexture() override;
         [[nodiscard]] std::vector<float> resultBuffer(size_t size = 0) override;
         ~Vulkan();

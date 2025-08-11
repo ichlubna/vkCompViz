@@ -6,5 +6,6 @@ var searchData=
   ['pipeline_3',['pipeline',['../classGpu_1_1Vulkan_1_1Pipelines_1_1Graphics.html#af0001c935a90b58bf5f35d909d9e996e',1,'Gpu::Vulkan::Pipelines::Graphics']]],
   ['pipelines_4',['pipelines',['../classGpu_1_1Vulkan_1_1Pipelines_1_1Compute.html#ac3f7e2292b570f942429f0de87cc610b',1,'Gpu::Vulkan::Pipelines::Compute']]],
   ['print_5',['print',['../classGpu_1_1Gpu_1_1BenchmarkReport.html#af395d7e192c9c435424587bf37295c84',1,'Gpu::Gpu::BenchmarkReport']]],
-  ['priorityuuid_6',['priorityUUID',['../classvkCompViz_1_1App_1_1Parameters.html#a0cc7b79233a7546b076b60d6ccc86dcf',1,'vkCompViz::App::Parameters']]]
+  ['printuniforms_6',['printuniforms',['../classGpu_1_1Gpu.html#a638dda6a161d3244ecdbbe196fa8db6f',1,'Gpu::Gpu::printUniforms()'],['../classGpu_1_1Vulkan.html#a855ec24d92a0f6fa3a7eb3c0e6678b33',1,'Gpu::Vulkan::printUniforms()']]],
+  ['priorityuuid_7',['priorityUUID',['../classvkCompViz_1_1App_1_1Parameters.html#a0cc7b79233a7546b076b60d6ccc86dcf',1,'vkCompViz::App::Parameters']]]
 ];
