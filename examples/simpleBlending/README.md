@@ -1,5 +1,5 @@
 # Simple Blending
-This program can load two input images and blend them together with a given factor. The result is shown in a window and also stored in a file.
+This program can load two input images and blend them together with a given factor. The result is shown in a window and also stored in a file. Mouse wheel can be used to zoom the image.
 
 ## Example usage
 [Build](../../README.md) the examples. Then run in the `buikd` directory:
