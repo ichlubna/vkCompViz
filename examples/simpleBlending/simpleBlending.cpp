@@ -35,7 +35,8 @@ int main(int argc, char *argv[])
         params.shaders.uniforms.push_back({"mouseX", 0.0f});
         params.shaders.uniforms.push_back({"mouseY", 0.0f});
         // Mouse scrolling can be used to zoom in and out, the scrolling is bound to the uniform variables 
-        params.mouseBindings.push_back({.action = "mouseScroll", .valueUniform = "zoom", .positionXUniform = "mouseX", .positionYUniform = "mouseY"});
+        params.mouseBindings.push_back({.action = "mouseScroll", .valueUniform = "zoom"});
+        params.mouseBindings.push_back({.action = "mouseTrack", .positionXUniform = "mouseX", .positionYUniform = "mouseY"});
         // The output screenshots taken by F1 can be stored to a given directory with a given extension, the name is created from date and time
         auto outputPath = std::filesystem::path(args["-o"]).remove_filename().string();
         params.screenshot.path = outputPath;

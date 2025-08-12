@@ -23,8 +23,8 @@ Vulkan::Vulkan(VulkanInitParams params) :
     commandPools{   .graphics{device, createInfo.commandPool(createInfo.graphicsQueueID())},
                     .compute{device, createInfo.commandPool(createInfo.computeQueueID())}},
     sampler{device, createInfo.sampler()},
-    descriptorSetLayout{device, createInfo.descriptorSetLayout(params.textures.input.size(), params.textures.output.size())},
     currentUniformBufferData{std::vector<uint32_t>(params.shaders.uniformBufferUint32Count(), 0)},
+    descriptorSetLayout{device, createInfo.descriptorSetLayout(params.textures.input.size(), params.textures.output.size())},
     uniformNames{params.shaders.uniformNames()},
     shaders{.vertex{device, createInfo.shaderModule(params.shaders.vertex.code)},
             .fragment{device, createInfo.shaderModule(params.shaders.fragment.code)},
@@ -785,7 +785,7 @@ void Vulkan::graphicsSubmit(size_t swapChainFrameID)
 
 void Vulkan::updateUniformBuffer(SwapChain::InFlight &inFlight)
 {
-    vmaCopyMemoryToAllocation(*inFlight.buffers.uniform->allocator, currentUniformBufferData.data(), inFlight.buffers.uniform->allocation, 0, currentUniformBufferData.size()*sizeof(uint32_t));
+    vmaCopyMemoryToAllocation(*inFlight.buffers.uniform->allocator, currentUniformBufferData.data(), inFlight.buffers.uniform->allocation, 0, currentUniformBufferData.size()*sizeof(uint32_t)); 
 }
 
 void Vulkan::updateShaderStorageBuffer(SwapChain::InFlight &inFlight)
@@ -1202,7 +1202,7 @@ void Vulkan::updateDescriptorSets(SwapChain::InFlight &inFlight)
     bufferInfo
     .setBuffer(inFlight.buffers.uniform->buffer)
     .setOffset(0)
-    .setRange(VK_WHOLE_SIZE);
+    .setRange(currentUniformBufferData.size()*sizeof(uint32_t));
 
     std::vector<vk::WriteDescriptorSet> writeDescriptorSets;
     writeDescriptorSets.emplace_back()
@@ -1355,7 +1355,7 @@ void Vulkan::createSwapChainFrames()
         inFlight.commandBuffers.graphics.emplace(std::move(graphicsCommandBuffers[i]));
         inFlight.commandBuffers.compute.emplace(std::move(computeCommandBuffers[i]));
         createInfo.createFrameSync(inFlight);
-        inFlight.buffers.uniform = memory.buffer(vk::BufferUsageFlagBits::eUniformBuffer, currentUniformBufferData.size());
+        inFlight.buffers.uniform = memory.buffer(vk::BufferUsageFlagBits::eUniformBuffer, currentUniformBufferData.size()*sizeof(uint32_t));
         swapChain.inFlight.back().descriptorSet.emplace(std::move(descriptorSets[i]));
         auto outputImages = createInfo.outputImages();
         for(auto const &outputImage : outputImages)
@@ -1396,7 +1396,7 @@ void Vulkan::updateUniformBuffer(std::vector<uint32_t> buffer)
 
 void Vulkan::setUniformLimits(std::string name, float minValue, float maxValue)
 {
-    uniformLimits[name] ={minValue, maxValue};
+    uniformLimits[name] = {minValue, maxValue};
 } 
 
 int Vulkan::uniformIndex(std::string name) const

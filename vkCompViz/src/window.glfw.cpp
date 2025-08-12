@@ -31,6 +31,15 @@ bool Window::Glfw::Keys::mouse(std::string name)
     return result;
 }
 
+void Window::Glfw::cursorPositionCallback(GLFWwindow* window, double xpos, double ypos)
+{
+    auto* self = static_cast<Glfw *>(glfwGetWindowUserPointer(window));
+    int width, height;
+    glfwGetWindowSize(window, &width, &height);
+    self->mouse.x = xpos/width;
+    self->mouse.y = ypos/height;  
+}
+
 void Window::Glfw::keyCallback(GLFWwindow *window, int key, [[maybe_unused]] int scancode, int action, [[maybe_unused]] int mods)
 {
     auto* self = static_cast<Glfw *>(glfwGetWindowUserPointer(window));
@@ -52,9 +61,6 @@ void Window::Glfw::keyCallback(GLFWwindow *window, int key, [[maybe_unused]] int
 void Window::Glfw::scrollCallback(GLFWwindow* window, double xoffset, double yoffset) 
 {
     auto* self = static_cast<Glfw *>(glfwGetWindowUserPointer(window));
-    auto [x, y] = normalizedMousePosition(window);
-    self->mouse.x = x;
-    self->mouse.y = y;
     self->mouse.scrollX = xoffset;
     self->mouse.scrollY = yoffset;
     self->keys.mouseActionStart(GLFW_MOUSE_BUTTON_SCROLL);
@@ -63,9 +69,6 @@ void Window::Glfw::scrollCallback(GLFWwindow* window, double xoffset, double yof
 void Window::Glfw::mouseButtonCallback(GLFWwindow* window, int button, int action, [[maybe_unused]] int mods)
 {
     auto* self = static_cast<Glfw *>(glfwGetWindowUserPointer(window));
-    auto [x, y] = normalizedMousePosition(window);
-    self->mouse.x = x;
-    self->mouse.y = y;
     if(action == GLFW_PRESS)
         self->keys.mouseActionStart(button);
     else if(action == GLFW_RELEASE)
@@ -93,6 +96,7 @@ Window::Glfw::Glfw(const Parameters &parameters) :
     glfwSetScrollCallback(window, Glfw::scrollCallback);
     glfwSetMouseButtonCallback(window, Glfw::mouseButtonCallback);
     glfwSetFramebufferSizeCallback(window, Glfw::resizeCallback);
+    glfwSetCursorPosCallback(window, Glfw::cursorPositionCallback);
 }
 
 Resolution Window::Glfw::resolution() const

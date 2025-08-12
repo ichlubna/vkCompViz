@@ -183,11 +183,11 @@ class App
                 class MouseBinding
                 {
                     public:
-                        /** The action of the mouse (mouseLeft, mouseRight, mouseMiddle, mouseScroll). */
+                        /** The action of the mouse (mouseLeft, mouseRight, mouseMiddle, mouseScroll, mouseTrack (tracks the position all time)). */
                         std::string action;
 
                         /** Name of the uniform variable to modify. In case of scrolling the value contains the accumulated scroll offset. In caseof clicks int contains 1 as clicked or 0 as released.. */
-                        std::string valueUniform;
+                        std::string valueUniform{""};
                         
                         /** Uniform of X mouse position stored durign the action. Leave empty if position is not used. */
                         std::string positionXUniform{""};

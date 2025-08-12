@@ -349,9 +349,9 @@ class Vulkan : public Gpu
                 vk::raii::CommandPool compute;
         } commandPools;
         vk::raii::Sampler sampler;
+        std::vector<std::uint32_t> currentUniformBufferData;
         vk::raii::DescriptorSetLayout descriptorSetLayout;
         SwapChain swapChain;
-        std::vector<std::uint32_t> currentUniformBufferData;
         std::vector<std::string> uniformNames;
         class Shaders
         {

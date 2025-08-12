@@ -37,6 +37,7 @@ class Glfw : public Window
         static void resizeCallback(GLFWwindow *window, [[maybe_unused]] int width, [[maybe_unused]] int height);
         static void scrollCallback(GLFWwindow* window, double xoffset, double yoffset);
         static void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
+        static void cursorPositionCallback(GLFWwindow* window, double xpos, double ypos);
         ~Glfw();
 
     private:

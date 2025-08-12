@@ -169,9 +169,15 @@ void App::mainLoop()
                     if(!binding.positionYUniform.empty())
                         gpu->updateUniform(binding.positionYUniform, window->mouse.y);
                 }
-                else 
-                    if(binding.action != "mouseScroll")
-                        gpu->updateUniform(binding.valueUniform, 0.0f);
+                else if(binding.action == "mouseTrack")
+                {
+                    if(!binding.positionXUniform.empty())
+                        gpu->updateUniform(binding.positionXUniform, window->mouse.x);
+                    if(!binding.positionYUniform.empty())
+                        gpu->updateUniform(binding.positionYUniform, window->mouse.y);
+                }    
+                else if(binding.action != "mouseScroll")
+                    gpu->updateUniform(binding.valueUniform, 0.0f);
 
             timer.waitUntilElapsed(frameTime);
         }

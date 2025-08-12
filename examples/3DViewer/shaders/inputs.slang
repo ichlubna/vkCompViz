@@ -3,6 +3,9 @@ struct Parameters
     float angle;
     float verticesStart;
     float normalsStart;
+    float mouseX;
+    float mouseY;
+    float lightOverride;
 }
 [[vk::binding(0, 0)]]
 uniform Parameters parameters;

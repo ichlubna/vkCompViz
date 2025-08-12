@@ -31,13 +31,18 @@ int main(int argc, char *argv[])
         params.shaders.compute.push_back("3DViewerCompute.slang");
         params.shaders.workGroupCounts.push_back({1, 1, 1});
         // The viewer will support model rotation
-        params.shaders.uniforms.push_back({"angle", 180.0f});
+        params.shaders.uniforms.push_back({"angle", 0.0f});
+        params.shaders.uniforms.push_back({"mouseX", 0.0f});
+        params.shaders.uniforms.push_back({"mouseY", 0.0f});
+        params.shaders.uniforms.push_back({"lightOverride", 0.0f});
         // The following uniforms are indices to the buffer
         params.shaders.uniforms.push_back({"verticesStart", static_cast<float>(objLoader.indices.size())});
         params.shaders.uniforms.push_back({"normalsStart", static_cast<float>(objLoader.indices.size() + objLoader.vertices.size())});
         // The angle can be adjusted either by pressing space and defining the new value
         // Or by pressing buttons to oncrease and decrease the angle by a step
         params.keyBindings.push_back({.uniform = "angle", .keyIncrease = "left", .keyDecrease = "right", .step = 0.01f});
+        // Mouse click will also be bound
+        params.mouseBindings.push_back({.action = "mouseLeft", .valueUniform = "lightOverride", .positionXUniform = "mouseX", .positionYUniform = "mouseY"});
         // This is a window app
         params.window.enable = true;
         params.window.resolution = {800, 600};
