@@ -5,5 +5,5 @@ digraph "Graphical Class Hierarchy"
   edge [fontname=Helvetica,fontsize=10,labelfontname=Helvetica,labelfontsize=10];
   node [fontname=Helvetica,fontsize=10,shape=box,height=0.2,width=0.4];
   rankdir="LR";
-  Node0 [id="Node000000",label="vkCompViz::App::Parameters\l::Shaders",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$classvkCompViz_1_1App_1_1Parameters_1_1Shaders.html",tooltip="Configuration of shaders used in the application."];
+  Node0 [id="Node000000",label="vkCompViz::App::Parameters\l::Screenshot",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$classvkCompViz_1_1App_1_1Parameters_1_1Screenshot.html",tooltip="Configuration for saving screenshots."];
 }

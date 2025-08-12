@@ -1,9 +1,7 @@
 var searchData=
 [
-  ['uniform_0',['uniform',['../classGpu_1_1Vulkan_1_1SwapChain_1_1InFlight_1_1Buffers.html#a3de52066d79246c4519af9afa3c570a9',1,'Gpu::Vulkan::SwapChain::InFlight::Buffers::uniform'],['../classvkCompViz_1_1App_1_1Parameters_1_1KeyBinding.html#a7200bf060647800e74cee8bf738154e7',1,'vkCompViz::App::Parameters::KeyBinding::uniform']]],
-  ['uniformbuffersize_1',['uniformBufferSize',['../classShader_1_1Shader_1_1Info.html#a8d6381237514e0e5770ba6b14663bced',1,'Shader::Shader::Info']]],
-  ['uniformnames_2',['uniformNames',['../classShader_1_1Shader_1_1Info.html#a6f77db65041e0e815050269f132d8cbe',1,'Shader::Shader::Info']]],
-  ['uniforms_3',['uniforms',['../classvkCompViz_1_1App_1_1Parameters_1_1Shaders.html#ae1c9694bc38892e18813333035c1ce71',1,'vkCompViz::App::Parameters::Shaders']]],
-  ['upload_4',['upload',['../classGpu_1_1Gpu_1_1BenchmarkReport_1_1Times.html#aa5519590abb507976c1855775c7d255b',1,'Gpu::Gpu::BenchmarkReport::Times::upload'],['../classGpu_1_1Vulkan_1_1Times_1_1Memory.html#a30bcac6071b4a32f4ab580c99fc09cc1',1,'Gpu::Vulkan::Times::Memory::upload']]],
-  ['usedmemory_5',['usedMemory',['../classGpu_1_1Gpu_1_1BenchmarkReport.html#a67029a68e06313e6d64ab38d40c17e3e',1,'Gpu::Gpu::BenchmarkReport']]]
+  ['renderfinished_0',['renderFinished',['../classGpu_1_1Vulkan_1_1SwapChain_1_1InFlight_1_1Sempahores.html#a6130b31a4fcf7e01fb3399fffc4e9f29',1,'Gpu::Vulkan::SwapChain::InFlight::Sempahores']]],
+  ['renderpass_1',['renderPass',['../classGpu_1_1Vulkan_1_1Pipelines_1_1Graphics.html#a99dd7d6c3f4f30251d958de8f7368299',1,'Gpu::Vulkan::Pipelines::Graphics']]],
+  ['requiredextensions_2',['requiredExtensions',['../classGpu_1_1Vulkan_1_1VulkanInitParams.html#a6e828d2206ba14a744dbdc17b6cc060c',1,'Gpu::Vulkan::VulkanInitParams']]],
+  ['resolution_3',['resolution',['../classGpu_1_1Vulkan_1_1VulkanInitParams.html#a2c4000187011afc6b85f99903a2f08d7',1,'Gpu::Vulkan::VulkanInitParams::resolution'],['../classvkCompViz_1_1App_1_1Parameters_1_1Textures_1_1Output.html#a466dda29fd34c21da9d7949703ec7878',1,'vkCompViz::App::Parameters::Textures::Output::resolution'],['../classvkCompViz_1_1App_1_1Parameters_1_1Window.html#af899025983e7b28243080aa8084587d7',1,'vkCompViz::App::Parameters::Window::resolution'],['../classWindow_1_1Parameters.html#ace689d47937f39f1759c7d16052a3d4d',1,'Window::Parameters::resolution']]]
 ];

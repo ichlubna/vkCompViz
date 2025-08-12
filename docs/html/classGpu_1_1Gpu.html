@@ -116,6 +116,8 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:a8a269a1fa98aa0dd729b7140795992d6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a60d5964627e61a7cb643a3aa07276acf" id="r_a60d5964627e61a7cb643a3aa07276acf"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classGpu_1_1Gpu.html#a60d5964627e61a7cb643a3aa07276acf">updateUniform</a> (std::string name, float value)=0</td></tr>
 <tr class="separator:a60d5964627e61a7cb643a3aa07276acf"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:adbebc2708b93f4ed6cf758a24be65cee" id="r_adbebc2708b93f4ed6cf758a24be65cee"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classGpu_1_1Gpu.html#adbebc2708b93f4ed6cf758a24be65cee">setUniformLimits</a> (std::string name, float minValue, float maxValue)=0</td></tr>
+<tr class="separator:adbebc2708b93f4ed6cf758a24be65cee"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a638dda6a161d3244ecdbbe196fa8db6f" id="r_a638dda6a161d3244ecdbbe196fa8db6f"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classGpu_1_1Gpu.html#a638dda6a161d3244ecdbbe196fa8db6f">printUniforms</a> () const =0</td></tr>
 <tr class="separator:a638dda6a161d3244ecdbbe196fa8db6f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a86346482dd8b02c3ebbaff833a738da9" id="r_a86346482dd8b02c3ebbaff833a738da9"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classGpu_1_1Gpu.html#a86346482dd8b02c3ebbaff833a738da9">addToUniform</a> (std::string name, float value)=0</td></tr>
@@ -424,6 +426,50 @@ Protected Attributes</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Implemented in <a class="el" href="classGpu_1_1Vulkan.html#a2984b3c31a814da0c95440300577c056">Gpu::Vulkan</a>.</p>
+
+</div>
+</div>
+<a id="adbebc2708b93f4ed6cf758a24be65cee" name="adbebc2708b93f4ed6cf758a24be65cee"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#adbebc2708b93f4ed6cf758a24be65cee">&#9670;&#160;</a></span>setUniformLimits()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">virtual void Gpu::Gpu::setUniformLimits </td>
+          <td>(</td>
+          <td class="paramtype">std::string&#160;</td>
+          <td class="paramname"><em>name</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>minValue</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>maxValue</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">export</span><span class="mlabel">pure virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Implemented in <a class="el" href="classGpu_1_1Vulkan.html#a16812308708cb103c3da65feb0829085">Gpu::Vulkan</a>.</p>
 
 </div>
 </div>

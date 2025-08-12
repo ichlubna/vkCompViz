@@ -1,8 +1,5 @@
 var searchData=
 [
-  ['fences_0',['fences',['../classGpu_1_1Vulkan_1_1SwapChain_1_1InFlight.html#a15fa94c4c2d5a4971eaa1d5286896fc7',1,'Gpu::Vulkan::SwapChain::InFlight']]],
-  ['floatformat_1',['floatFormat',['../classvkCompViz_1_1App_1_1Parameters_1_1Textures_1_1Output.html#a62a32c96918ffa736d324bd42120ce10',1,'vkCompViz::App::Parameters::Textures::Output']]],
-  ['fps_2',['fps',['../classvkCompViz_1_1App_1_1Parameters_1_1Window.html#a58bf556510367916be6d767743f06010',1,'vkCompViz::App::Parameters::Window']]],
-  ['fragment_3',['fragment',['../classGpu_1_1Vulkan_1_1VulkanInitParams_1_1Shaders.html#ad5ce4c5fa7c765ce977ab7c971e80ab4',1,'Gpu::Vulkan::VulkanInitParams::Shaders::fragment'],['../classvkCompViz_1_1App_1_1Parameters_1_1Shaders.html#a76da208ae7e202bc60ac47f13f6c5876',1,'vkCompViz::App::Parameters::Shaders::fragment']]],
-  ['framebuffer_4',['frameBuffer',['../classGpu_1_1Vulkan_1_1SwapChain_1_1Frame.html#a1c83f91fa57c243a162525163eb14543',1,'Gpu::Vulkan::SwapChain::Frame']]]
+  ['enable_0',['enable',['../classvkCompViz_1_1App_1_1Parameters_1_1Benchmark.html#a8d98f7f51d66a6783ddb959c438fa976',1,'vkCompViz::App::Parameters::Benchmark::enable'],['../classvkCompViz_1_1App_1_1Parameters_1_1Window.html#a703d1e4e61c93754f16afc549088a57d',1,'vkCompViz::App::Parameters::Window::enable']]],
+  ['extension_1',['extension',['../classvkCompViz_1_1App_1_1Parameters_1_1Screenshot.html#a2811678840a10d3ba978e1c48b456f99',1,'vkCompViz::App::Parameters::Screenshot']]]
 ];
