@@ -1,7 +1,7 @@
 var searchData=
 [
-  ['width_0',['width',['../classResolution.html#a805146f6d3d573b92a4b5000711ee70a',1,'Resolution']]],
-  ['window_1',['window',['../classGpu_1_1Vulkan_1_1VulkanInitParams.html#a62092b89d9abdb17f8dd41203dd93fd3',1,'Gpu::Vulkan::VulkanInitParams::window'],['../classvkCompViz_1_1App_1_1Parameters.html#a425b29244711a9cdff4f0321f39db78e',1,'vkCompViz::App::Parameters::window']]],
-  ['workgroupcounts_2',['workGroupCounts',['../classvkCompViz_1_1App_1_1Parameters_1_1Shaders.html#a62f0c75df5a2e8d5a5321a68fae6703a',1,'vkCompViz::App::Parameters::Shaders']]],
-  ['workgroupsize_3',['workGroupSize',['../classShader_1_1Shader_1_1Info.html#a0f637c24c010b76bbb4fd121f8d909ac',1,'Shader::Shader::Info']]]
+  ['texture_0',['texture',['../classGpu_1_1Gpu_1_1BenchmarkReport_1_1Times_1_1Download.html#abede0376a47d4a9b5dd72c30cb204c03',1,'Gpu::Gpu::BenchmarkReport::Times::Download::texture'],['../classGpu_1_1Gpu_1_1BenchmarkReport_1_1Times_1_1Upload.html#a6c65b4984415e6353c4225aac19cf265',1,'Gpu::Gpu::BenchmarkReport::Times::Upload::texture'],['../classGpu_1_1Vulkan_1_1Times_1_1Memory_1_1Download.html#aaedd5b866b81c19fdc545240298efbdf',1,'Gpu::Vulkan::Times::Memory::Download::texture'],['../classGpu_1_1Vulkan_1_1Times_1_1Memory_1_1Upload.html#a253d02a7769bb01f03630e247ed22a69',1,'Gpu::Vulkan::Times::Memory::Upload::texture']]],
+  ['textures_1',['textures',['../classGpu_1_1Vulkan_1_1VulkanInitParams.html#a052b5f01a78b944e5e11f6cba2735d68',1,'Gpu::Vulkan::VulkanInitParams::textures'],['../classvkCompViz_1_1App_1_1Parameters.html#ab45d4d027acdfd0aad8f82110db2bb08',1,'vkCompViz::App::Parameters::textures']]],
+  ['times_2',['times',['../classGpu_1_1Gpu_1_1BenchmarkReport.html#af47cb5568ec6b2992f0e7cd8cd8515e8',1,'Gpu::Gpu::BenchmarkReport']]],
+  ['title_3',['title',['../classvkCompViz_1_1App_1_1Parameters_1_1Window.html#afb5f3db60f35863f40959dc74a1c031f',1,'vkCompViz::App::Parameters::Window::title'],['../classWindow_1_1Parameters.html#a5d85e77ec9ed6d882b370d19bdce7014',1,'Window::Parameters::title']]]
 ];

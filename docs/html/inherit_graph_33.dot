@@ -5,5 +5,5 @@ digraph "Graphical Class Hierarchy"
   edge [fontname=Helvetica,fontsize=10,labelfontname=Helvetica,labelfontsize=10];
   node [fontname=Helvetica,fontsize=10,shape=box,height=0.2,width=0.4];
   rankdir="LR";
-  Node0 [id="Node000000",label="vkCompViz::App::Parameters\l::Screenshot",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$classvkCompViz_1_1App_1_1Parameters_1_1Screenshot.html",tooltip="Configuration for saving screenshots."];
+  Node0 [id="Node000000",label="vkCompViz::App::Parameters\l::MouseBinding",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$classvkCompViz_1_1App_1_1Parameters_1_1MouseBinding.html",tooltip="Defines a mouse binding to modify a uniform value via mouse input."];
 }

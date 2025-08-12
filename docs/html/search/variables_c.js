@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['querypools_0',['queryPools',['../classGpu_1_1Vulkan_1_1SwapChain_1_1InFlight.html#a44c6a167295d59530fe70a9be35d0b30',1,'Gpu::Vulkan::SwapChain::InFlight']]]
+  ['name_0',['name',['../classvkCompViz_1_1App_1_1Parameters_1_1Shaders_1_1Uniform.html#ab54022178a1bc722de0de1d1d30cedce',1,'vkCompViz::App::Parameters::Shaders::Uniform']]]
 ];
