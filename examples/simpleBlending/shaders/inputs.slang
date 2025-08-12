@@ -1,6 +1,10 @@
 struct Parameters
 {
     float factor;
+    float zoom;
+    float zoomSteps;
+    float mouseX;
+    float mouseY;
 }
 [[vk::binding(0, 0)]]
 uniform Parameters parameters;

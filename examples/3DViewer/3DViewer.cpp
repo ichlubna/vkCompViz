@@ -33,8 +33,8 @@ int main(int argc, char *argv[])
         // The viewer will support model rotation
         params.shaders.uniforms.push_back({"angle", 180.0f});
         // The following uniforms are indices to the buffer
-        params.shaders.uniforms.push_back({"verticesStart", objLoader.indices.size()});
-        params.shaders.uniforms.push_back({"normalsStart", objLoader.indices.size() + objLoader.vertices.size()});
+        params.shaders.uniforms.push_back({"verticesStart", static_cast<float>(objLoader.indices.size())});
+        params.shaders.uniforms.push_back({"normalsStart", static_cast<float>(objLoader.indices.size() + objLoader.vertices.size())});
         // The angle can be adjusted either by pressing space and defining the new value
         // Or by pressing buttons to oncrease and decrease the angle by a step
         params.keyBindings.push_back({.uniform = "angle", .keyIncrease = "left", .keyDecrease = "right", .step = 0.01f});

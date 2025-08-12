@@ -19,6 +19,10 @@ class Glfw : public Window
         {
             return keys.pressed(name);
         }
+        [[nodiscard]] bool mouseAction(std::string name) override
+        {
+            return keys.mouse(name);
+        }
         [[nodiscard]] bool quit() const override;
         [[nodiscard]] Resolution resolution() const override;
         void setResized()
@@ -31,6 +35,8 @@ class Glfw : public Window
         }
         static void keyCallback(GLFWwindow *window, int key, [[maybe_unused]] int scancode, int action, [[maybe_unused]] int mods);
         static void resizeCallback(GLFWwindow *window, [[maybe_unused]] int width, [[maybe_unused]] int height);
+        static void scrollCallback(GLFWwindow* window, double xoffset, double yoffset);
+        static void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
         ~Glfw();
 
     private:
@@ -38,6 +44,7 @@ class Glfw : public Window
         {
             public:
                 [[nodiscard]] bool pressed(std::string name) const;
+                [[nodiscard]] bool mouse(std::string name);
                 void press(int code)
                 {
                     pressedKeys.insert(code);
@@ -46,9 +53,18 @@ class Glfw : public Window
                 {
                     pressedKeys.erase(code);
                 }
+                void mouseActionStart(int code)
+                {
+                    mouseActions.insert(code);
+                }
+                void mouseActionEnd(int code)
+                {
+                    mouseActions.erase(code);
+                }
 
             private:
                 std::set<int> pressedKeys;
+                std::set<int> mouseActions;
         } keys;
         GLFWwindow *window;
         bool wasResized{false};

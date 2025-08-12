@@ -1394,6 +1394,11 @@ void Vulkan::updateUniformBuffer(std::vector<uint32_t> buffer)
     std::copy(buffer.begin(), buffer.end(), currentUniformBufferData.begin());
 }
 
+void Vulkan::setUniformLimits(std::string name, float minValue, float maxValue)
+{
+    uniformLimits[name] ={minValue, maxValue};
+} 
+
 int Vulkan::uniformIndex(std::string name) const
 {
     int index = -1;
@@ -1410,9 +1415,13 @@ int Vulkan::uniformIndex(std::string name) const
 
 void Vulkan::updateUniform(std::string name, float value)
 {
+    float resultValue = value;
+    if(uniformLimits.contains(name))
+        resultValue = std::clamp(value, uniformLimits[name].minValue, uniformLimits[name].maxValue);
+
     int index = uniformIndex(name);
     if(index > -1)
-        currentUniformBufferData[index] = *reinterpret_cast<uint32_t * >(&value);
+        currentUniformBufferData[index] = *reinterpret_cast<uint32_t * >(&resultValue);
 }
 
 void Vulkan::printUniforms() const
@@ -1429,6 +1438,8 @@ void Vulkan::addToUniform(std::string name, float value)
     {
         float uniformValue = *reinterpret_cast<float *>(&currentUniformBufferData[index]);
         uniformValue += value;
+        if(uniformLimits.contains(name))
+            uniformValue = std::clamp(uniformValue, uniformLimits[name].minValue, uniformLimits[name].maxValue);
         currentUniformBufferData[index] = *reinterpret_cast<uint32_t * >(&uniformValue);
     }
 }

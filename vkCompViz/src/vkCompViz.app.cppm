@@ -81,8 +81,20 @@ class App
                         /** Number of iterations to run compute shaders (only in headless mode). */
                         std::size_t iterations{1};
 
-                        /** List of uniform name-value pairs to be passed to shaders. */
-                        std::vector<std::pair<std::string, float >> uniforms;
+                        class Uniform
+                        {
+                            public:
+                                /** Name of the uniform. Corresponds to the name in the shader code. */
+                                std::string name;
+                                /** Initial value of the uniform. */
+                                float defaultValue;
+                                /** Minimum allowed value of the uniform. */
+                                float minValue{std::numeric_limits<float>::min()};
+                                /** Maximum allowed value of the uniform. */
+                                float maxValue{std::numeric_limits<float>::max()};
+                        };
+                        /** List of uniforms to be passed to shaders. */
+                        std::vector<Uniform> uniforms;
 
                         /**
                          * @brief Storage buffer configuration for shaders.
@@ -164,6 +176,28 @@ class App
 
                 /** List of key bindings to modify uniforms when the window is enabled. */
                 std::vector<KeyBinding> keyBindings;
+
+                /**
+                 * @brief Defines a mouse binding to modify a uniform value via mouse input.
+                 */
+                class MouseBinding
+                {
+                    public:
+                        /** The action of the mouse (mouseLeft, mouseRight, mouseMiddle, mouseScroll). */
+                        std::string action;
+
+                        /** Name of the uniform variable to modify. In case of scrolling the value contains the accumulated scroll offset. In caseof clicks int contains 1 as clicked or 0 as released.. */
+                        std::string valueUniform;
+                        
+                        /** Uniform of X mouse position stored durign the action. Leave empty if position is not used. */
+                        std::string positionXUniform{""};
+
+                        /** Uniform of Y mouse position stored durign the action. Leave empty if position is not used. */
+                        std::string positionYUniform{""};
+                };
+
+                /** List of mouse bindings to modify uniforms when the window is enabled. */
+                std::vector<MouseBinding> mouseBindings;
 
                 /** UUID of the GPU device to prioritize. */
                 std::string priorityUUID{""};
