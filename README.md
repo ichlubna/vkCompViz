@@ -25,7 +25,7 @@ A path to Artistic Style (astyle) program can be defined with `ccmake` and the p
 ninja format
 ```
 ## Usage
-See the existing examples for reference. Especially, [Simple Blending](examples/simpleBlending), [Parallel Reduction](examples/parallelReduction), and [3D Viewer](examples/3DViewer) are simple and contain explanatory comments. It is recommended to use them as templates for new examples. The API of the library is described in the [documentation](https://ichlubna.github.io/vkCompViz/html/classvkCompViz_1_1App.html).
+See the existing examples for reference. Especially, [Simple Blending](examples/simpleBlending), [Parallel Reduction](examples/parallelReduction), and [3D Viewer](examples/3DViewer) are simple and contain explanatory comments. It is recommended to use them as templates for new examples. The API of the library is described in the [documentation](https://ichlubna.github.io/vkCompViz/classvkCompViz_1_1App.html).
 
 A simple basic code using this library, with no window output, that loads an image, processes it with a compute shader and one workgroup, and stores the result is:
 
