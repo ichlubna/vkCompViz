@@ -12,5 +12,6 @@ var searchData=
   ['computeinflight_9',['computeInFlight',['../classGpu_1_1Vulkan_1_1SwapChain_1_1InFlight_1_1Fences.html#a04b00d9a6fba23a39459a2e924be9877',1,'Gpu::Vulkan::SwapChain::InFlight::Fences']]],
   ['computesettings_10',['computesettings',['../classGpu_1_1Gpu.html#a863e90ea89dc4b4c41bb6e85a7e27fc7',1,'Gpu::Gpu::computeSettings()'],['../classGpu_1_1Vulkan.html#a6f316caf2becdd59fa06484f652b298f',1,'Gpu::Vulkan::computeSettings()']]],
   ['computetime_11',['computeTime',['../classGpu_1_1Gpu_1_1BenchmarkReport.html#a47733c2ab5feafa09eaa8cb3ee72a76a',1,'Gpu::Gpu::BenchmarkReport']]],
-  ['currentresolution_12',['currentResolution',['../classGpu_1_1Vulkan_1_1VulkanInitParams.html#a369ed2dd973d7d5b06b429e027ef80be',1,'Gpu::Vulkan::VulkanInitParams']]]
+  ['currentresolution_12',['currentResolution',['../classGpu_1_1Vulkan_1_1VulkanInitParams.html#a369ed2dd973d7d5b06b429e027ef80be',1,'Gpu::Vulkan::VulkanInitParams']]],
+  ['cursorpositioncallback_13',['cursorPositionCallback',['../classWindow_1_1Glfw.html#a661dd13496dcc623b440702b51a95793',1,'Window::Glfw']]]
 ];

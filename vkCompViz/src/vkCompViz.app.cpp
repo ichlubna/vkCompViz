@@ -81,7 +81,10 @@ void App::initTextures()
 void App::initUniforms() const
 {
     for(auto &uniform : parameters.shaders.uniforms)
-        gpu->updateUniform(uniform.first, uniform.second);
+    {
+        gpu->setUniformLimits(uniform.name, uniform.minValue, uniform.maxValue);
+        gpu->updateUniform(uniform.name, uniform.defaultValue);
+    }
 }
 
 [[nodiscard]] std::string currentTimeFile(std::string path, std::string extension)
@@ -153,6 +156,29 @@ void App::mainLoop()
                 if(window->key(binding.keyDecrease))
                     gpu->addToUniform(binding.uniform, -binding.step);
             }
+
+            for(auto const& binding : parameters.mouseBindings)
+                if(window->mouseAction(binding.action))
+                {
+                    if(binding.action == "mouseScroll")
+                        gpu->addToUniform(binding.valueUniform, window->mouse.scrollY);
+                    else
+                        gpu->updateUniform(binding.valueUniform, 1.0f);
+                    if(!binding.positionXUniform.empty())
+                        gpu->updateUniform(binding.positionXUniform, window->mouse.x);
+                    if(!binding.positionYUniform.empty())
+                        gpu->updateUniform(binding.positionYUniform, window->mouse.y);
+                }
+                else if(binding.action == "mouseTrack")
+                {
+                    if(!binding.positionXUniform.empty())
+                        gpu->updateUniform(binding.positionXUniform, window->mouse.x);
+                    if(!binding.positionYUniform.empty())
+                        gpu->updateUniform(binding.positionYUniform, window->mouse.y);
+                }    
+                else if(binding.action != "mouseScroll")
+                    gpu->updateUniform(binding.valueUniform, 0.0f);
+
             timer.waitUntilElapsed(frameTime);
         }
     }

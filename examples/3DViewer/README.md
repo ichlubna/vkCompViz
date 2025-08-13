@@ -5,4 +5,5 @@ This program can open an OBJ file and render it in a window. The OBJ file must c
 [Build](../../README.md) the examples. Then run in the `buikd` directory:
 
     cd examples/3DViewer/; ./3DViewer ../../../examples/3DViewer/data/test.obj; cd -
-Use the left and right arrows on the keyboard to rotate the object.
+
+Use the left and right arrows on the keyboard to rotate the object. Click to the window and hold the left mouse button to move the light temporarily. 

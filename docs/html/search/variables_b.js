@@ -1,7 +1,7 @@
 var searchData=
 [
-  ['path_0',['path',['../classvkCompViz_1_1App_1_1Parameters_1_1Screenshot.html#a095fa64bfc2b773e2a4a178997b0bf88',1,'vkCompViz::App::Parameters::Screenshot::path'],['../classvkCompViz_1_1App_1_1Parameters_1_1Benchmark.html#a57fa377607f7207709b0b19ba55d780e',1,'vkCompViz::App::Parameters::Benchmark::path']]],
-  ['pipeline_1',['pipeline',['../classGpu_1_1Vulkan_1_1Pipelines_1_1Graphics.html#af0001c935a90b58bf5f35d909d9e996e',1,'Gpu::Vulkan::Pipelines::Graphics']]],
-  ['pipelines_2',['pipelines',['../classGpu_1_1Vulkan_1_1Pipelines_1_1Compute.html#ac3f7e2292b570f942429f0de87cc610b',1,'Gpu::Vulkan::Pipelines::Compute']]],
-  ['priorityuuid_3',['priorityUUID',['../classvkCompViz_1_1App_1_1Parameters.html#a0cc7b79233a7546b076b60d6ccc86dcf',1,'vkCompViz::App::Parameters']]]
+  ['maxvalue_0',['maxValue',['../classvkCompViz_1_1App_1_1Parameters_1_1Shaders_1_1Uniform.html#a171b0f5dded41481754b8e84a5cca084',1,'vkCompViz::App::Parameters::Shaders::Uniform']]],
+  ['minvalue_1',['minValue',['../classvkCompViz_1_1App_1_1Parameters_1_1Shaders_1_1Uniform.html#aeddc5a2e5dc3f1cdc2dae8bb19254cb9',1,'vkCompViz::App::Parameters::Shaders::Uniform']]],
+  ['mouse_2',['mouse',['../classWindow_1_1Window.html#a286fe7113c0a28c93effee90cf9f731e',1,'Window::Window']]],
+  ['mousebindings_3',['mouseBindings',['../classvkCompViz_1_1App_1_1Parameters.html#a0a5f82b122d9f296fd1491c138befdc1',1,'vkCompViz::App::Parameters']]]
 ];

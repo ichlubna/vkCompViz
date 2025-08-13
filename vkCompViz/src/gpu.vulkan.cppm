@@ -54,6 +54,7 @@ class Vulkan : public Gpu
         void resize() override;
         void updateUniformBuffer(std::vector<uint32_t> buffer) override;
         void updateUniform(std::string name, float value) override;
+        void setUniformLimits(std::string name, float minValue, float maxValue) override; 
         void addToUniform(std::string name, float value) override;
         void printUniforms() const override;
         [[nodiscard]] std::shared_ptr<Loader::Image> resultTexture() override;
@@ -348,9 +349,9 @@ class Vulkan : public Gpu
                 vk::raii::CommandPool compute;
         } commandPools;
         vk::raii::Sampler sampler;
+        std::vector<std::uint32_t> currentUniformBufferData;
         vk::raii::DescriptorSetLayout descriptorSetLayout;
         SwapChain swapChain;
-        std::vector<std::uint32_t> currentUniformBufferData;
         std::vector<std::string> uniformNames;
         class Shaders
         {
@@ -420,6 +421,13 @@ class Vulkan : public Gpu
                         } upload;
                 } memory;
         } times;
+        class UniformLimits
+        {
+            public:
+                float minValue;
+                float maxValue;
+        };
+        std::unordered_map<std::string, UniformLimits> uniformLimits;
         std::vector<std::unique_ptr<Texture >> inputTextures;
         std::vector<WorkGroupCount> workGroupCounts;
         const size_t timeout = std::numeric_limits<uint64_t>::max();

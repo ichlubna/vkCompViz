@@ -23,8 +23,8 @@ Vulkan::Vulkan(VulkanInitParams params) :
     commandPools{   .graphics{device, createInfo.commandPool(createInfo.graphicsQueueID())},
                     .compute{device, createInfo.commandPool(createInfo.computeQueueID())}},
     sampler{device, createInfo.sampler()},
-    descriptorSetLayout{device, createInfo.descriptorSetLayout(params.textures.input.size(), params.textures.output.size())},
     currentUniformBufferData{std::vector<uint32_t>(params.shaders.uniformBufferUint32Count(), 0)},
+    descriptorSetLayout{device, createInfo.descriptorSetLayout(params.textures.input.size(), params.textures.output.size())},
     uniformNames{params.shaders.uniformNames()},
     shaders{.vertex{device, createInfo.shaderModule(params.shaders.vertex.code)},
             .fragment{device, createInfo.shaderModule(params.shaders.fragment.code)},
@@ -785,7 +785,7 @@ void Vulkan::graphicsSubmit(size_t swapChainFrameID)
 
 void Vulkan::updateUniformBuffer(SwapChain::InFlight &inFlight)
 {
-    vmaCopyMemoryToAllocation(*inFlight.buffers.uniform->allocator, currentUniformBufferData.data(), inFlight.buffers.uniform->allocation, 0, currentUniformBufferData.size()*sizeof(uint32_t));
+    vmaCopyMemoryToAllocation(*inFlight.buffers.uniform->allocator, currentUniformBufferData.data(), inFlight.buffers.uniform->allocation, 0, currentUniformBufferData.size()*sizeof(uint32_t)); 
 }
 
 void Vulkan::updateShaderStorageBuffer(SwapChain::InFlight &inFlight)
@@ -957,9 +957,14 @@ std::unique_ptr<Vulkan::Buffer> Vulkan::Memory::buffer(vk::BufferUsageFlags usag
 
 vk::ImageCreateInfo &Vulkan::CreateInfo::image(vk::Format imageFormat, Resolution resolution, CreateInfo::ImageType imageType)
 {
+    auto sharingMode = vk::SharingMode::eConcurrent;
     queueFamilyIndices.clear();
     queueFamilyIndices.push_back(graphicsQueueID());
-    queueFamilyIndices.push_back(computeQueueID());
+    if (computeQueueID() != graphicsQueueID())
+        queueFamilyIndices.push_back(computeQueueID());
+    else
+        sharingMode = vk::SharingMode::eExclusive;
+
     auto usageFlags = vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled;
     if(imageType == ImageType::Storage)
         usageFlags |= vk::ImageUsageFlagBits::eStorage | vk::ImageUsageFlagBits::eTransferSrc;
@@ -967,17 +972,17 @@ vk::ImageCreateInfo &Vulkan::CreateInfo::image(vk::Format imageFormat, Resolutio
         usageFlags = vk::ImageUsageFlagBits::eDepthStencilAttachment;
 
     imageCreateInfo
-    .setFormat(imageFormat)
-    .setImageType(vk::ImageType::e2D)
-    .setExtent({resolution.width, resolution.height, 1})
-    .setMipLevels(1)
-    .setArrayLayers(1)
-    .setTiling(vk::ImageTiling::eOptimal)
-    .setInitialLayout(vk::ImageLayout::eUndefined)
-    .setUsage(usageFlags)
-    .setSharingMode(vk::SharingMode::eConcurrent)
-    .setQueueFamilyIndices(queueFamilyIndices)
-    .setSamples(vk::SampleCountFlagBits::e1);
+        .setFormat(imageFormat)
+        .setImageType(vk::ImageType::e2D)
+        .setExtent({resolution.width, resolution.height, 1})
+        .setMipLevels(1)
+        .setArrayLayers(1)
+        .setTiling(vk::ImageTiling::eOptimal)
+        .setInitialLayout(vk::ImageLayout::eUndefined)
+        .setUsage(usageFlags)
+        .setSharingMode(sharingMode)
+        .setQueueFamilyIndices(queueFamilyIndices)
+        .setSamples(vk::SampleCountFlagBits::e1);
     return imageCreateInfo;
 }
 
@@ -1197,7 +1202,7 @@ void Vulkan::updateDescriptorSets(SwapChain::InFlight &inFlight)
     bufferInfo
     .setBuffer(inFlight.buffers.uniform->buffer)
     .setOffset(0)
-    .setRange(VK_WHOLE_SIZE);
+    .setRange(currentUniformBufferData.size()*sizeof(uint32_t));
 
     std::vector<vk::WriteDescriptorSet> writeDescriptorSets;
     writeDescriptorSets.emplace_back()
@@ -1350,7 +1355,7 @@ void Vulkan::createSwapChainFrames()
         inFlight.commandBuffers.graphics.emplace(std::move(graphicsCommandBuffers[i]));
         inFlight.commandBuffers.compute.emplace(std::move(computeCommandBuffers[i]));
         createInfo.createFrameSync(inFlight);
-        inFlight.buffers.uniform = memory.buffer(vk::BufferUsageFlagBits::eUniformBuffer, currentUniformBufferData.size());
+        inFlight.buffers.uniform = memory.buffer(vk::BufferUsageFlagBits::eUniformBuffer, currentUniformBufferData.size()*sizeof(uint32_t));
         swapChain.inFlight.back().descriptorSet.emplace(std::move(descriptorSets[i]));
         auto outputImages = createInfo.outputImages();
         for(auto const &outputImage : outputImages)
@@ -1389,6 +1394,11 @@ void Vulkan::updateUniformBuffer(std::vector<uint32_t> buffer)
     std::copy(buffer.begin(), buffer.end(), currentUniformBufferData.begin());
 }
 
+void Vulkan::setUniformLimits(std::string name, float minValue, float maxValue)
+{
+    uniformLimits[name] = {minValue, maxValue};
+} 
+
 int Vulkan::uniformIndex(std::string name) const
 {
     int index = -1;
@@ -1405,9 +1415,13 @@ int Vulkan::uniformIndex(std::string name) const
 
 void Vulkan::updateUniform(std::string name, float value)
 {
+    float resultValue = value;
+    if(uniformLimits.contains(name))
+        resultValue = std::clamp(value, uniformLimits[name].minValue, uniformLimits[name].maxValue);
+
     int index = uniformIndex(name);
     if(index > -1)
-        currentUniformBufferData[index] = *reinterpret_cast<uint32_t * >(&value);
+        currentUniformBufferData[index] = *reinterpret_cast<uint32_t * >(&resultValue);
 }
 
 void Vulkan::printUniforms() const
@@ -1424,6 +1438,8 @@ void Vulkan::addToUniform(std::string name, float value)
     {
         float uniformValue = *reinterpret_cast<float *>(&currentUniformBufferData[index]);
         uniformValue += value;
+        if(uniformLimits.contains(name))
+            uniformValue = std::clamp(uniformValue, uniformLimits[name].minValue, uniformLimits[name].maxValue);
         currentUniformBufferData[index] = *reinterpret_cast<uint32_t * >(&uniformValue);
     }
 }

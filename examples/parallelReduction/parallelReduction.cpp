@@ -55,8 +55,8 @@ int main(int argc, char *argv[])
         params.shaders.workGroupCounts.push_back({1, 1, 1});
         // The number of elements after first reduction
         float reducedSize = inputData.size() / 2 / workGroupSize.x;
-        params.shaders.uniforms.push_back({"count", inputData.size()});
-        params.shaders.uniforms.push_back({"reducedCount", params.shaders.workGroupCounts[0].x});
+        params.shaders.uniforms.push_back({"count", static_cast<float>(inputData.size())});
+        params.shaders.uniforms.push_back({"reducedCount", static_cast<float>(params.shaders.workGroupCounts[0].x)});
         // After the input data there will be stored the results after first reduction
         params.shaders.storageBuffer.size = static_cast<std::size_t>((inputData.size() + reducedSize) * sizeof(float));
         params.shaders.storageBuffer.initialData = inputData;

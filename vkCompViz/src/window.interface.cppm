@@ -19,9 +19,18 @@ class Window
         [[nodiscard]] virtual std::vector<const char *> requiredExtensions() const = 0;
         [[nodiscard]] virtual std::uintptr_t getSurface(std::uintptr_t vkInstance) = 0;
         [[nodiscard]] virtual bool key(std::string name) const = 0;
+        [[nodiscard]] virtual bool mouseAction(std::string name) = 0;
         [[nodiscard]] virtual bool resized() const = 0;
         [[nodiscard]] virtual bool quit() const = 0;
         [[nodiscard]] virtual Resolution resolution() const = 0;
         virtual ~Window() = default;
+        class Mouse
+        {
+            public:
+                double x{0.0f};
+                double y{0.0f};
+                double scrollX{0.0f}; 
+                double scrollY{0.0f}; 
+        } mouse;
 };
 }

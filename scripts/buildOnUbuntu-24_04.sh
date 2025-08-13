@@ -27,7 +27,9 @@ sudo apt update; sudo apt install -y clang-20 libc++-20-dev libc++abi-20-dev
 
 # Cloning the project in Docker
 #git clone --recursive https://github.com/ichlubna/vkCompViz.git
-#cd vkCompViz/; 
+#cd vkCompViz/
+
+# Preparing submodules and build dir
 git submodule update --init --recursive
 mkdir build; cd build
 
@@ -36,21 +38,23 @@ mkdir buildTools; cd buildTools
 
 # Using specific CMake version to ensure the support for modules
 wget https://github.com/Kitware/CMake/releases/download/v4.1.0/cmake-4.1.0-linux-x86_64.tar.gz; tar -xvzf cmake-4.1.0-linux-x86_64.tar.gz
+rm ./*.gz
 
 # Getting latest VMA
 git clone https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator.git
 cd VulkanMemoryAllocator; mkdir install
 ../cmake-4.1.0-linux-x86_64/bin/cmake ./ -DCMAKE_INSTALL_PREFIX=./install -G "Ninja" -DCMAKE_CXX_COMPILER="/usr/bin/clang-20"
 ../cmake-4.1.0-linux-x86_64/bin/cmake --build . --target install 
-#mkdir -p ./install/lib/cmake/VulkanMemoryAllocator
-#mv ./install/share/cmake/VulkanMemoryAllocator/VulkanMemoryAllocatorConfig.cmake ./install/lib/cmake/VulkanMemoryAllocator/
-VMA_PATH=$(realpath ./install)
+mv ./install ../vma
 cd ..
+rm -rf ./VulkanMemoryAllocator
+VMA_PATH=$(realpath ./vma)
 
 # Getting tested Slang release
 wget https://github.com/shader-slang/slang/releases/download/v2025.14.2/slang-2025.14.2-linux-x86_64.tar.gz
 mkdir slang; tar -xvzf slang-2025.14.2-linux-x86_64.tar.gz -C ./slang
 SLANG_PATH=$(realpath ./slang)
+rm ./*.gz
 
 # Installing Vulkan SDK
 wget -qO- https://packages.lunarg.com/lunarg-signing-key-pub.asc | sudo tee /etc/apt/trusted.gpg.d/lunarg.asc

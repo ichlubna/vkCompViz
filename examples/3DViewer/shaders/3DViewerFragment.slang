@@ -5,6 +5,11 @@ float4 main(VertexOutput input) : SV_Target
 {
     float3 N = normalize(input.normal);
     float3 L = {-0.4f, -0.4f, -1.0f};
+    if(parameters.lightOverride > 0.01f)
+    {
+        L.x = 2*parameters.mouseX-1;
+        L.y = 2*parameters.mouseY-1;
+    }
     float3 V = {0.0f, 0.0f, -1.0f};
     float3 R = reflect(-L, N);
     float diffuseStrength = max(dot(N, L), 0.0);

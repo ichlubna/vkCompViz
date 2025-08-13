@@ -127,3 +127,14 @@ export const std::unordered_map<std::string, int> keyNames
     {"RIGHTSUPER", GLFW_KEY_RIGHT_SUPER},
     {"MENU", GLFW_KEY_MENU}
 };
+
+export constexpr int GLFW_MOUSE_BUTTON_SCROLL = GLFW_MOUSE_BUTTON_LAST+1;
+export constexpr int GLFW_MOUSE_BUTTON_TRACK = GLFW_MOUSE_BUTTON_LAST+2;
+export const std::unordered_map<std::string, int> mouseNames  
+{
+    {"MOUSELEFT", GLFW_MOUSE_BUTTON_LEFT},
+    {"MOUSERIGHT", GLFW_MOUSE_BUTTON_RIGHT},
+    {"MOUSEMIDDLE", GLFW_MOUSE_BUTTON_MIDDLE},
+    {"MOUSESCROLL", GLFW_MOUSE_BUTTON_SCROLL},
+    {"MOUSETRACK", GLFW_MOUSE_BUTTON_TRACK}
+};
