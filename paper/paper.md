@@ -9,7 +9,6 @@ tags:
 authors:
   - name: Tomas Chlubna
     orcid: 0000-0003-3126-0545
-    equal-contrib: true
     affiliation: 1
 affiliations:
  - name: Faculty of Information Technology Brno University of Technology, Czech Republic
