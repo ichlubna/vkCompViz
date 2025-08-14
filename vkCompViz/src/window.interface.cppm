@@ -29,8 +29,8 @@ class Window
             public:
                 double x{0.0f};
                 double y{0.0f};
-                double scrollX{0.0f}; 
-                double scrollY{0.0f}; 
+                double scrollX{0.0f};
+                double scrollY{0.0f};
         } mouse;
 };
 }

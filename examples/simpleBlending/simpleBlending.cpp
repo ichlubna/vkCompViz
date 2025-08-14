@@ -30,11 +30,11 @@ int main(int argc, char *argv[])
         // The default uniform values can be set here
         params.shaders.uniforms.push_back({"factor", args["-f"]});
         constexpr float ZOOM_STEPS = 50.0f;
-        params.shaders.uniforms.push_back({.name="zoom", .defaultValue=0.0f, .minValue=0.0f, .maxValue=ZOOM_STEPS});
+        params.shaders.uniforms.push_back({.name = "zoom", .defaultValue = 0.0f, .minValue = 0.0f, .maxValue = ZOOM_STEPS});
         params.shaders.uniforms.push_back({"zoomSteps", ZOOM_STEPS});
         params.shaders.uniforms.push_back({"mouseX", 0.0f});
         params.shaders.uniforms.push_back({"mouseY", 0.0f});
-        // Mouse scrolling can be used to zoom in and out, the scrolling is bound to the uniform variables 
+        // Mouse scrolling can be used to zoom in and out, the scrolling is bound to the uniform variables
         params.mouseBindings.push_back({.action = "mouseScroll", .valueUniform = "zoom"});
         params.mouseBindings.push_back({.action = "mouseTrack", .positionXUniform = "mouseX", .positionYUniform = "mouseY"});
         // The output screenshots taken by F1 can be stored to a given directory with a given extension, the name is created from date and time

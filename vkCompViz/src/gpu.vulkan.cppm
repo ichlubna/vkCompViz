@@ -54,7 +54,7 @@ class Vulkan : public Gpu
         void resize() override;
         void updateUniformBuffer(std::vector<uint32_t> buffer) override;
         void updateUniform(std::string name, float value) override;
-        void setUniformLimits(std::string name, float minValue, float maxValue) override; 
+        void setUniformLimits(std::string name, float minValue, float maxValue) override;
         void addToUniform(std::string name, float value) override;
         void printUniforms() const override;
         [[nodiscard]] std::shared_ptr<Loader::Image> resultTexture() override;

@@ -15,14 +15,11 @@ class Gpu
             public:
                 /** Number of workgroups in X dimension. */
                 std::size_t x;
-
                 /** Number of workgroups in Y dimension. */
                 std::size_t y;
-
                 /** Number of workgroups in Z dimension. */
                 std::size_t z;
         };
-
         /**
          * @brief Reports detailed benchmark statistics for GPU computation and rendering.
          */
@@ -33,7 +30,6 @@ class Gpu
                  * @brief Number of in-flight frames during benchmarking.
                  */
                 std::size_t inFlightFrames {1};
-
                 /**
                  * @brief Timing data for different GPU operations in milliseconds.
                  */
@@ -44,12 +40,10 @@ class Gpu
                          * @brief Compute times per compute shader iteration in milliseconds.
                          */
                         std::vector<float> compute;
-
                         /**
                          * @brief Time taken to draw a frame in milliseconds.
                          */
                         float draw{0};
-
                         /**
                          * @brief Download times from GPU to CPU in milliseconds.
                          */
@@ -60,13 +54,11 @@ class Gpu
                                  * @brief Time taken to download texture data.
                                  */
                                 float texture{0};
-
                                 /**
                                  * @brief Time taken to download shader storage buffer data.
                                  */
                                 float shaderStorage{0};
                         } download;
-
                         /**
                          * @brief Upload times from CPU to GPU in milliseconds.
                          */
@@ -77,19 +69,16 @@ class Gpu
                                  * @brief Time taken to upload texture data.
                                  */
                                 float texture{0};
-
                                 /**
                                  * @brief Time taken to upload shader storage buffer data.
                                  */
                                 float shaderStorage{0};
                         } upload;
                 } times;
-
                 /**
                  * @brief Amount of GPU memory used in bytes.
                  */
                 float usedMemory {0};
-
                 /**
                  * @brief Returns total compute time in milliseconds.
                  * @return Compute time.
@@ -101,25 +90,21 @@ class Gpu
                  * @return Memory transfer time.
                  */
                 [[nodiscard]] float memoryTime() const;
-
                 /**
                  * @brief Returns total time including compute and optionally draw time in milliseconds.
                  * @param includeDraw Whether to include draw time in total.
                  * @return Total elapsed time.
                  */
                 [[nodiscard]] float totalTime(bool includeDraw = false) const;
-
                 /**
                  * @brief Returns a string representation of the benchmark report.
                  * @return String describing the benchmark data.
                  */
                 [[nodiscard]] std::string toString() const;
-
                 /**
                  * @brief Prints the benchmark report to the console.
                  */
                 void print() const;
-
                 /**
                  * @brief Saves the benchmark report to the specified file path.
                  * @param path File path to save the report.

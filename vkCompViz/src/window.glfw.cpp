@@ -36,8 +36,8 @@ void Window::Glfw::cursorPositionCallback(GLFWwindow* window, double xpos, doubl
     auto* self = static_cast<Glfw *>(glfwGetWindowUserPointer(window));
     int width, height;
     glfwGetWindowSize(window, &width, &height);
-    self->mouse.x = xpos/width;
-    self->mouse.y = ypos/height;  
+    self->mouse.x = xpos / width;
+    self->mouse.y = ypos / height;
 }
 
 void Window::Glfw::keyCallback(GLFWwindow *window, int key, [[maybe_unused]] int scancode, int action, [[maybe_unused]] int mods)
@@ -55,10 +55,10 @@ void Window::Glfw::keyCallback(GLFWwindow *window, int key, [[maybe_unused]] int
     glfwGetCursorPos(window, &x, &y);
     int width, height;
     glfwGetWindowSize(window, &width, &height);
-    return {x/width, y/height};  
-} 
+    return {x / width, y / height};
+}
 
-void Window::Glfw::scrollCallback(GLFWwindow* window, double xoffset, double yoffset) 
+void Window::Glfw::scrollCallback(GLFWwindow* window, double xoffset, double yoffset)
 {
     auto* self = static_cast<Glfw *>(glfwGetWindowUserPointer(window));
     self->mouse.scrollX = xoffset;
