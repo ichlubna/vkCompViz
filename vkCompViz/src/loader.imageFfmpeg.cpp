@@ -47,6 +47,7 @@ AVFrame *frameFromFile(std::string path)
     if(avcodec_receive_frame(codecContext, decodedFrame) < 0)
         throw std::runtime_error("Cannot receive frame");
     av_packet_free(&packet);
+    avformat_close_input(&formatContext);
     return decodedFrame;
 }
 
@@ -68,24 +69,16 @@ void convertFrame(AVFrame *input, AVFrame *output)
 
     std::string args = "video_size=" + std::to_string(input->width) + "x" + std::to_string(input->height) + ":pix_fmt=" + inFormatName + ":time_base=1/25:pixel_aspect=1/1";
 
-    int ret = avfilter_graph_create_filter(&buffersrc_ctx, buffersrc, "in", args.data(), nullptr, filter_graph);
-    if(ret < 0)
+    if(avfilter_graph_create_filter(&buffersrc_ctx, buffersrc, "in", args.data(), nullptr, filter_graph) < 0)
     {
         avfilter_graph_free(&filter_graph);
         throw std::runtime_error("Cannot create buffer source");
     }
 
-    ret = avfilter_graph_create_filter(&buffersink_ctx, buffersink, "out", nullptr, nullptr, filter_graph);
-    if(ret < 0)
+    if(avfilter_graph_create_filter(&buffersink_ctx, buffersink, "out", nullptr, nullptr, filter_graph) < 0)
     {
         avfilter_graph_free(&filter_graph);
         throw std::runtime_error("Cannot create buffer sink");
-    }
-
-    if(ret < 0)
-    {
-        avfilter_graph_free(&filter_graph);
-        throw std::runtime_error("Cannot set output pixel format");
     }
 
     std::string filter_desc = "format=" + outFormatName;
@@ -102,8 +95,7 @@ void convertFrame(AVFrame *input, AVFrame *output)
     inputs->pad_idx = 0;
     inputs->next = nullptr;
 
-    ret = avfilter_graph_parse_ptr(filter_graph, filter_desc.data(), &inputs, &outputs, nullptr);
-    if(ret < 0)
+    if(avfilter_graph_parse_ptr(filter_graph, filter_desc.data(), &inputs, &outputs, nullptr) < 0)
     {
         avfilter_inout_free(&outputs);
         avfilter_inout_free(&inputs);
@@ -111,24 +103,21 @@ void convertFrame(AVFrame *input, AVFrame *output)
         throw std::runtime_error("Error parsing filter graph");
     }
 
-    ret = avfilter_graph_config(filter_graph, nullptr);
-    avfilter_inout_free(&outputs);
-    avfilter_inout_free(&inputs);
-    if(ret < 0)
+    if(avfilter_graph_config(filter_graph, nullptr) < 0)
     {
         avfilter_graph_free(&filter_graph);
         throw std::runtime_error("Error configuring filter graph");
     }
+    avfilter_inout_free(&outputs);
+    avfilter_inout_free(&inputs);
 
-    ret = av_buffersrc_add_frame_flags(buffersrc_ctx, input, AV_BUFFERSRC_FLAG_KEEP_REF);
-    if(ret < 0)
+    if(av_buffersrc_add_frame_flags(buffersrc_ctx, input, AV_BUFFERSRC_FLAG_KEEP_REF) < 0)
     {
         avfilter_graph_free(&filter_graph);
         throw std::runtime_error("Error feeding frame into filtergraph");
     }
 
-    ret = av_buffersink_get_frame(buffersink_ctx, output);
-    if(ret < 0)
+    if(av_buffersink_get_frame(buffersink_ctx, output) < 0)
     {
         avfilter_graph_free(&filter_graph);
         throw std::runtime_error("Error getting frame from filtergraph");
@@ -369,6 +358,10 @@ void Loader::ImageFfmpeg::save(std::string outputPath) const
     av_write_trailer(formatContext);
     av_packet_unref(outputPacket);
     av_packet_free(&outputPacket);
+    av_frame_unref(outputFrame);
+    av_frame_free(&outputFrame);
+    avio_close(formatContext->pb);
+    avformat_free_context(formatContext);
 }
 
 Loader::ImageFfmpeg::~ImageFfmpeg()

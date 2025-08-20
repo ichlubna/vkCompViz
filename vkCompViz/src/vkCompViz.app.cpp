@@ -183,13 +183,11 @@ void App::mainLoop()
         }
     }
     else
-    {
         for(std::size_t i = 0; i < parameters.shaders.iterations; i++)
         {
             gpu->computeSettings(parameters.shaders.workGroupCounts, parameters.benchmark.enable);
             gpu->run();
         }
-    }
 }
 
 void App::initShaderStorageBuffer()
