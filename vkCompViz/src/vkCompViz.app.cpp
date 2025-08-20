@@ -175,7 +175,7 @@ void App::mainLoop()
                         gpu->updateUniform(binding.positionXUniform, window->mouse.x);
                     if(!binding.positionYUniform.empty())
                         gpu->updateUniform(binding.positionYUniform, window->mouse.y);
-                }    
+                }
                 else if(binding.action != "mouseScroll")
                     gpu->updateUniform(binding.valueUniform, 0.0f);
 
@@ -183,13 +183,11 @@ void App::mainLoop()
         }
     }
     else
-    {
         for(std::size_t i = 0; i < parameters.shaders.iterations; i++)
         {
             gpu->computeSettings(parameters.shaders.workGroupCounts, parameters.benchmark.enable);
             gpu->run();
         }
-    }
 }
 
 void App::initShaderStorageBuffer()
