@@ -1421,14 +1421,14 @@ void Vulkan::updateUniform(std::string name, float value)
 
     int index = uniformIndex(name);
     if(index > -1)
-        currentUniformBufferData[index] = *reinterpret_cast<uint32_t * >(&resultValue);
+        currentUniformBufferData[index] = std::bit_cast<uint32_t>(resultValue);
 }
 
 void Vulkan::printUniforms() const
 {
     std::cout << "Uniforms:" << std::endl;
     for(size_t i = 0; i < uniformNames.size(); i++)
-        std::cout << uniformNames[i] << " = " << *reinterpret_cast<const float *>(&currentUniformBufferData[i]) << std::endl;
+        std::cout << uniformNames[i] << " = " << std::bit_cast<const float>(currentUniformBufferData[i]) << std::endl;
 }
 
 void Vulkan::addToUniform(std::string name, float value)
@@ -1436,11 +1436,11 @@ void Vulkan::addToUniform(std::string name, float value)
     int index = uniformIndex(name);
     if(index > -1)
     {
-        float uniformValue = *reinterpret_cast<float *>(&currentUniformBufferData[index]);
+        float uniformValue = std::bit_cast<float>(currentUniformBufferData[index]);
         uniformValue += value;
         if(uniformLimits.contains(name))
             uniformValue = std::clamp(uniformValue, uniformLimits[name].minValue, uniformLimits[name].maxValue);
-        currentUniformBufferData[index] = *reinterpret_cast<uint32_t * >(&uniformValue);
+        currentUniformBufferData[index] = std::bit_cast<uint32_t>(uniformValue);
     }
 }
 

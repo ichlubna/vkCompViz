@@ -27,12 +27,13 @@ float ParameterParser::get(std::string name, float defaultValue) const
 
 void ParameterParser::read()
 {
-    std::cout << "Enter parameters as a=1.0 b=2.0..." << std::endl;
+    std::cout << "Enter parameters as a=1.0, b=2.0..." << std::endl;
     if(!lastName.empty())
         std::cout << "Last parameter was " << lastName << " you can enter only value to update it" << std::endl;
     parametersMap.clear();
     std::string input;
     std::getline(std::cin, input);
+    std::erase(input, ' ');
 
     if(!lastName.empty())
     {
@@ -52,17 +53,24 @@ void ParameterParser::read()
         }
     }
 
-    auto parameters = split(input, ' ');
+    auto parameters = split(input, ',');
     for(auto parameter : parameters)
     {
         auto nameValue = split(parameter, '=');
         if(nameValue.size() != 2)
         {
-            std::cout << "Invalid parameter format, use a=1.0 b=2.0..." << std::endl;
+            std::cout << "Invalid parameter format, use a=1.0, b=2.0..." << std::endl;
             parametersMap.clear();
             return;
         }
-        parametersMap[nameValue[0]] = std::stof(nameValue[1]);
+        try
+        {
+            parametersMap[nameValue[0]] = std::stof(nameValue[1]);
+        }
+        catch (const std::invalid_argument& e)
+        {
+            std::cout << "Invalid value for " + nameValue[0] + " that cannot be converted to float" << std::endl;
+        }
         if(parameters.size() == 1)
             lastName = nameValue[0];
     }

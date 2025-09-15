@@ -82,26 +82,31 @@ Shader::Shader::Info Shader::SlangFactory::compile(slang::IModule *shaderModule,
     if(code.empty())
         throw std::runtime_error("Failed to compile shader");
     info.code = std::move(code);
-
+    
     auto programLayout = program->getLayout();
-    for(size_t paramID = 0 ; paramID < programLayout->getParameterCount(); paramID++)
+    auto globalScopeLayout = programLayout->getGlobalParamsVarLayout();
+    auto globalParamsTypeLayout = globalScopeLayout->getTypeLayout();
+    if(globalParamsTypeLayout->getKind() == slang::TypeReflection::Kind::ConstantBuffer)
+        globalParamsTypeLayout = globalParamsTypeLayout->getElementVarLayout()->getTypeLayout();
+    if(globalParamsTypeLayout->getKind() == slang::TypeReflection::Kind::Struct)
     {
-        auto varLayout = programLayout->getParameterByIndex(paramID);
-        auto paramTypeLayout = varLayout->getTypeLayout();
-        if(paramTypeLayout->getKind() == slang::TypeReflection::Kind::Struct)
+        size_t globalFieldCount = globalParamsTypeLayout->getFieldCount();
+        for(size_t globalFieldID = 0; globalFieldID < globalFieldCount; globalFieldID++)
         {
-            size_t fieldCount = paramTypeLayout->getFieldCount();
-            for(size_t fieldID = 0; fieldID < fieldCount; fieldID++)
+            auto fieldLayout = globalParamsTypeLayout->getFieldByIndex(globalFieldID);
+            auto fieldTypeLayout = fieldLayout->getTypeLayout();
+            if(fieldTypeLayout->getKind() == slang::TypeReflection::Kind::Struct)
             {
-                auto fieldLayout = paramTypeLayout->getFieldByIndex(fieldID);
-                info.uniformNames.push_back(fieldLayout->getName());
+                size_t fieldCount = fieldTypeLayout->getFieldCount();
+                for(size_t fieldID = 0; fieldID < fieldCount; fieldID++)
+                    info.uniformNames.push_back(fieldTypeLayout->getFieldByIndex(fieldID)->getName());
             }
-            int usedLayoutUnitCount = paramTypeLayout->getCategoryCount();
-            for(int unitID = 0; unitID < usedLayoutUnitCount; unitID++)
-            {
-                auto layoutUnit = paramTypeLayout->getCategoryByIndex(unitID);
-                info.uniformBufferSize = std::max(paramTypeLayout->getSize(layoutUnit), info.uniformBufferSize);
-            }
+        }
+        int usedLayoutUnitCount = globalParamsTypeLayout->getCategoryCount();
+        for(int unitID = 0; unitID < usedLayoutUnitCount; unitID++)
+        {
+            auto layoutUnit = globalParamsTypeLayout->getCategoryByIndex(unitID);
+            info.uniformBufferSize = std::max(globalParamsTypeLayout->getSize(layoutUnit), info.uniformBufferSize);
         }
     }
 
