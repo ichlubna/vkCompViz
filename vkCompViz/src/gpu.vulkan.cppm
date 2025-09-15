@@ -425,8 +425,8 @@ class Vulkan : public Gpu
         class UniformLimits
         {
             public:
-                float minValue;
-                float maxValue;
+                float minValue{std::numeric_limits<float>::lowest()};
+                float maxValue{std::numeric_limits<float>::max()};
         };
         std::unordered_map<std::string, UniformLimits> uniformLimits;
         std::vector<std::unique_ptr<Texture >> inputTextures;

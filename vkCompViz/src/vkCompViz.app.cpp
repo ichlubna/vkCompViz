@@ -196,9 +196,18 @@ void App::initShaderStorageBuffer()
     vulkanInitParams.shaderStorageBuffer.initialData = parameters.shaders.storageBuffer.initialData;
 }
 
+void App::checkOutputPaths() const
+{
+    if(!std::filesystem::exists(parameters.screenshot.path))
+       throw std::runtime_error("Output path " + parameters.screenshot.path + " does not exist"); 
+    if(!std::filesystem::exists(parameters.benchmark.path))
+       throw std::runtime_error("Output path " + parameters.benchmark.path + " does not exist");
+}
+
 void App::run(App::Parameters const &inputParameters)
 {
     parameters = inputParameters;
+    checkOutputPaths();
     vulkanInitParams.window = parameters.window.enable;
     if(parameters.window.enable)
         windowInit();

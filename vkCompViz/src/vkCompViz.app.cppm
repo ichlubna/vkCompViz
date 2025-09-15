@@ -89,7 +89,7 @@ class App
                                 /** Initial value of the uniform. */
                                 float defaultValue;
                                 /** Minimum allowed value of the uniform. */
-                                float minValue{std::numeric_limits<float>::min()};
+                                float minValue{std::numeric_limits<float>::lowest()};
                                 /** Maximum allowed value of the uniform. */
                                 float maxValue{std::numeric_limits<float>::max()};
                         };
@@ -277,7 +277,7 @@ class App
         void initTextures();
         void initUniforms() const;
         void initShaderStorageBuffer();
+        void checkOutputPaths() const;
         void mainLoop();
 };
-
 }
