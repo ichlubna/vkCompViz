@@ -305,6 +305,7 @@ class Vulkan : public Gpu
                 inline static const std::vector<const char *> validationLayers{"VK_LAYER_KHRONOS_validation"};
                 std::vector<const char *> deviceExtensions{"VK_KHR_shader_draw_parameters", "VK_KHR_compute_shader_derivatives"};
                 inline static const std::vector<vk::DynamicState> dynamicStates{vk::DynamicState::eViewport, vk::DynamicState::eScissor};
+                static constexpr std::array<float, 4> clearColor{0.02f, 0.01f, 0.01f, 1.0f};
                 class QueueIndices
                 {
                     public:

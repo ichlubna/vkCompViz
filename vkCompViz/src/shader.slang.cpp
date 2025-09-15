@@ -67,22 +67,11 @@ Shader::Shader::Info Shader::SlangFactory::loadFromString(std::string code) cons
     return compile(shaderModule, session);
 }
 
-Shader::Shader::Info Shader::SlangFactory::compile(slang::IModule *shaderModule, Slang::ComPtr<slang::ISession> session) const
+std::tuple<std::vector<std::string>, size_t> Shader::SlangFactory::getUniformNamesAndSize(Slang::ComPtr<slang::IComponentType> &program) const
 {
-    Shader::Shader::Info info;
-    Slang::ComPtr<slang::IEntryPoint> entryPoint;
-    shaderModule->findEntryPointByName("main", entryPoint.writeRef());
-    slang::IComponentType* components[] = { shaderModule, entryPoint };
-    Slang::ComPtr<slang::IComponentType> program;
-    session->createCompositeComponentType(components, 2, program.writeRef());
-    Slang::ComPtr<slang::IBlob> spirvCode;
-    program->getEntryPointCode(0, 0, spirvCode.writeRef(), nullptr);
-    const uint32_t *data = reinterpret_cast<const uint32_t *>(spirvCode->getBufferPointer());
-    std::vector<uint32_t> code(data, data + spirvCode->getBufferSize() / sizeof(uint32_t));
-    if(code.empty())
-        throw std::runtime_error("Failed to compile shader");
-    info.code = std::move(code);
-    
+    std::vector<std::string> uniformNames;
+    size_t uniformSize = 0;
+
     auto programLayout = program->getLayout();
     auto globalScopeLayout = programLayout->getGlobalParamsVarLayout();
     auto globalParamsTypeLayout = globalScopeLayout->getTypeLayout();
@@ -99,16 +88,35 @@ Shader::Shader::Info Shader::SlangFactory::compile(slang::IModule *shaderModule,
             {
                 size_t fieldCount = fieldTypeLayout->getFieldCount();
                 for(size_t fieldID = 0; fieldID < fieldCount; fieldID++)
-                    info.uniformNames.push_back(fieldTypeLayout->getFieldByIndex(fieldID)->getName());
+                    uniformNames.push_back(fieldTypeLayout->getFieldByIndex(fieldID)->getName());
             }
         }
         int usedLayoutUnitCount = globalParamsTypeLayout->getCategoryCount();
         for(int unitID = 0; unitID < usedLayoutUnitCount; unitID++)
         {
             auto layoutUnit = globalParamsTypeLayout->getCategoryByIndex(unitID);
-            info.uniformBufferSize = std::max(globalParamsTypeLayout->getSize(layoutUnit), info.uniformBufferSize);
+            uniformSize = std::max(globalParamsTypeLayout->getSize(layoutUnit), uniformSize);
         }
     }
+    return {uniformNames, uniformSize};
+}
+
+Shader::Shader::Info Shader::SlangFactory::compile(slang::IModule *shaderModule, Slang::ComPtr<slang::ISession> session) const
+{
+    Shader::Shader::Info info;
+    Slang::ComPtr<slang::IEntryPoint> entryPoint;
+    shaderModule->findEntryPointByName("main", entryPoint.writeRef());
+    slang::IComponentType* components[] = { shaderModule, entryPoint };
+    Slang::ComPtr<slang::IComponentType> program;
+    session->createCompositeComponentType(components, 2, program.writeRef());
+    Slang::ComPtr<slang::IBlob> spirvCode;
+    program->getEntryPointCode(0, 0, spirvCode.writeRef(), nullptr);
+    const uint32_t *data = reinterpret_cast<const uint32_t *>(spirvCode->getBufferPointer());
+    std::vector<uint32_t> code(data, data + spirvCode->getBufferSize() / sizeof(uint32_t));
+    if(code.empty())
+        throw std::runtime_error("Failed to compile shader");
+    info.code = std::move(code);
+    std::tie(info.uniformNames, info.uniformBufferSize) = getUniformNamesAndSize(program);
 
     auto entryPointLayout = program->getLayout()->getEntryPointByIndex(0);
     if(entryPointLayout->getStage() == SLANG_STAGE_COMPUTE)

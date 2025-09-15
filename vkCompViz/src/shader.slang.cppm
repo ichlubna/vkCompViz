@@ -19,6 +19,7 @@ class SlangFactory : public Shader
         Slang::ComPtr<slang::IGlobalSession> globalSession;
         std::vector<std::string> searchPaths;
         [[nodiscard]] Slang::ComPtr<slang::ISession> createSession() const;
+        [[nodiscard]] std::tuple<std::vector<std::string>, size_t> getUniformNamesAndSize(Slang::ComPtr<slang::IComponentType> &program) const;
         Shader::Info compile(slang::IModule *shaderModule, Slang::ComPtr<slang::ISession> session) const;
 };
 }

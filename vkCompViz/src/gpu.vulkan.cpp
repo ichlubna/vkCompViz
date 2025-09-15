@@ -74,8 +74,8 @@ size_t Vulkan::VulkanInitParams::Shaders::uniformBufferSize() const
 vk::ApplicationInfo &Vulkan::CreateInfo::application()
 {
     applicationInfo
-    .setPApplicationName("My Vulkan App")
-    .setPEngineName("My Engine")
+    .setPApplicationName("Epic Vulkan App")
+    .setPEngineName("Cool Engine")
     .setApiVersion(VK_API_VERSION_1_4)
     .setPNext(nullptr);
     return applicationInfo;
@@ -625,7 +625,7 @@ vk::RenderPassBeginInfo &Vulkan::CreateInfo::renderPassBegin(vk::raii::Framebuff
 {
     clearColors.clear();
     clearColors.emplace_back()
-               .setColor({0.02f, 0.01f, 0.01f, 1.0f});
+               .setColor(clearColor);
     clearColors.emplace_back()
                .setDepthStencil({1.0f, 0});
     renderPassBeginInfo
@@ -1041,50 +1041,27 @@ void Vulkan::transitionImageLayout(vk::Image image, vk::ImageLayout oldLayout, v
 
     auto allStages = vk::PipelineStageFlagBits::eVertexShader | vk::PipelineStageFlagBits::eFragmentShader | vk::PipelineStageFlagBits::eComputeShader;
 
-    if(oldLayout == vk::ImageLayout::eUndefined && newLayout == vk::ImageLayout::eTransferDstOptimal)
+    class Flags
     {
-        barrier
-        .setSrcAccessMask(vk::AccessFlagBits::eNone)
-        .setDstAccessMask(vk::AccessFlagBits::eTransferWrite);
-        srcStage = vk::PipelineStageFlagBits::eTopOfPipe;
-        dstStage = vk::PipelineStageFlagBits::eTransfer;
-    }
-    else if(oldLayout == vk::ImageLayout::eTransferDstOptimal && newLayout == vk::ImageLayout::eShaderReadOnlyOptimal)
+        public:
+        vk::AccessFlags access;
+        vk::PipelineStageFlags stage;
+    };
+    const std::map<vk::ImageLayout, Flags> flags = 
     {
-        barrier
-        .setSrcAccessMask(vk::AccessFlagBits::eTransferWrite)
-        .setDstAccessMask(vk::AccessFlagBits::eShaderRead);
-        srcStage = vk::PipelineStageFlagBits::eTransfer;
-        dstStage = allStages;
-    }
-    else if(oldLayout == vk::ImageLayout::eTransferDstOptimal && newLayout == vk::ImageLayout::eGeneral)
-    {
-        barrier
-        .setSrcAccessMask(vk::AccessFlagBits::eTransferWrite)
-        .setDstAccessMask(vk::AccessFlagBits::eShaderRead | vk::AccessFlagBits::eShaderWrite);
-        srcStage = vk::PipelineStageFlagBits::eTransfer;
-        dstStage = allStages;
-    }
-    else if(oldLayout == vk::ImageLayout::eGeneral && newLayout == vk::ImageLayout::eTransferSrcOptimal)
-    {
-        barrier
-        .setSrcAccessMask(vk::AccessFlagBits::eShaderRead | vk::AccessFlagBits::eShaderWrite)
-        .setDstAccessMask(vk::AccessFlagBits::eTransferRead);
-        srcStage = allStages;
-        dstStage = vk::PipelineStageFlagBits::eTransfer;
-    }
-    else if(oldLayout == vk::ImageLayout::eTransferSrcOptimal && newLayout == vk::ImageLayout::eGeneral)
-    {
-        barrier
-        .setSrcAccessMask(vk::AccessFlagBits::eTransferRead)
-        .setDstAccessMask(vk::AccessFlagBits::eShaderRead | vk::AccessFlagBits::eShaderWrite);
-        srcStage = vk::PipelineStageFlagBits::eTransfer;
-        dstStage = allStages;
-    }
-    else
-    {
-        throw std::runtime_error("Unsupported layout transition");
-    }
+        {vk::ImageLayout::eUndefined, {vk::AccessFlagBits::eNone, vk::PipelineStageFlagBits::eTopOfPipe}}, 
+        {vk::ImageLayout::eTransferDstOptimal, {vk::AccessFlagBits::eTransferWrite, vk::PipelineStageFlagBits::eTransfer}},
+        {vk::ImageLayout::eTransferSrcOptimal, {vk::AccessFlagBits::eTransferRead, vk::PipelineStageFlagBits::eTransfer}},
+        {vk::ImageLayout::eShaderReadOnlyOptimal, {vk::AccessFlagBits::eShaderRead, allStages}}, 
+        {vk::ImageLayout::eGeneral, {vk::AccessFlagBits::eShaderRead | vk::AccessFlagBits::eShaderWrite, allStages}}, 
+    };
+    
+    barrier
+    .setSrcAccessMask(flags.at(oldLayout).access)
+    .setDstAccessMask(flags.at(newLayout).access);
+    srcStage = flags.at(oldLayout).stage;
+    dstStage = flags.at(newLayout).stage;
+ 
     buffer->command().pipelineBarrier(srcStage, dstStage, {}, nullptr, nullptr, barrier);
 }
 
@@ -1272,7 +1249,7 @@ void Vulkan::updateDescriptorSets(SwapChain::InFlight &inFlight)
                        .setDescriptorType(vk::DescriptorType::eSampledImage)
                        .setDescriptorCount(inImageInfosStorage.size())
                        .setPImageInfo(inImageInfosStorage.data());
-
+    
     vk::DescriptorBufferInfo storageBufferInfo;
     storageBufferInfo
     .setBuffer(inFlight.buffers.shaderStorage->buffer)
