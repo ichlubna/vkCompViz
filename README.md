@@ -2,9 +2,17 @@
 The current version of the project needs to use CMake 4.1.1. This will be fixed in the future when CMake support for import of std module is no longer an experimental feature. See the CMakeLists.txt file for more details. Compiling the project in Release mode might also be problematic due to the use of currently unfinished std module import.
 
 # Vulkan GPGPU Compute Framework
-Vulkan Compute Vizualization (vkCompViz) is a Vulkan library for GPU-accelerated data processing. The main purpose are computer-graphics-related GPU-accelerated operations on images.
+Vulkan Compute Vizualization (vkCompViz) is a Vulkan library for GPU-accelerated data processing. 
+The main purpose are computer-graphics-related GPU-accelerated operations on images or other data. 
+This framework can be used for a fast experimental prototyping of scientific research ideas. 
+Using GPU frameworks requires a lot of boilerplate code and API calls. 
+This library simplifies the process so that the user only specifies the input and output data, writes the shader code and runs the pipeline. 
+The presented examples can also be edited to quickly create an GPU-based experiment without a time-consuming GPU API documentation study. 
 
-The library can load input images, run a sequence of compute shaders, display the result in window, and store the result. Uniform parameters can be interactively changed in console with the result updated in the display window. The application can run in headless mode or with window. The library can also generate memory and time performance reports.
+The library can load input images, run a sequence of compute shaders, display the result in window, and store the result. 
+Uniform parameters can be interactively changed in console with the result updated in the display window. 
+The application can run in headless mode or with window. 
+The library can also generate memory and time performance reports.
 
 ## How to run
 Simple compilation of examples:
@@ -64,6 +72,14 @@ Keys for window application:
 | F2 | Store benchmark report | 
 | F3 | Print uniforms | 
 
-### Possible future features
+## Community guidelines
+This repository is primarily for research purposes. 
+If you’d like to collaborate or discuss, please open an issue or contact me at [ichlubna@fit.vut.cz](mailto:ichlubna@fit.vut.cz). 
+Pull requests are welcome. 
+To keep the same formatting style, please use `ninja format` command before contributing. 
+All pull requests must pass the automated checks in this repository. 
+When using this library in a project, please [cite](/CITATION.cff) this repository.
+
+## Possible future features
 - RTX pipeline that can render to texture.
 - Add a class reflecting the input buffers and textures which can be asynchronously updated in runtime. GPU would update its data when changes happen. This can allow for data changes during runtime (e.g. video player).
