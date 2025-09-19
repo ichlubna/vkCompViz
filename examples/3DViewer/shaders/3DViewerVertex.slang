@@ -1,7 +1,7 @@
 // Including uniforms and other inputs shared in all shaders
 #include "inputs.slang"
 
-This vertex shader transforms and projects the geometry
+//This vertex shader transforms and projects the geometry
 [shader("vertex")]
 VertexOutput main(uint vertexID : SV_VertexID)
 {
