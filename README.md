@@ -1,6 +1,3 @@
-# Temporary notes
-The current version of the project needs to use CMake 4.1.1. This will be fixed in the future when CMake support for import of std module is no longer an experimental feature. See the CMakeLists.txt file for more details. Compiling the project in Release mode might also be problematic due to the use of currently unfinished std module import.
-
 # Vulkan GPGPU Compute Framework
 Vulkan Compute Vizualization (vkCompViz) is a Vulkan library for GPU-accelerated data processing. 
 The main purpose are computer-graphics-related GPU-accelerated operations on images or other data. 
