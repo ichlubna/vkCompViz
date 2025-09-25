@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 4.0)
+cmake_minimum_required(VERSION 4.1.1)
 set(CMAKE_COLOR_DIAGNOSTICS ON)
 include(functions.cmake)
 # This hash works only with the given cmake version:
