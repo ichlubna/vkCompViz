@@ -1,4 +1,4 @@
-# Vulkan GPGPU Compute Framework
+# Universal C++ Library for GPU-Based Experiments
 Vulkan Compute Vizualization (vkCompViz) is a Vulkan library for GPU-accelerated data processing. 
 The main purpose are computer-graphics-related GPU-accelerated operations on images or other data. 
 This framework can be used for a fast experimental prototyping of scientific research ideas. 
