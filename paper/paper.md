@@ -45,7 +45,7 @@ All the APIs also require the host application to allocate data in GPU memory, l
 The proposed vkCompViz library offers a high-level API that significantly simplifies GPU programming.
 The library only requires the paths to the code files to be executed on GPU, paths to the input images, a buffer with arbitrary input data, and a set of parameters.
 The library then allocates the necessary memory, creates the GPU-related objects, transfers the data on the GPU, runs the computation (or rendering) pipeline, and returns or stores the results.
-The libary can visualize the results in a window, where the parameters can be interactively adjusted at run-time, or can be run in headless mode on machines with no window systems.
+The library can visualize the results in a window, where the parameters can be interactively adjusted at run-time, or can be run in headless mode on machines with no window systems.
 The memory usage and time performance of the data transfer and shader execution reporting mechanism is also implemented.
 With this library, researchers do not need to learn about complex GPU-related APIs and can quickly conduct scientific experiments on GPU.
 This tackles a frequent issue in the scientific domain, where bringing an experimental concept to life usually requires a considerable amount of time owing to the need to acquire novel technological skills and address numerous small, implementation-related challenges.
@@ -83,6 +83,6 @@ This fact is in alignment with previously published findings [@dinkelbach2012].
 
 ![Comparison of GPU and CPU array summation is shown in the chart.\label{fig:reduction}](reduction.pdf){width=100%}
 
-![The turning point where GPU starts to be faster than CPU for array summation is shown with two neighboring masurements.\label{fig:reductionZoom}](reductionZoom.pdf){width=100%}
+![The turning point where GPU starts to be faster than CPU for array summation is shown with two neighboring measurements.\label{fig:reductionZoom}](reductionZoom.pdf){width=100%}
 
 # References
