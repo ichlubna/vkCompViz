@@ -2,7 +2,7 @@
 This program can load two input images and blend them together with a given factor. The result is shown in a window and also stored in a file.
  
 ## Example usage
-[Build](../../README.md) the examples. Then run in the `buikd` directory:
+[Build](../../README.md) the examples. Then run in the `build` directory:
 
     cd examples/simpleBlending/; ./simpleBlending -i1 ../../../examples/simpleBlending/data/A.webp -i2 ../../../examples/simpleBlending/data/B.webp -f 0.5 -o ../../result.webp; cd -
 
