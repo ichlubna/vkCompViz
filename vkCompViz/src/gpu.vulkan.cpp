@@ -122,8 +122,9 @@ class DeviceRating
                 std::size_t present{0};
         } queueIndex;
         size_t score{0};
-        static bool extensionPresent(const std::vector<const char*> &requiredExtensions, const std::vector<vk::ExtensionProperties> &extensionProperties);
-        bool swapChainSupport(const vk::SurfaceKHR &testedSurface);
+        [[nodiscard]] static bool extensionPresent(const std::vector<const char*> &requiredExtensions, const std::vector<vk::ExtensionProperties> &extensionProperties);
+        [[nodiscard]] bool swapChainSupport(const vk::SurfaceKHR &testedSurface);
+        [[nodiscard]] bool featuresSupport(const vk::raii::PhysicalDevice *testedDevice);
 };
 inline bool operator>(const DeviceRating& a, const DeviceRating& b)
 {
@@ -163,6 +164,41 @@ bool DeviceRating::extensionPresent(const std::vector<const char*> &requiredExte
     return allExtensionsSupported;
 }
 
+bool DeviceRating::featuresSupport(const vk::raii::PhysicalDevice *testedDevice)
+{
+    auto featuresChain = testedDevice->getFeatures2<vk::PhysicalDeviceFeatures2,
+                                                    vk::PhysicalDeviceVulkan12Features,
+                                                    vk::PhysicalDeviceComputeShaderDerivativesFeaturesNV>();
+    auto& features2 = featuresChain.get<vk::PhysicalDeviceFeatures2>();
+    auto& vulkan12Features  = featuresChain.get<vk::PhysicalDeviceVulkan12Features>();
+    auto& computeDerivativesFeatures = featuresChain.get<vk::PhysicalDeviceComputeShaderDerivativesFeaturesNV>();
+
+    if(!features2.features.vertexPipelineStoresAndAtomics)
+    {
+        std::cout << "Vertex pipeline stores and atomics device feature not supported" << std::endl;
+        return false;
+    }
+
+    if(!vulkan12Features.runtimeDescriptorArray)
+    {
+        std::cout << "Runtime descriptor array device feature not supported" << std::endl;
+        return false;
+    }
+
+    if(!features2.features.samplerAnisotropy)
+    {
+        std::cout << "Sampler anisotropy device feature not supported" << std::endl;
+        return false;
+    }
+
+    if(!computeDerivativesFeatures.computeDerivativeGroupQuads)
+    {
+        std::cout << "Compute derivative group quads device feature not supported" << std::endl;
+        return false;
+    }
+    return true;    
+}
+
 bool DeviceRating::swapChainSupport(const vk::SurfaceKHR &testedSurface)
 {
     auto surfaceFormats = device->getSurfaceFormatsKHR(testedSurface);
@@ -178,6 +214,12 @@ DeviceRating::DeviceRating(const vk::raii::PhysicalDevice *testedDevice, const v
     {
         score++;
         uniqueCapabilities.insert("Discrete");
+    }
+
+    if(featuresSupport(testedDevice))
+    {
+        score++;
+        uniqueCapabilities.insert("Features");
     }
 
     const auto extensionProperties = device->enumerateDeviceExtensionProperties();
