@@ -2,11 +2,11 @@
 <svg
    id="vlpa"
    version="1.1"
-   viewBox="0 0 1914.7953 300.63153"
+   viewBox="0 0 1862.7306 300.63153"
    xml:space="preserve"
    sodipodi:docname="logo.svg"
    inkscape:version="1.4.2 (ebf0e940d0, 2025-05-08)"
-   width="1914.7953"
+   width="1862.7306"
    height="300.63153"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
@@ -24,15 +24,16 @@
    inkscape:pageopacity="0.0"
    inkscape:pagecheckerboard="0"
    inkscape:deskcolor="#d1d1d1"
-   inkscape:zoom="0.21878014"
-   inkscape:cx="1154.1267"
-   inkscape:cy="907.30358"
+   inkscape:zoom="0.43756028"
+   inkscape:cx="1326.6744"
+   inkscape:cy="554.20935"
    inkscape:window-width="1920"
    inkscape:window-height="1200"
    inkscape:window-x="0"
    inkscape:window-y="0"
    inkscape:window-maximized="1"
-   inkscape:current-layer="g8" /><title
+   inkscape:current-layer="g8"
+   showgrid="false" /><title
    id="title1">Vulkan API logo</title><desc
    id="desc1">A low-overhead graphics API from Khronos Group</desc><metadata
    id="metadata1"><rdf:RDF><cc:Work
@@ -43,7 +44,7 @@
    id="g8">
 	<g
    id="g47"
-   transform="translate(-101.35923,3.6692337)"><path
+   transform="translate(-153.73823,3.6692337)"><path
      id="rect9"
      style="opacity:1;fill:#ac162c;fill-opacity:1;stroke-width:2.73469;stroke-linecap:round;stroke-linejoin:round"
      d="m 1683.7824,112.30832 c -0.1823,-0.0302 -1.5438,7.18789 -3.0525,16.18626 l -26.3029,156.87727 c -1.5087,8.99837 -2.5762,16.26715 -2.3939,16.29735 l 459.729,76.1586 c 0.1823,0.0302 1.5441,-7.18982 3.0528,-16.18819 l 14.8456,-88.54244 -66.793,-97.9897 z" /><ellipse
@@ -194,13 +195,13 @@
    transform="scale(1.0030136,0.99699547)"><tspan
      sodipodi:role="line"
      id="tspan8"
-     style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:133.735px;font-family:'Noto Sans NKo Unjoined';-inkscape-font-specification:'Noto Sans NKo Unjoined Bold';fill:#0052be;fill-opacity:1;stroke-width:1.00301"
+     style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:133.735px;font-family:'Liberation Sans';-inkscape-font-specification:'Liberation Sans Bold';fill:#0052be;fill-opacity:1;stroke-width:1.00301"
      x="650.39801"
      y="209.12839">Computation</tspan><tspan
      sodipodi:role="line"
-     style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:133.735px;font-family:'Noto Sans NKo Unjoined';-inkscape-font-specification:'Noto Sans NKo Unjoined Bold';fill:#0052be;fill-opacity:1;stroke-width:1.00301"
+     style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:133.735px;font-family:'Liberation Sans';-inkscape-font-specification:'Liberation Sans Bold';fill:#0052be;fill-opacity:1;stroke-width:1.00301"
      x="650.39801"
-     y="378.38739"
+     y="379.60718"
      id="tspan9">Visualization</tspan></text><path
    d="m 491.51401,385 h -40.6 V 181.4 h 40.6 z"
    fill="#ac162c"
@@ -218,7 +219,7 @@
    id="g5"
    transform="translate(-334.90988,79.5)">
 	<polygon
-   points="782,237 830,237 774,292 836,385 787,385 731,296 731,290 "
+   points="774,292 836,385 787,385 731,296 731,290 782,237 830,237 "
    id="polygon3"
    transform="translate(102.42389,-79.5)" />
 	
