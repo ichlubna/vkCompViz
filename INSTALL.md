@@ -29,7 +29,7 @@ cmake .. -G "Ninja" -DCMAKE_CXX_COMPILER="/usr/bin/clang-20" -DCMAKE_C_COMPILER=
 ninja
 ```
 
-This project uses [GitHub workflow](/.github/workflows/linuxBuild.yml) to test to compilation after every commit. This workflow uses an Ubuntu compilation [script](/scripts/buildOnUbuntu-24_04.sh) which can be run, for example in clean Ubuntu Docker image. The script also demonstrates the installation of the required dependencies with the package manager and also manually.
+This project uses [GitHub workflow](/.github/workflows/linuxBuild.yml) to test to compilation after every commit. This workflow uses an Ubuntu compilation [script](/scripts/README.md) which can be run, for example in clean Ubuntu Docker image. The script also demonstrates the installation of the required dependencies with the package manager and also manually.
 
 # Usage
 To run the examples, simply use:  
