@@ -1,6 +1,3 @@
-# Temporary notes
-The current version of the project needs to use CMake 4.1.1. This will be fixed in the future when CMake support for import of std module is no longer an experimental feature. See the CMakeLists.txt file for more details. Compiling the project in Release mode might also be problematic due to the use of currently unfinished std module import.
-
 # Universal C++ Library for GPU-Based Experiments
 ![Logo](docs/logo.svg)
 
