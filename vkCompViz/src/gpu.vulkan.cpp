@@ -3,7 +3,7 @@ module;
 #define VMA_IMPLEMENTATION
 #include <vk_mem_alloc.h>
 module gpu;
-import vulkan_hpp;
+import vulkan;
 import timer;
 import std;
 import common;
@@ -850,7 +850,7 @@ void Vulkan::draw(SwapChain::InFlight &inFlight)
     }
     catch(const vk::SystemError& err)
     {
-        if(err.code() == vk::Result::eErrorOutOfDateKHR)
+        if(err.code() ==  vk::make_error_code(vk::Result::eErrorOutOfDateKHR))
         {
             recreateSwapChain();
             return;
@@ -871,7 +871,7 @@ void Vulkan::draw(SwapChain::InFlight &inFlight)
     }
     catch(const vk::SystemError& err)
     {
-        if(err.code() == vk::Result::eErrorOutOfDateKHR || err.code() == vk::Result::eSuboptimalKHR)
+        if(err.code() == vk::make_error_code(vk::Result::eErrorOutOfDateKHR) || err.code() == vk::make_error_code(vk::Result::eSuboptimalKHR))
         {
             recreateSwapChain();
             resizeRequired = false;

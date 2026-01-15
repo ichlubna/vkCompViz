@@ -3,7 +3,7 @@ module;
 export module gpu: vulkan;
 export import : interface;
 import std;
-import vulkan_hpp;
+import vulkan;
 import common;
 import shader;
 

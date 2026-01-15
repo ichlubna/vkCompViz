@@ -1,9 +1,9 @@
-cmake_minimum_required(VERSION 4.1.1)
+cmake_minimum_required(VERSION 4.2.1)
 set(CMAKE_COLOR_DIAGNOSTICS ON)
 include(functions.cmake)
-if(CMAKE_VERSION VERSION_EQUAL 4.1.1)
+if(CMAKE_VERSION VERSION_EQUAL 4.2.1)
   # This hash works only with the given cmake version:
-  # https://github.com/Kitware/CMake/blob/v4.1.1/Help/dev/experimental.rst
+  # https://github.com/Kitware/CMake/blob/v4.2.1/Help/dev/experimental.rst
   set(CMAKE_EXPERIMENTAL_CXX_IMPORT_STD "d0edc3af-4c50-42ea-a356-e2862fe7a444")
   set(CMAKE_CXX_MODULE_STD 1)
 endif()

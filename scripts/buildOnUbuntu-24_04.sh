@@ -40,14 +40,14 @@ mkdir build; cd build
 mkdir buildTools; cd buildTools
 
 # Using specific CMake version to ensure the support for modules
-wget https://github.com/Kitware/CMake/releases/download/v4.1.0/cmake-4.1.0-linux-x86_64.tar.gz; tar -xvzf cmake-4.1.0-linux-x86_64.tar.gz
+wget https://github.com/Kitware/CMake/releases/download/v4.2.1/cmake-4.2.1-linux-x86_64.tar.gz; tar -xvzf cmake-4.2.1-linux-x86_64.tar.gz
 rm ./*.gz
 
 # Getting latest VMA
 git clone https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator.git
 cd VulkanMemoryAllocator; mkdir install
-../cmake-4.1.0-linux-x86_64/bin/cmake ./ -DCMAKE_INSTALL_PREFIX=./install -G "Ninja" -DCMAKE_CXX_COMPILER="/usr/bin/clang-20"
-../cmake-4.1.0-linux-x86_64/bin/cmake --build . --target install 
+../cmake-4.2.1-linux-x86_64/bin/cmake ./ -DCMAKE_INSTALL_PREFIX=./install -G "Ninja" -DCMAKE_CXX_COMPILER="/usr/bin/clang-20"
+../cmake-4.2.1-linux-x86_64/bin/cmake --build . --target install 
 mv ./install ../vma
 cd ..
 rm -rf ./VulkanMemoryAllocator
@@ -66,5 +66,5 @@ sudo apt update; sudo apt install vulkan-sdk -y
 
 # Compiling the project
 cd ..
-./buildTools/cmake-4.1.0-linux-x86_64/bin/cmake .. -G Ninja -DCMAKE_PREFIX_PATH="$VMA_PATH;$SLANG_PATH" -DCMAKE_CXX_COMPILER="/usr/bin/clang-20" -DCMAKE_C_COMPILER="/usr/bin/clang-20" -DCMAKE_CXX_FLAGS="-stdlib=libc++ -I/usr/include/c++/v1 -resource-dir=/usr/lib/llvm-20/lib/clang/20 -I/usr/include/x86_64-linux-gnu" -DCMAKE_EXE_LINKER_FLAGS="-L/usr/lib/llvm-20/lib -Wl,-rpath,/usr/lib/llvm-20/lib -lm -lc++abi -lc++"
+./buildTools/cmake-4.2.1-linux-x86_64/bin/cmake .. -G Ninja -DCMAKE_PREFIX_PATH="$VMA_PATH;$SLANG_PATH" -DCMAKE_CXX_COMPILER="/usr/bin/clang-20" -DCMAKE_C_COMPILER="/usr/bin/clang-20" -DCMAKE_CXX_FLAGS="-stdlib=libc++ -I/usr/include/c++/v1 -resource-dir=/usr/lib/llvm-20/lib/clang/20 -I/usr/include/x86_64-linux-gnu" -DCMAKE_EXE_LINKER_FLAGS="-L/usr/lib/llvm-20/lib -Wl,-rpath,/usr/lib/llvm-20/lib -lm -lc++abi -lc++"
 ninja
