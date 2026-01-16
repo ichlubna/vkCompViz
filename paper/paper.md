@@ -11,7 +11,7 @@ authors:
     orcid: 0000-0003-3126-0545
     affiliation: 1
 affiliations:
- - name: Faculty of Information Technology Brno University of Technology, Czech Republic
+ - name: Faculty of Information Technology, Brno University of Technology, Czech Republic
    index: 1
 date: 7 August 2017
 bibliography: paper.bib
@@ -21,7 +21,7 @@ bibliography: paper.bib
 GPUs are gaining popularity due to their massive computational parallelism [@jia2021] and usage in interactive graphics [@nguyen2007] or machine learning applications [@mittal2019].
 Prototyping GPU-executed experiments is often time-consuming due to the complexity of GPU-related APIs.
 Multiplatform and multi-vendor support is also not guaranteed with all existing APIs.
-The vkCompViz C++ library offers a simple way to write a GPGPU [@hu2016] (general-purpose computing on graphics processing units) program.
+The vkCompViz C++ library offers a simple way to write a GPGPU (general-purpose computing on graphics processing units) [@hu2016] program.
 Only the paths to files with GPU code (shader/kernel), paths to input images, or a buffer of arbitrary input data need to be provided by the host application.
 The library is capable of running a sequence of compute shaders, processing the input data, and storing the result or presenting it in a window.
 Memory usage and computational time can also be automatically measured.
@@ -40,7 +40,7 @@ The verbosity of Vulkan makes it difficult to use for quick experiments.
 A substantial portion of the code is necessary even for basic functionality.
 All the APIs also require the host application to allocate data in GPU memory, load and decode resources like images, transfer the data, create a window, etc.
 
-The proposed vkCompViz library offers a high-level API that significantly simplifies GPU programming.
+The vkCompViz library offers a high-level API that significantly simplifies GPU programming.
 The library only requires the paths to the code files to be executed on GPU, paths to the input images, a buffer with arbitrary input data, and a set of parameters.
 The library then allocates the necessary memory, creates the GPU-related objects, transfers the data on the GPU, runs the computation (or rendering) pipeline, and returns or stores the results.
 The library can visualize the results in a window, where the parameters can be interactively adjusted at run-time, or can be run in headless mode on machines with no window systems.
@@ -48,10 +48,10 @@ The memory usage and time performance of the data transfer and shader execution 
 Users do not need to study complex GPU APIs to conduct scientific experiments.
 This addresses a frequent issue in science, where implementing an experimental concept often requires a considerable amount of time due to technical difficulties.
 
-Compared to existing frameworks used in science that simplify the work with Vulkan, such as vk-bootstrap [@lopez2025], or Auto-Vk-Toolkit [@unter2023], the proposed library does not require an in-depth work with the GPU-related structures.
+Compared to existing frameworks used in science that simplify the work with Vulkan, such as vk-bootstrap [@lopez2025], or Auto-Vk-Toolkit [@unter2023], the vkCompViz library does not require in-depth work with the GPU-related structures.
 The library is specially designed for quick experimental prototyping.
-Other frameworks often focus on specific tasks, such as Datoviz [@rossant2021] for scientific data visualization, the framework for remote rendering of large data [@lavrivc2018], or VComputeBench for benchmarking purposes [@mammeri2018].
-The proposed library aims to be a general GPGPU scientific framework.
+Other frameworks often focus on specific tasks, such as Datoviz [@rossant2021] for scientific data visualization, the framework for remote rendering of large data [@lavrivc2018], and VComputeBench for benchmarking purposes [@mammeri2018].
+The vkCompViz library aims to be a general GPGPU scientific framework.
 Kokkos [@trott2022] and RAJA [@beckingsale2019] are C++ abstractions for performance-portable parallel computation across CPUs and GPUs.
 In contrast, vkCompViz is GPU-oriented.
 Its goal is not only to simplify parallel computing but also visualization and data loading and provide access to additional GPU capabilities, such as rendering and other features exposed by Vulkan.
@@ -67,7 +67,7 @@ The library workflow and architecture are described in \autoref{fig:architecture
 ![The figure describes the architecture of vkCompViz library.\label{fig:architecture}](vkCompViz.pdf){width=60%}
 
 # Usage
-The project uses CMake, C++26 standard, and C++20 modules.
+The project uses CMake, the C++26 standard, and C++20 modules.
 The usage of the library is demonstrated and documented in three basic example subprojects.
 The Simple Blending example demonstrates operations with images in which two images can be blended together with a given factor.
 The 3D Viewer also shows how the rendering pipeline can be customized to render an input 3D model file.
