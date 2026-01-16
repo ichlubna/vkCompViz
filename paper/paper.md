@@ -18,7 +18,6 @@ bibliography: paper.bib
 ---
 
 # Summary
-
 GPUs are gaining popularity due to their massive computational parallelism [@jia2021] and usage in interactive graphics [@nguyen2007] or machine learning applications [@mittal2019].
 Prototyping GPU-executed experiments is often time-consuming due to the complexity of GPU-related APIs.
 Multiplatform and multi-vendor support is also not guaranteed with all existing APIs.
@@ -28,18 +27,17 @@ The library is capable of running a sequence of compute shaders, processing the 
 Memory usage and computational time can also be automatically measured.
 
 # Statement of need
-
 Necessary data allocations and transfers, and the execution of shaders, require a special API that communicates with the GPU drivers [@plebanski2025; @henriksen2024].
-However, using these APIs presents various problems.
 Vendor-specific GPGPU API CUDA by NVIDIA and HIP by AMD quickly provide access to new GPU features but can be used only with the given vendor's GPUs.
-OpenCL is a multiplatform and vendor-free API that contains a lot of features, but, in practice, GPU drivers usually do not implement its entire specification.
-The APIs referenced earlier are tailored only for GPGPU computations and lack direct access to GPU rendering features. 
-In contrast, subsequent APIs are capable of using rendering pipelines and GPGPU functions.
+OpenCL is a vendor-free multiplatform API with a lot of features that are usually not fully supported by drivers.
+These APIs are only for GPGPU computations and lack access to GPU rendering features. 
+The subsequent APIs can use rendering pipelines and GPGPU functions.
 DirectX does not depend on the vendor, but is developed by Microsoft and can be used only on Windows.
 Similarly, Metal works only on Apple devices.
 OpenGL is multiplatform and vendor-free, but it does not support new features and its development is discontinued.
 Vulkan is multi-platform, vendor-free, supports new features quickly, and offers low-level optimization settings.
-The main disadvantage of Vulkan is its verbosity, which makes it difficult to use for quick experiments, as a substantial portion of the code is necessary even for basic functionality.
+The verbosity of Vulkan makes it difficult to use for quick experiments. 
+A substantial portion of the code is necessary even for basic functionality.
 All the APIs also require the host application to allocate data in GPU memory, load and decode resources like images, transfer the data, create a window, etc.
 
 The proposed vkCompViz library offers a high-level API that significantly simplifies GPU programming.
@@ -47,17 +45,18 @@ The library only requires the paths to the code files to be executed on GPU, pat
 The library then allocates the necessary memory, creates the GPU-related objects, transfers the data on the GPU, runs the computation (or rendering) pipeline, and returns or stores the results.
 The library can visualize the results in a window, where the parameters can be interactively adjusted at run-time, or can be run in headless mode on machines with no window systems.
 The memory usage and time performance of the data transfer and shader execution reporting mechanism is also implemented.
-With this library, researchers do not need to learn about complex GPU-related APIs and can quickly conduct scientific experiments on GPU.
-This tackles a frequent issue in the scientific domain, where bringing an experimental concept to life usually requires a considerable amount of time owing to the need to acquire novel technological skills and address numerous small, implementation-related challenges.
+Users do not need to study complex GPU APIs to conduct scientific experiments.
+This addresses a frequent issue in science, where implementing an experimental concept often requires a considerable amount of time due to technical difficulties.
 
 Compared to existing frameworks used in science that simplify the work with Vulkan, such as vk-bootstrap [@lopez2025], or Auto-Vk-Toolkit [@unter2023], the proposed library does not require an in-depth work with the GPU-related structures.
 The library is specially designed for quick experimental prototyping.
 Other frameworks often focus on specific tasks, such as Datoviz [@rossant2021] for scientific data visualization, the framework for remote rendering of large data [@lavrivc2018], or VComputeBench for benchmarking purposes [@mammeri2018].
 The proposed library aims to be a general GPGPU scientific framework.
-The goal is to reduce the time required for GPU programming, particularly since numerous scientific experiments may not produce significant results, and it is inefficient to spend excessive time learning about existing APIs.
+Kokkos [@trott2022] and RAJA [@beckingsale2019] are C++ abstractions for performance-portable parallel computation across CPUs and GPUs.
+In contrast, vkCompViz is GPU-oriented.
+Its goal is not only to simplify parallel computing but also visualization and data loading and provide access to additional GPU capabilities, such as rendering and other features exposed by Vulkan.
 
 # Architecture
-
 The library uses Vulkan [@bailey2019], which ensures support for modern operating systems and GPUs.
 Vulkan is expected to be further supported in the future and also quickly adopts novel GPU features which can be possibly used in the library.
 The input shaders are expected to be written in the Slang language, which is a universal modern language designed for GPU shaders.
