@@ -1,12 +1,12 @@
 @article{Chlubna2026,
-	title        = {vkCompViz: Universal C++ Library for GPU-Based Experiments},
-	author       = {Chlubna, Tomas},
-	year         = 2026,
-	journal      = {Journal of Open Source Software},
-	publisher    = {The Open Journal},
-	volume       = 11,
-	number       = 117,
-	pages        = 8871,
-	doi          = {10.21105/joss.08871},
-	url          = {https://doi.org/10.21105/joss.08871}
+title = {vkCompViz: Universal C++ Library for GPU-Based Experiments},
+author = {Chlubna, Tomas},
+year = 2026,
+journal = {Journal of Open Source Software},
+publisher = {The Open Journal},
+volume = 11,
+number = 117,
+pages = 8871,
+doi = {10.21105/joss.08871},
+url = {https://doi.org/10.21105/joss.08871}
 }
