@@ -1,5 +1,5 @@
 ## buildOnUbuntu-24_04.sh
-This script is used in GitHub Workflow to make sure the project can be compiled. 
+This script is used in GitHub Workflow to make sure the project can be compiled on Linux. 
 
 ### Usage in Docker
 To run the script in docker, the recommended approach is as follows.
@@ -16,5 +16,8 @@ The Docker machine can be later removed using:
 
     docker stop vkCompViz; docker rm vkCompViz
 
+## buildOnMacOS-26.sh
+This script is used in GitHub Workflow to make sure the project can be compiled on MacOS. 
+The script also contains comments describing how to compile the project on a clean MacOS machine. 
 
 

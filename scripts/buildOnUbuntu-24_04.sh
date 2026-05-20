@@ -60,9 +60,11 @@ SLANG_PATH=$(realpath ./slang)
 rm ./*.gz
 
 # Installing Vulkan SDK
-wget -qO- https://packages.lunarg.com/lunarg-signing-key-pub.asc | sudo tee /etc/apt/trusted.gpg.d/lunarg.asc
-sudo wget -qO /etc/apt/sources.list.d/lunarg-vulkan-noble.list http://packages.lunarg.com/vulkan/lunarg-vulkan-noble.list
-sudo apt update; sudo apt install vulkan-sdk -y
+LUNAR_VERSION="1.4.350.0"
+sudo apt install libxcb-xinput0 libxcb-xinerama0 libxcb-cursor-dev -y
+wget https://sdk.lunarg.com/sdk/download/$LUNAR_VERSION/linux/vulkansdk-linux-x86_64-$LUNAR_VERSION.tar.xz
+tar xf vulkansdk-linux-x86_64-$LUNAR_VERSION.tar.xz
+source ./$LUNAR_VERSION/setup-env.sh
 
 # Compiling the project
 cd ..
