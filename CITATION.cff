@@ -1,4 +1,26 @@
-@article{chlubna2026,
-title = {TODO},
-author = {T. Chlubna}
-}
+cff-version: "1.2.0"
+authors:
+- family-names: Chlubna
+  given-names: Tomas
+  orcid: "https://orcid.org/0000-0003-3126-0545"
+doi: 10.5281/zenodo.18258201
+message: If you use this software, please cite our article in the
+  Journal of Open Source Software.
+preferred-citation:
+  authors:
+  - family-names: Chlubna
+    given-names: Tomas
+    orcid: "https://orcid.org/0000-0003-3126-0545"
+  date-published: 2026-01-17
+  doi: 10.21105/joss.08871
+  issn: 2475-9066
+  issue: 117
+  journal: Journal of Open Source Software
+  publisher:
+    name: Open Journals
+  start: 8871
+  title: "vkCompViz: Universal C++ Library for GPU-Based Experiments"
+  type: article
+  url: "https://joss.theoj.org/papers/10.21105/joss.08871"
+  volume: 11
+title: "vkCompViz: Universal C++ Library for GPU-Based Experiments"
