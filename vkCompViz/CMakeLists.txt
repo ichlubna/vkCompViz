@@ -34,6 +34,14 @@ target_sources(${PROJECT_NAME}
     src/shader.interface.cppm
     src/shader.slang.cppm
 )
+
+pkg_check_modules(FFMPEG REQUIRED IMPORTED_TARGET
+	libavcodec
+	libavformat
+	libavutil
+	libswscale
+	libavfilter
+)
 target_include_directories(${PROJECT_NAME}
     PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src
@@ -46,7 +54,7 @@ target_link_libraries(${PROJECT_NAME}
     GPUOpen::VulkanMemoryAllocator
     glfw
     slang::slang
-    ffmpeg swscale avfilter ${FFMPEG_LIBRARIES} 
+    PkgConfig::FFMPEG
 )
 target_compile_features(${PROJECT_NAME}
     PRIVATE cxx_std_26

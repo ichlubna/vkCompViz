@@ -18,6 +18,4 @@ The Docker machine can be later removed using:
 
 ## buildOnMacOS-26.sh
 This script is used in GitHub Workflow to make sure the project can be compiled on MacOS. 
-The script also contains comments describing how to compile the project on a clean MacOS machine. 
-
-
+The script also contains comments describing how to compile the project on a clean MacOS machine with parameter `clean`. 

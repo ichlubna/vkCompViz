@@ -1,14 +1,18 @@
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/CMakeModules")
 
-find_package(FFMPEG REQUIRED)
-add_library(ffmpeg INTERFACE)
-target_link_libraries(ffmpeg INTERFACE ${FFMPEG_LIBRARIES})
-target_include_directories(ffmpeg INTERFACE $<BUILD_INTERFACE:${FFMPEG_INCLUDE_DIRS})
-
+find_package(PkgConfig REQUIRED)
 find_package(Vulkan REQUIRED)
 find_package(VulkanMemoryAllocator CONFIG REQUIRED)
 find_package(glfw3 REQUIRED)
 find_package(slang REQUIRED)
+
+pkg_check_modules(FFMPEG REQUIRED IMPORTED_TARGET
+	libavcodec
+	libavformat
+	libavutil
+	libswscale
+	libavfilter
+)
 
 add_library( VulkanHppModule )
 target_sources( VulkanHppModule PUBLIC
