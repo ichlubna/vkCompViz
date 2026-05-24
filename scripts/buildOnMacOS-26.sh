@@ -20,6 +20,8 @@ if [ "$1" == "clean" ]; then
     brew install pkgconf
 fi
 
+LLVM_PATH=$(brew --prefix llvm@20)
+
 mkdir -p buildTools; cd buildTools
 
 # CMake
@@ -29,12 +31,12 @@ cp -R /Volumes/cmake-4.2.1-macos-universal/ ./cmake
 # Workaround to fix the modules file path
 # https://www.reddit.com/r/cpp/comments/1eafzjs/anyone_having_success_with_c23_modules_and_cmake/
 # https://gitlab.kitware.com/cmake/cmake/-/issues/25965#note_1523575
-sed -i '' 's|${_clang_modules_json_impl}.modules.json|/usr/local/opt/llvm@20/lib/c++/libc++.modules.json|g' ./cmake/CMake.app/Contents/share/cmake-4.2/Modules/Compiler/Clang-CXX-CXXImportStd.cmake
+sed -i '' 's|${_clang_modules_json_impl}.modules.json|$(brew --prefix llvm@20)/lib/c++/libc++.modules.json|g' ./cmake/CMake.app/Contents/share/cmake-4.2/Modules/Compiler/Clang-CXX-CXXImportStd.cmake
 
 # VMA
 git clone https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator.git
 cd VulkanMemoryAllocator; mkdir install
-../cmake/CMake.app/Contents/bin/cmake ./ -DCMAKE_INSTALL_PREFIX=./install -G "Ninja" -DCMAKE_CXX_COMPILER="/usr/local/opt/llvm@20/bin/clang"
+../cmake/CMake.app/Contents/bin/cmake ./ -DCMAKE_INSTALL_PREFIX=./install -G "Ninja" -DCMAKE_CXX_COMPILER="$LLVM_PATH/bin/clang"
 ../cmake/CMake.app/Contents/bin/cmake --build . --target install 
 mv ./install ../vma
 cd ..
@@ -73,7 +75,6 @@ git submodule update --init --recursive
 mkdir build; cd build
 
 SDKROOT=$(xcrun --sdk macosx --show-sdk-path)
-LLVM_PATH=$(brew --prefix llvm@20)
 FFMPEG_PATH=$(brew --prefix ffmpeg)
 
 ../buildTools/cmake/CMake.app/Contents/bin/cmake .. \
