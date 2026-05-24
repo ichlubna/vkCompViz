@@ -1,4 +1,4 @@
-#!/bin/zsh
+#!/bin/bash
 # When running on a clean MacOS 26 Tahoe, the following needs to be installed
 # Can be triggered by adding a parameter "clean" to the script
 # Xcode Commandline Tools
