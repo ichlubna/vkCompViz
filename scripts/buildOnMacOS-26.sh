@@ -73,14 +73,16 @@ git submodule update --init --recursive
 mkdir build; cd build
 
 SDKROOT=$(xcrun --sdk macosx --show-sdk-path)
+LLVM_PATH=$(brew --prefix llvm@20)
+FFMPEG_PATH=$(brew --prefix ffmpeg)
 
 ../buildTools/cmake/CMake.app/Contents/bin/cmake .. \
   -G Ninja \
   -DCMAKE_PREFIX_PATH="$VMA_PATH;$SLANG_PATH;$VULKAN_SDK" \
-  -DCMAKE_C_COMPILER="/usr/local/opt/llvm@20/bin/clang" \
-  -DCMAKE_CXX_COMPILER="/usr/local/opt/llvm@20/bin/clang++" \
+  -DCMAKE_C_COMPILER="$LLVM_PATH/bin/clang" \
+  -DCMAKE_CXX_COMPILER="$LLVM_PATH/bin/clang++" \
   -DCMAKE_OSX_SYSROOT="$SDKROOT" \
-  -DCMAKE_CXX_FLAGS="-stdlib=libc++ -resource-dir=/usr/local/opt/llvm@20/lib/clang/20" \
-  -DCMAKE_EXE_LINKER_FLAGS="-L/usr/local/opt/llvm@20/lib -Wl,-rpath,/usr/local/opt/llvm@20/lib -lc++ -lc++abi -L/usr/local/opt/ffmpeg/lib -Wl,-rpath,/usr/local/opt/ffmpeg/lib -lswscale"
+  -DCMAKE_CXX_FLAGS="-stdlib=libc++ -resource-dir=$LLVM_PATH/lib/clang/20" \
+  -DCMAKE_EXE_LINKER_FLAGS="-L$LLVM_PATH/lib -Wl,-rpath,$LLVM_PATH/lib -lc++ -lc++abi -L$FFMPEG_PATH/lib -Wl,-rpath,$FFMPEG_PATH/lib -lswscale"
 
 ninja
