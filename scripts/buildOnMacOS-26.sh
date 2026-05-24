@@ -31,7 +31,8 @@ cp -R /Volumes/cmake-4.2.1-macos-universal/ ./cmake
 # Workaround to fix the modules file path
 # https://www.reddit.com/r/cpp/comments/1eafzjs/anyone_having_success_with_c23_modules_and_cmake/
 # https://gitlab.kitware.com/cmake/cmake/-/issues/25965#note_1523575
-sed -i '' "'s|\${_clang_modules_json_impl}.modules.json|$LLVM_PATH/lib/c++/libc++.modules.json|g" ./cmake/CMake.app/Contents/share/cmake-4.2/Modules/Compiler/Clang-CXX-CXXImportStd.cmake
+sed -i '' "s|\${_clang_modules_json_impl}.modules.json|${LLVM_PATH}/lib/c++/libc++.modules.json|g" \
+./cmake/CMake.app/Contents/share/cmake-4.2/Modules/Compiler/Clang-CXX-CXXImportStd.cmake
 
 # VMA
 git clone https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator.git
