@@ -74,7 +74,7 @@ mkdir build; cd build
 
 SDKROOT=$(xcrun --sdk macosx --show-sdk-path)
 
-./buildTools/cmake/CMake.app/Contents/bin/cmake .. \
+../buildTools/cmake/CMake.app/Contents/bin/cmake .. \
   -G Ninja \
   -DCMAKE_PREFIX_PATH="$VMA_PATH;$SLANG_PATH;$VULKAN_SDK" \
   -DCMAKE_C_COMPILER="/usr/local/opt/llvm@20/bin/clang" \
