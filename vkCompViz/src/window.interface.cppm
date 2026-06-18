@@ -20,7 +20,7 @@ class Window
         [[nodiscard]] virtual std::uintptr_t getSurface(std::uintptr_t vkInstance) = 0;
         [[nodiscard]] virtual bool key(std::string name) const = 0;
         [[nodiscard]] virtual bool mouseAction(std::string name) = 0;
-        [[nodiscard]] virtual bool resized() const = 0;
+        [[nodiscard]] virtual bool resized() = 0;
         [[nodiscard]] virtual bool quit() const = 0;
         [[nodiscard]] virtual Resolution resolution() const = 0;
         virtual ~Window() = default;

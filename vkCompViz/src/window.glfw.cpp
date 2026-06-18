@@ -59,15 +59,6 @@ void Window::Glfw::keyCallback(GLFWwindow *window, int key, [[maybe_unused]] int
         self->keys.release(key);
 }
 
-[[nodiscard]] std::pair<double, double> normalizedMousePosition(GLFWwindow *window)
-{
-    double x, y;
-    glfwGetCursorPos(window, &x, &y);
-    int width, height;
-    glfwGetWindowSize(window, &width, &height);
-    return {x/width, y/height};  
-} 
-
 void Window::Glfw::scrollCallback(GLFWwindow* window, double xoffset, double yoffset) 
 {
     auto* self = static_cast<Glfw *>(glfwGetWindowUserPointer(window));

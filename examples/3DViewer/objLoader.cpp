@@ -6,7 +6,7 @@ ObjLoader::BoundingBox::BoundingBox(std::size_t dimension) : dimension(dimension
     for(std::size_t i = 0; i < dimension; ++i)
     {
         min.push_back(std::numeric_limits<float>::max());
-        max.push_back(std::numeric_limits<float>::min());
+        max.push_back(std::numeric_limits<float>::lowest());
     }
 }
 
@@ -21,11 +21,16 @@ void ObjLoader::BoundingBox::update(std::vector<float> coords)
 
 void ObjLoader::normalizeVertices()
 {
+    constexpr float eps = 1e-8f;
+    float dx = std::max(boundingBox.max[0] - boundingBox.min[0], eps);
+    float dy = std::max(boundingBox.max[1] - boundingBox.min[1], eps);
+    float dz = std::max(boundingBox.max[2] - boundingBox.min[2], eps);
+
     for(std::size_t i = 0; i < vertices.size(); i += 3)
     {
-        vertices[i] = (vertices[i] - boundingBox.min[0]) / (boundingBox.max[0] - boundingBox.min[0]);
-        vertices[i + 1] = (vertices[i + 1] - boundingBox.min[1]) / (boundingBox.max[1] - boundingBox.min[1]);
-        vertices[i + 2] = (vertices[i + 2] - boundingBox.min[2]) / (boundingBox.max[2] - boundingBox.min[2]);
+        vertices[i] = (vertices[i] - boundingBox.min[0]) / dx;
+        vertices[i + 1] = (vertices[i + 1] - boundingBox.min[1]) / dy;
+        vertices[i + 2] = (vertices[i + 2] - boundingBox.min[2]) / dz;
     }
 }
 

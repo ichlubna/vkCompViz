@@ -29,9 +29,11 @@ class Glfw : public Window
         {
             wasResized = true;
         }
-        bool resized() const override
+        bool resized() override
         {
-            return wasResized;
+            bool wasResizedOriginal = wasResized;
+            wasResized = false;
+            return wasResizedOriginal;
         }
         static void keyCallback(GLFWwindow *window, int key, [[maybe_unused]] int scancode, int action, [[maybe_unused]] int mods);
         static void resizeCallback(GLFWwindow *window, [[maybe_unused]] int width, [[maybe_unused]] int height);

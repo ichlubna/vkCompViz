@@ -76,7 +76,7 @@ vk::ApplicationInfo &Vulkan::CreateInfo::application()
     applicationInfo
     .setPApplicationName("Epic Vulkan App")
     .setPEngineName("Cool Engine")
-    .setApiVersion(VK_API_VERSION_1_4)
+    .setApiVersion(vulkanApiVersion)
     .setPNext(nullptr);
     return applicationInfo;
 }
@@ -743,6 +743,7 @@ Vulkan::Memory::Memory(vk::raii::Instance &instance, vk::raii::PhysicalDevice &p
     allocatorInfo.instance = *instance;
     allocatorInfo.physicalDevice = *physicalDevice;
     allocatorInfo.device = *device;
+    allocatorInfo.vulkanApiVersion = vulkan.vulkanApiVersion;
     if(vmaCreateAllocator(&allocatorInfo, &allocator))
         throw std::runtime_error("Failed to create allocator");
 }
@@ -918,12 +919,16 @@ void Vulkan::newBenchmark(SwapChain::InFlight &inFlight)
 
 void Vulkan::waitForCompute(SwapChain::InFlight &inFlight)
 {
-    while(device.waitForFences({inFlight.fences.computeInFlight.value()}, VK_TRUE, timeout) == vk::Result::eTimeout);
+    vk::Result result = device.waitForFences({ inFlight.fences.computeInFlight.value() }, VK_TRUE, timeout);
+    if (result != vk::Result::eSuccess) 
+        throw std::runtime_error("Fence wait failed");
 }
 
 void Vulkan::waitForGraphics(SwapChain::InFlight &inFlight)
 {
-    while(device.waitForFences({inFlight.fences.inFlight.value()}, VK_TRUE, timeout) == vk::Result::eTimeout);
+    vk::Result result = device.waitForFences({ inFlight.fences.inFlight.value() }, VK_TRUE, timeout);
+    if (result != vk::Result::eSuccess) 
+        throw std::runtime_error("Fence wait failed");
 }
 
 void Vulkan::run()
@@ -993,7 +998,9 @@ std::unique_ptr<Vulkan::Buffer> Vulkan::Memory::buffer(vk::BufferUsageFlags usag
     allocInfo.usage = VMA_MEMORY_USAGE_AUTO;
     allocInfo.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT;
     auto info = static_cast<VkBufferCreateInfo>(bufferInfo);
-    vmaCreateBuffer(allocator, &info, &allocInfo, &buffer->buffer, &buffer->allocation, nullptr);
+    auto result = vmaCreateBuffer(allocator, &info, &allocInfo, &buffer->buffer, &buffer->allocation, nullptr);
+    if(result != VK_SUCCESS)
+        throw std::runtime_error("Failed to create buffer");
     return buffer;
 }
 
@@ -1142,7 +1149,9 @@ std::unique_ptr<Vulkan::Texture> Vulkan::Memory::texture(std::shared_ptr<Loader:
     auto format = formatToVk(image->imageFormat());
     auto type = (storage) ? CreateInfo::ImageType::Storage : CreateInfo::ImageType::Read;
     auto &imageCreateInfo = vulkan.createInfo.image(format, {static_cast<uint32_t>(image->width()), static_cast<uint32_t>(image->height())}, type);
-    vmaCreateImage(allocator, imageCreateInfo, &imageAllocInfo, &texture->image, &texture->allocation, nullptr);
+    auto result = vmaCreateImage(allocator, imageCreateInfo, &imageAllocInfo, &texture->image, &texture->allocation, nullptr);
+    if(result != VK_SUCCESS)
+        throw std::runtime_error("Failed to create image");
     vulkan.transitionImageLayout(texture->image, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal);
     vulkan.copyBufferToImage(static_cast<vk::Buffer>(stagingBuffer->buffer), texture->image, image->width(), image->height());
     if(storage)
@@ -1160,7 +1169,9 @@ std::unique_ptr<Vulkan::Texture> Vulkan::Memory::depth(Resolution resolution)
     VmaAllocationCreateInfo imageAllocInfo = {};
     imageAllocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
     auto &imageCreateInfo = vulkan.createInfo.image(vk::Format::eD32Sfloat, {static_cast<uint32_t>(resolution.width), static_cast<uint32_t>(resolution.height)}, CreateInfo::ImageType::Depth);
-    vmaCreateImage(allocator, imageCreateInfo, &imageAllocInfo, &texture->image, &texture->allocation, nullptr);
+    auto result = vmaCreateImage(allocator, imageCreateInfo, &imageAllocInfo, &texture->image, &texture->allocation, nullptr);
+    if(result != VK_SUCCESS)
+        throw std::runtime_error("Failed to create image");
 
     texture->view.emplace(vk::raii::ImageView{vulkan.device, vulkan.createInfo.imageView(vk::Format::eD32Sfloat, texture->image, true)});
     texture->allocator = &allocator;
@@ -1410,6 +1421,8 @@ void Vulkan::resize()
 
 void Vulkan::updateUniformBuffer(std::vector<uint32_t> buffer)
 {
+    if(buffer.size() != currentUniformBufferData.size())
+        throw std::runtime_error("Uniform buffer size mismatch");
     std::copy(buffer.begin(), buffer.end(), currentUniformBufferData.begin());
 }
 

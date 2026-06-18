@@ -146,9 +146,9 @@ class Vulkan : public Gpu
                 };
                 [[nodiscard]] InFlight &lastComputedInFlight()
                 {
-                    if(previousInFlightID < 0)
+                    if(!previousInFlightID)
                         throw std::runtime_error("No frames were computed yet");
-                    return inFlight[previousInFlightID];
+                    return inFlight[*previousInFlightID];
                 }
                 std::optional<vk::raii::SwapchainKHR> swapChain;
                 std::optional<vk::raii::SwapchainKHR> oldSwapChain;
@@ -158,7 +158,7 @@ class Vulkan : public Gpu
                 std::vector<InFlight> inFlight;
                 std::uint32_t inFlightID{0};
                 std::uint32_t inFlightCount{0};
-                int previousInFlightID{-1};
+                std::optional<int> previousInFlightID;
         };
         class CreateInfo
         {
@@ -290,8 +290,8 @@ class Vulkan : public Gpu
                 std::vector<vk::ClearValue> clearColors;
                 std::vector<vk::AttachmentDescription> attachments = {};
                 vk::PipelineShaderStageCreateInfo shaderStage{};
-                std::vector<vk::ShaderModuleCreateInfo> shaderModuleCreateInfos;
-                std::vector<vk::PipelineShaderStageCreateInfo> pipelineShaderStageCreateInfos;
+                std::deque<vk::ShaderModuleCreateInfo> shaderModuleCreateInfos;
+                std::deque<vk::PipelineShaderStageCreateInfo> pipelineShaderStageCreateInfos;
                 std::vector<vk::DeviceQueueCreateInfo> queueCreateInfos;
                 std::vector<vk::PipelineShaderStageCreateInfo> shaderStages{};
                 std::vector<vk::ImageView> frameBufferAttachments;
@@ -316,6 +316,7 @@ class Vulkan : public Gpu
                 inline static const float queuePriorities{1.0f};
         };
         CreateInfo createInfo;
+        static constexpr uint32_t vulkanApiVersion = VK_API_VERSION_1_4;
         vk::raii::Context context;
         vk::raii::Instance instance;
         std::optional<vk::raii::SurfaceKHR> surface;

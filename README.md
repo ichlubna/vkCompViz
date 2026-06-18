@@ -75,7 +75,7 @@ Keys for window application:
 |---|---|
 | Esc | Exit program | 
 | Space | Edit uniforms in runtime | 
-| F1 | Store the the result |
+| F1 | Store the result |
 | F2 | Store benchmark report | 
 | F3 | Print uniforms | 
 

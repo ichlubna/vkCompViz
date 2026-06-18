@@ -27,7 +27,8 @@ AVFrame *frameFromFile(std::string path)
     formatContext = avformat_alloc_context();
     if(avformat_open_input(&formatContext, path.c_str(), nullptr, nullptr) != 0)
         throw std::runtime_error("Cannot open file: " + path);
-    avformat_find_stream_info(formatContext, nullptr);
+    if(avformat_find_stream_info(formatContext, nullptr) < 0) 
+        throw std::runtime_error("Cannot find stream info");
     AVCodec *codec;
     auto streamID = av_find_best_stream(formatContext, AVMEDIA_TYPE_VIDEO, -1, -1, const_cast<const AVCodec **>(&codec), 0);
     if(streamID < 0)
@@ -35,18 +36,22 @@ AVFrame *frameFromFile(std::string path)
     if(!codec)
         throw std::runtime_error("No suitable codec found");
     AVCodecContext *codecContext = avcodec_alloc_context3(codec);
-    avcodec_parameters_to_context(codecContext, formatContext->streams[streamID]->codecpar);
+    if(avcodec_parameters_to_context(codecContext, formatContext->streams[streamID]->codecpar) < 0)
+        throw std::runtime_error("Cannot copy codec parameters");
     if(avcodec_open2(codecContext, codec, nullptr) < 0)
         throw std::runtime_error("Cannot open codec");
 
     AVFrame *decodedFrame = av_frame_alloc();
     AVPacket *packet = av_packet_alloc();
-    av_read_frame(formatContext, packet);
-    avcodec_send_packet(codecContext, packet);
+    if(av_read_frame(formatContext, packet) < 0)
+        throw std::runtime_error("Cannot read frame");
+    if(avcodec_send_packet(codecContext, packet) < 0)
+        throw std::runtime_error("Cannot send packet");
     avcodec_send_packet(codecContext, nullptr);
     if(avcodec_receive_frame(codecContext, decodedFrame) < 0)
         throw std::runtime_error("Cannot receive frame");
     av_packet_free(&packet);
+    avcodec_free_context(&codecContext);
     avformat_close_input(&formatContext);
     return decodedFrame;
 }
@@ -137,7 +142,6 @@ void Loader::ImageFfmpeg::packData()
         packedData.push_back(reinterpret_cast<float *>(frame->data[1])[i]);
         packedData.push_back(reinterpret_cast<float *>(frame->data[3])[i]);
     }
-    packedData.back() = 0.0f;
 }
 
 const unsigned char *Loader::ImageFfmpeg::data()
@@ -277,22 +281,19 @@ size_t pixelFormatScore(AVPixelFormat pixelFormat, Loader::Image::Format format)
 }
 
 
-void Loader::ImageFfmpeg::save(std::string outputPath) const
+void Loader::ImageFfmpeg::save(std::string path) const
 {
     if(!DEBUG)
         av_log_set_level(AV_LOG_ERROR);
 
-    std::string outputFilePath = outputPath;
-    if(outputPath == "")
-        outputFilePath = outputPath;
     AVFormatContext *formatContext = avformat_alloc_context();
-    if(avformat_alloc_output_context2(&formatContext, nullptr, nullptr, outputFilePath.c_str()) < 0)
+    if(avformat_alloc_output_context2(&formatContext, nullptr, nullptr, path.c_str()) < 0)
         throw std::runtime_error("Could not open output file");
-    const AVOutputFormat *outputFormat = av_guess_format(nullptr, outputFilePath.c_str(), nullptr);
+    const AVOutputFormat *outputFormat = av_guess_format(nullptr, path.c_str(), nullptr);
     if(!outputFormat)
         throw std::runtime_error("Could not deduce output format");
 
-    const AVCodec *codec = guessCodecByExtension(outputPath, outputFormat);
+    const AVCodec *codec = guessCodecByExtension(path, outputFormat);
     if(!codec)
         throw std::runtime_error("Could not find encoder");
     AVStream *stream;
@@ -342,7 +343,7 @@ void Loader::ImageFfmpeg::save(std::string outputPath) const
         throw std::runtime_error("Could not open the encoder");
     if(avcodec_parameters_from_context(stream->codecpar, codecContext) < 0)
         throw std::runtime_error("Could not copy the encoder parameters to the stream");
-    if(avio_open(&formatContext->pb, outputFilePath.c_str(), AVIO_FLAG_WRITE) < 0)
+    if(avio_open(&formatContext->pb, path.c_str(), AVIO_FLAG_WRITE) < 0)
         throw std::runtime_error("Could not open the output format for writing");
     if(avformat_write_header(formatContext, nullptr) < 0)
         throw std::runtime_error("Could not write the output file header");
@@ -362,6 +363,7 @@ void Loader::ImageFfmpeg::save(std::string outputPath) const
     av_frame_free(&outputFrame);
     avio_close(formatContext->pb);
     avformat_free_context(formatContext);
+    avcodec_free_context(&codecContext);
 }
 
 Loader::ImageFfmpeg::~ImageFfmpeg()
