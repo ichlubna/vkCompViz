@@ -129,7 +129,7 @@ void convertFrame(AVFrame *input, AVFrame *output)
 void Loader::ImageFfmpeg::packData()
 {
     size_t pixelCount = frame->width * frame->height;
-    packedData.reserve(pixelCount * 4);
+    packedData.reserve(pixelCount * CHANNELS);
     for(size_t i = 0; i < pixelCount; i++)
     {
         packedData.push_back(reinterpret_cast<float *>(frame->data[2])[i]);
@@ -185,12 +185,12 @@ Loader::ImageFfmpeg::ImageFfmpeg(std::string inputPath) : Image()
 
 void Loader::ImageFfmpeg::unpackData()
 {
-    for(size_t i = 0; i < packedData.size() / 4; i++)
+    for(size_t i = 0; i < packedData.size() / CHANNELS; i++)
     {
-        reinterpret_cast<float *>(frame->data[2])[i] = packedData[4 * i];
-        reinterpret_cast<float *>(frame->data[0])[i] = packedData[4 * i + 1];
-        reinterpret_cast<float *>(frame->data[1])[i] = packedData[4 * i + 2];
-        reinterpret_cast<float *>(frame->data[3])[i] = packedData[4 * i + 3];
+        reinterpret_cast<float *>(frame->data[2])[i] = packedData[CHANNELS * i];
+        reinterpret_cast<float *>(frame->data[0])[i] = packedData[CHANNELS * i + 1];
+        reinterpret_cast<float *>(frame->data[1])[i] = packedData[CHANNELS * i + 2];
+        reinterpret_cast<float *>(frame->data[3])[i] = packedData[CHANNELS * i + 3];
     }
 }
 

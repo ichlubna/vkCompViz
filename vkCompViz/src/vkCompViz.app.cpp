@@ -60,7 +60,7 @@ void App::initTextures()
     {
         std::size_t width = texture.resolution.width;
         std::size_t height = texture.resolution.height;
-        if(texture.sameResolutionAsInputID != -1)
+        if(texture.sameResolutionAsInputID > -1 && static_cast<std::size_t>(texture.sameResolutionAsInputID) < inputTextures.size())
         {
             auto input = inputTextures[texture.sameResolutionAsInputID];
             width = input->width();
@@ -69,7 +69,7 @@ void App::initTextures()
         Loader::Image::Format format = Loader::Image::Format::RGBA_8_INT;
         if(texture.floatFormat)
             format = Loader::Image::Format::RGBA_32_FLOAT;
-        if(texture.sameFormatAsInputID != -1)
+        if(texture.sameFormatAsInputID > -1 && static_cast<std::size_t>(texture.sameFormatAsInputID) < inputTextures.size())
         {
             auto input = inputTextures[texture.sameFormatAsInputID];
             format = input->imageFormat();

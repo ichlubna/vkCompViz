@@ -51,6 +51,8 @@ void Gpu::Gpu::BenchmarkReport::store(std::string path) const
 {
     std::ofstream file;
     file.open(path);
+    if(!file)
+        throw std::runtime_error("Could not open the benchmark file at " + path);
     file << toString();
     file.close();
     std::cout << "Report stored to " << path << std::endl;

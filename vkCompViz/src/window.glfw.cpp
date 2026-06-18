@@ -19,13 +19,19 @@ import glfwKeyStrings;
 bool Window::Glfw::Keys::pressed(std::string name) const
 {
     auto normalizedName = normalizeName(name);
-    return pressedKeys.contains(keyNames.find(normalizedName)->second);
+    auto keyName = keyNames.find(normalizedName);
+    if(keyName == keyNames.end())
+        return false;
+    return pressedKeys.contains(keyName->second);
 }
 
 bool Window::Glfw::Keys::mouse(std::string name)
 {
     auto normalizedName = normalizeName(name);
-    bool result = mouseActions.contains(mouseNames.find(normalizedName)->second);
+    auto mouseName = mouseNames.find(normalizedName);
+    if(mouseName == mouseNames.end())
+        return false;
+    bool result = mouseActions.contains(mouseName->second);
     if(normalizedName == "MOUSESCROLL")
         mouseActionEnd(mouseNames.find("MOUSESCROLL")->second);
     return result;
@@ -36,6 +42,10 @@ void Window::Glfw::cursorPositionCallback(GLFWwindow* window, double xpos, doubl
     auto* self = static_cast<Glfw *>(glfwGetWindowUserPointer(window));
     int width, height;
     glfwGetWindowSize(window, &width, &height);
+    
+    if(width == 0 || height == 0)
+        return;
+    
     self->mouse.x = xpos/width;
     self->mouse.y = ypos/height;  
 }

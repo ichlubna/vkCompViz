@@ -42,7 +42,7 @@ void ParameterParser::read()
         {
             std::stof(input);
         }
-        catch(...)
+        catch(const std::exception&)
         {
             singleValue = false;
         }

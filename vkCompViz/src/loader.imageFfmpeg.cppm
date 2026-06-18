@@ -45,5 +45,6 @@ class ImageFfmpeg : public Image
         void packData();
         void unpackData();
         std::vector<float> packedData;
+        static constexpr size_t CHANNELS = 4;
 };
 }
