@@ -1,5 +1,5 @@
 // Including uniforms and other inputs shared in all shaders
-#include "inputs.slang"
+import inputs;
 
 //This vertex shader transforms and projects the geometry
 [shader("vertex")]

@@ -1,5 +1,5 @@
 // Including uniforms and other inputs shared in all shaders
-#include "inputs.slang"
+import inputs;
 
 // This fragment shader affects the color and lighting of the rendered geometry
 [shader("fragment")]

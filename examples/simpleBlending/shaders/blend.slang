@@ -1,4 +1,4 @@
-#include "inputs.slang"
+import inputs;
 
 // This function zooms the coordinates baed on the user defined zoom value and mouse position
 float2 zoomCoords(float2 imageCoords, float2 mouseCoords, float zoom)

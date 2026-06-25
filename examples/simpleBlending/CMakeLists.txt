@@ -12,7 +12,7 @@ set(RESOURCE_FILES
     examples/${PROJECT_NAME}/shaders/blend.slang
     examples/${PROJECT_NAME}/shaders/inputs.slang
 )
-copyResources()
+copyResources(${PROJECT_NAME} "${RESOURCE_FILES}")
 target_compile_features(${PROJECT_NAME}
     PRIVATE cxx_std_26
 )

@@ -107,8 +107,10 @@ Shader::Shader::Info Shader::SlangFactory::compile(slang::IModule *shaderModule,
     Slang::ComPtr<slang::IEntryPoint> entryPoint;
     shaderModule->findEntryPointByName("main", entryPoint.writeRef());
     slang::IComponentType* components[] = { shaderModule, entryPoint };
+    Slang::ComPtr<slang::IComponentType> composed;
+    session->createCompositeComponentType(components, 2, composed.writeRef());
     Slang::ComPtr<slang::IComponentType> program;
-    session->createCompositeComponentType(components, 2, program.writeRef());
+    composed->link(program.writeRef());
     Slang::ComPtr<slang::IBlob> spirvCode;
     program->getEntryPointCode(0, 0, spirvCode.writeRef(), nullptr);
     const uint32_t *data = reinterpret_cast<const uint32_t *>(spirvCode->getBufferPointer());

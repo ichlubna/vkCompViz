@@ -1,5 +1,5 @@
 // Including uniforms and other inputs shared in all shaders
-#include "inputs.slang"
+import inputs;
 
 // This is a compute shader with a 16x16 workgroup size
 [shader("compute")]

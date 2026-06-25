@@ -1,5 +1,5 @@
 // Including uniforms and other inputs shared in all shaders
-#include "inputs.slang"
+import inputs;
 
 // This compute shader performs second-stage parallel reduction on the intermediate results
 [shader("compute")]
